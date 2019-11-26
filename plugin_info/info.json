@@ -1,0 +1,20 @@
+{
+	"id" : "mymodbus",
+	"name" : "MyModbus",
+	"description" : "Plugin pour la gestion de matériel qui ont le protocol ModBus",
+	"licence" : "AGPL",
+	"author" : "Bebel27",
+	"require" : "4.0",
+	"category" : "automation protocol",
+	"hasDependency" : 1,
+	"hasOwnDeamon" : 1,
+	"maxDependancyInstallTime" : 0,
+	"changelog" : "https://jeedom.github.io/plugin-template/#language#/changelog",
+	"documentation" : "https://jeedom.github.io/plugin-template/#language#/",
+	"link" : {
+		"forum":"Lien vers le forum",
+		"video" : "Lien vers une video"
+	},
+	"language" : ["fr_FR","en_US","de_DE","sp_SP","ru_RU","id_ID","it_IT"],
+	"compatibility" : ["miniplus","smart","rpi","docker","diy","mobile"]
+}
