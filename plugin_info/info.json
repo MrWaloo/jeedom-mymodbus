@@ -8,6 +8,7 @@
 	"category" : "automation protocol",
 	"hasDependency" : 1,
 	"hasOwnDeamon" : 1,
+	"installation" : "Vous devez également installer le module pyModbusTCP via la commande : sudo pip install pyModbusTCP",
 	"maxDependancyInstallTime" : 0,
 	"changelog" : "https://jeedom.github.io/plugin-template/#language#/changelog",
 	"documentation" : "https://jeedom.github.io/plugin-template/#language#/",
