@@ -25,9 +25,6 @@ if (!isConnect()) {
 <form class="form-horizontal">
     <fieldset>
         <div class="form-group">
-            <label class="col-lg-6 control-label">{{Vous devez également installer le module pyModbusTCP via la commande : sudo pip install pyModbusTCP}}</label>
-        </div>
-        <div class="form-group">
             <label class="col-lg-4 control-label">{{Global param 2}}</label>
             <div class="col-lg-2">
                 <input class="configKey form-control" data-l1key="param2" value="80" />
