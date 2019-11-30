@@ -60,12 +60,12 @@ echo "-"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "Clonage de mbtget"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-
-    git clone https://github.com/sourceperl/mbtget.git
-    cd mbtget
-    perl Makefile.PL
-    make
-    sudo make install
+#
+#    git clone https://github.com/sourceperl/mbtget.git
+#    cd mbtget
+#    perl Makefile.PL
+#    make
+#    sudo make install
 
 echo 100 > ${PROGRESS_FILE}
 echo "-"
