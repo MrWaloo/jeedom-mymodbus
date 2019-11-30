@@ -10,12 +10,12 @@
 	"hasOwnDeamon" : 1,
 	"installation" : "Vous devez également installer le module pyModbusTCP via la commande : sudo pip install pyModbusTCP",
 	"maxDependancyInstallTime" : 0,
-	"changelog" : "https://jeedom.github.io/plugin-template/#language#/changelog",
-	"documentation" : "https://jeedom.github.io/plugin-template/#language#/",
+	"changelog" : "https://jeedom.github.io/mymodbus/#language#/changelog",
+	"documentation" : "https://jeedom.github.io/mymodbus/#language#/",
 	"link" : {
-		"forum":"Lien vers le forum",
+		"forum":"https://community.jeedom.com/t/plugin-mymodbus/9395",
 		"video" : "Lien vers une video"
 	},
-	"language" : ["fr_FR","en_US","de_DE","sp_SP","ru_RU","id_ID","it_IT"],
+	"language" : ["fr_FR"],
 	"compatibility" : ["miniplus","smart","rpi","docker","diy","mobile"]
 }
