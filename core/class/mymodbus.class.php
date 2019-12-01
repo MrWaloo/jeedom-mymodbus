@@ -184,28 +184,28 @@ class mymodbus extends eqLogic {
         exec('kill ' . $pid);
         $check = self::deamon_info();
         $retry = 0;
-        while ($check) {
-            $check = self::deamon_info();
-            $retry++;
-            if ($retry > 10) {
-                $check = false;
-            } else {
-                sleep(1);
-            }
-        }
-        exec('kill -9 ' . $pid);
-        $check = self::deamon_info();
-        $retry = 0;
-        while ($check) {
-            $check = self::deamon_info();
-            $retry++;
-            if ($retry > 10) {
-                $check = false;
-            } else {
-                sleep(1);
-            }
-        }
-		$retry = 0;
+        //while ($check) {
+           // $check = self::deamon_info();
+            //$retry++;
+            //if ($retry > 10) {
+                //$check = false;
+            //} else {
+                //sleep(1);
+            //}
+        //}
+        //exec('kill -9 ' . $pid);
+        //$check = self::deamon_info();
+        //$retry = 0;
+        //while ($check) {
+            //$check = self::deamon_info();
+            //$retry++;
+            //if ($retry > 10) {
+                //$check = false;
+            //} else {
+                //sleep(1);
+            //}
+        //}
+		//$retry = 0;
 	}	
 
 
