@@ -109,7 +109,7 @@ class mymodbus extends eqLogic {
 				if($input_registers){
 					$request.=' --irs='.implode(',',$input_registers);
 				}
-		        $cmd = 'nice -n 19 /usr/bin/python ' . $mymodbus_path . '/mymodbus_master.py ' . $request;
+		        $cmd = 'nice -n 19 /usr/bin/python ' . $mymodbus_path . '/demon.py ' . $request;
 		        log::add('mymodbus', 'info', 'Lancement démon modbus : ' . $cmd);
 		        $result = exec('nohup ' . $cmd . ' >> ' . log::getPathToLog('mymodbus') . ' 2>&1 &');
 		        if (strpos(strtolower($result), 'error') !== false || strpos(strtolower($result), 'traceback') !== false) {
@@ -137,7 +137,7 @@ class mymodbus extends eqLogic {
 	    $return['launchable'] = 'ok';
 
 		
-		$result = exec("ps -eo pid,command | grep 'mymodbus_master.py' | grep -v grep | awk '{print $1}'");
+		$result = exec("ps -eo pid,command | grep 'demon.py' | grep -v grep | awk '{print $1}'");
 		if ($result == 0) {
             
 			$return['state'] = 'nok';
@@ -151,10 +151,10 @@ class mymodbus extends eqLogic {
 
     public static function deamon_stop() {
 	
-		$nbpid = exec("ps -eo pid,command | grep 'mymodbus_master.py' | grep -v grep | awk '{print $1}'| wc -l");
+		$nbpid = exec("ps -eo pid,command | grep 'demon.py' | grep -v grep | awk '{print $1}'| wc -l");
 		log::add('mymodbus', 'info', 'valeur de nbpiddébut'.$nbpid);
 		While ($nbpid > 0) {	
-		  $nbpid = exec("ps -eo pid,command | grep 'mymodbus_master.py' | grep -v grep | awk '{print $1}'| wc -l");
+		  $nbpid = exec("ps -eo pid,command | grep 'demon.py' | grep -v grep | awk '{print $1}'| wc -l");
 		  log::add('mymodbus', 'info', 'valeur de nbpid'.$nbpid);
 		  self::Kill_Process();  
 		  
@@ -180,7 +180,7 @@ class mymodbus extends eqLogic {
 	}
     public static function Kill_Process() {
 		
-		$pid = exec("ps -eo pid,command | grep 'mymodbus_master.py' | grep -v grep | awk '{print $1}'");
+		$pid = exec("ps -eo pid,command | grep 'demon.py' | grep -v grep | awk '{print $1}'");
         exec('kill ' . $pid);
         $check = self::deamon_info();
         $retry = 0;
