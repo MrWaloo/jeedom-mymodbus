@@ -10,7 +10,7 @@ fi
 touch ${PROGRESS_FILE}
 echo 0 > ${PROGRESS_FILE}
 echo "-"
-echo date
+sudo date
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "MyModbus - Debut de l'installation des dependances ..."
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
