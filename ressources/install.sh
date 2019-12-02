@@ -24,6 +24,7 @@ cd /tmp
 #sudo apt-get -y update
 #sudo apt-get -y upgrade
 #sudo apt-get -y dist-upgrade
+#sudo  pip uninstall pyModbusTCP -y
 
 echo 50 > ${PROGRESS_FILE}
 echo "-"
