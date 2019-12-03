@@ -276,7 +276,12 @@ class mymodbus extends eqLogic {
     }
 
     public function postSave() {
-        
+    self::deamon_stop();
+		sleep(1);
+		$deamonRunning = self::deamon_info();
+        if ($deamonRunning['state'] != 'ok') {
+            self::deamon_start();
+        }    
     }
 
     public function preUpdate() {
@@ -287,12 +292,18 @@ class mymodbus extends eqLogic {
         
     }
 
+	
     public function preRemove() {
         
     }
 
     public function postRemove() {
-        
+        self::deamon_stop();
+		sleep(1);
+		$deamonRunning = self::deamon_info();
+        if ($deamonRunning['state'] != 'ok') {
+            self::deamon_start();
+        }
     }
 
     /*
