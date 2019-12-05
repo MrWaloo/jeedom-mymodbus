@@ -13,11 +13,11 @@ import subprocess
 from threading import Thread, Lock
 
 # RTU
-from pymodbus.client.sync import ModbusSerialClient
+#from pymodbus.client.sync import ModbusSerialClient
 
 # RTU over TCP
-from pymodbus.client.sync import ModbusTcpClient
-from pymodbus.transaction import ModbusRtuFramer
+#from pymodbus.client.sync import ModbusTcpClient
+"from pymodbus.transaction import ModbusRtuFramer
 
 # TCP/IP
 from pyModbusTCP.client import ModbusClient
