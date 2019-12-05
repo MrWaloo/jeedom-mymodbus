@@ -123,23 +123,23 @@ foreach (jeeObject::all() as $object) {
         <div class="col-sm-3">
             <input type="text" id="addr" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="polling" placeholder="{{Polling en secondes}}"/>
         </div>
-    </div>
+	</div>
+	     <div class="form-group">
+         <label class="col-sm-3 control-label">{{Mode de connection}}</label>
+            <div class="col-sm-3">
+                <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="mode">
+					<option value="tcpip">{{TCP/IP}}</option>
+					<option value="rtuovertcp">{{RTU over TCP}}</option>
+					<option value="rtu">{{RTU}}</option>
+				</select>
+            </div>
+	    </div>
 	    <div class="form-group">
 		<label class="col-sm-3 control-label">{{Garder la connexion ouverte}}</label>
 		<div class="col-sm-9">
 			<label class="checkbox-inline"><input type="checkbox" id="keepopen" class="eqLogicAttr" data-l1key="configuration" data-l2key="keepopen"checked/>{{Activer}}</label>
 	    </div>
-	</div>
-	     <div class="form-group">
-         <label class="col-sm-3 control-label">{{Mode de connection}}</label>
-            <div class="col-sm-3">
-                <select class="configKey form-control" data-l1key="paramconex">
-                    <option value="Conexval1">ETHERNET OK</option>
-                    <option value="Conexval2">USB NOK</option>
-                </select>
-            </div>
-        </div>
-		
+</div>		
 </fieldset>
 </form>
 </div>
