@@ -11,6 +11,15 @@ import getopt
 import os
 import subprocess
 from threading import Thread, Lock
+
+# RTU
+from pymodbus.client.sync import ModbusSerialClient
+
+# RTU over TCP
+from pymodbus.client.sync import ModbusTcpClient
+from pymodbus.transaction import ModbusRtuFramer
+
+# TCP/IP
 from pyModbusTCP.client import ModbusClient
 
 
@@ -68,8 +77,13 @@ read_discrete_inputs_lock = Lock()
 read_input_registers_lock = Lock()
 
 # modbus polling thread
+#Lecture mode bus over TCP
+#c = ModbusTcpClient(host=host, port=port, unit_id=unit_id, debug=False)
 def polling_thread():
     global regs
+	###################################
+    # pymodbusTCP: TCP/IP
+    ###################################
     c = ModbusClient(host=host, port=port, unit_id=unit_id, debug=False)
     # polling loop
     while True:
