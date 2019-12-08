@@ -1,21 +1,19 @@
 Description 
 ===
+MyModbus.
+Plugin servant à communiquer en protcole Modbus via plusieurs type de Liaison . 
 
-Plugin servant de base pour les plugins. Attention lors de l’utilisation
-à bien remplacer tous les templates par l’id de votre plugin.
+- Liaison modbus Ethernet 
+- Liaison Série Mode RTU ( A venir ) 
 
-Création plugin partie 1 : l’arborescence 
+Premier Pas  : Création d'un équipement  .
 ===
 
-Voici sa structure: tout d’abord un dossier du nom de votre plugin (son
-identifiant unique plus exactement) qui doit contenir les sous-dossiers
-suivants :
+Avant de démarrer le demon , il faut commencer par créer un équipement modbus  :
 
--   3rdparty : dossier contenant les librairies externes utilisées dans
-    le plugin (exemple pour le plugin SMS une librairie pour la
-    communication série en php)
+-  Photos etc.... 
 
--   core : dossier contenant tous les fichiers de fonctionnement interne
+-   Une fois cliqué sur sauvegarder le démon va démarer automatique etc ;....  : 
 
 -   class : dossier contenant la classe du plugin
 
