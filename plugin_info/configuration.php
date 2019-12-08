@@ -28,11 +28,10 @@ if (!isConnect()) {
             <label class="col-lg-4 control-label">{{Port serie pour le mode RTU }}</label>
             <div class="col-lg-2">
                 <select class="configKey form-control" data-l1key="Portrtu">
-                    <option value="value1">value1</option>
-                    <option value="value2">value2</option>
+                    <option value="value1">Aucun</option>
+                    <option value="value2">/dev/bus/usb/</option>
                 </select>
             </div>
         </div>
   </fieldset>
 </form>
-
