@@ -40,6 +40,7 @@ echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "Installation dependance  pypModbusTCP"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 sudo pip install pyModbus
+sudo pip install pyModbusTCP
 echo 70 > ${PROGRESS_FILE}
 echo "-"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
