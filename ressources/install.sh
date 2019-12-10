@@ -1,7 +1,8 @@
-##
-# MyModbus Install dependancies
-# v1.0
-##
+echo "++++++++++++++++++++++++++++++++++++++"
+echo "+  MyModbus Install dependancies"
+echo "+  v1.1"
+echo "+  By Bebel27"
+echo "++++++++++++++++++++++++++++++++++++++"
 
 PROGRESS_FILE=/tmp/dependances_MyModbus_en_cours
 if [ ! -z $1 ]; then
@@ -36,10 +37,10 @@ sudo apt-get -y install python{,3}-pip python{,3}-setuptools
 echo 60 > ${PROGRESS_FILE}
 echo "-"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-echo "Installation dependance  pytModbusTCP"
+echo "Installation dependance  pypModbusTCP"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+sudo pip install pyModbus
 sudo pip install pyModbusTCP
-
 echo 70 > ${PROGRESS_FILE}
 echo "-"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"

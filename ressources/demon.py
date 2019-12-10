@@ -16,15 +16,15 @@ from threading import Thread, Lock
 #from pymodbus.client.sync import ModbusSerialClient
 
 # RTU over TCP
-#from pymodbus.client.sync import ModbusTcpClient
-#from pymodbus.transaction import ModbusRtuFramer
+from pymodbus.client.sync import ModbusTcpClient
+from pymodbus.transaction import ModbusRtuFramer
 
 # TCP/IP
 from pyModbusTCP.client import ModbusClient
 
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "h:p:P", ["help","unit_id=","polling=","keepopen=","coils=","dis=","hrs=","irs="])
+    opts, args = getopt.getopt(sys.argv[1:], "h:p:P", ["help","unit_id=","polling=","keepopen=","coils=","dis=","hrs=","irs=","mode="])
 except getopt.GetoptError, err:
     print str(err)
     sys.exit()
@@ -55,7 +55,10 @@ for o, a in opts:
     elif o == "--irs":
         irs = a.split(',')
         irs.sort(key=int)
-      
+    elif o == "--mode":
+        mode = a.split(',')
+        mode.sort(key=str)
+  
 mymodbus = os.path.abspath(os.path.join(os.path.dirname(__file__), '../core/php/mymodbus.inc.php')) 
 
 # set global
@@ -77,22 +80,29 @@ read_discrete_inputs_lock = Lock()
 read_input_registers_lock = Lock()
 
 # modbus polling thread
-#Lecture mode bus over TCP
-#c = ModbusTcpClient(host=host, port=port, unit_id=unit_id, debug=False)
 def polling_thread():
     global regs
-	###################################
-    # pymodbusTCP: TCP/IP
-    ###################################
-    c = ModbusClient(host=host, port=port, unit_id=unit_id, debug=False)
+    if 'mode' in globals() :
+      model = mode[0]
+    if model == "tcpip":
+     # Lecture mode TCP: TCP/IP
+      c = ModbusClient(host=host, port=port, unit_id=unit_id, debug=False)
+      # keep TCP open
+      if not c.is_open():
+          print "ouverture de "
+          print host
+          print port
+          c.open()
+    if model == "rtuovertcp":
+     #Lecture mode bus over TCP
+      c = ModbusTcpClient(host=host, port=port, framer=ModbusRtuFramer, debug=False)
+    if model == "rtu":
+     #Lecture mode rtu
+     sys.exit() 
+
     # polling loop
     while True:
-        # keep TCP open
-        if not c.is_open():
-            print "ouverture de "
-            print host
-            print port
-            c.open()
+        
         if 'hrs' in globals() :
             hr_start=hrs[0]
             i=1
