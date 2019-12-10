@@ -153,10 +153,10 @@ class mymodbus extends eqLogic {
     public static function deamon_stop() {
 
 		$nbpid = exec("ps -eo pid,command | grep 'demon.py' | grep -v grep | awk '{print $1}'| wc -l");
-		log::add('mymodbus', 'debug', 'valeur de nbpiddébut'.$nbpid);
+		//log::add('mymodbus', 'debug', 'valeur de nbpiddébut'.$nbpid);
 		While ($nbpid > 0) {
 		  $nbpid = exec("ps -eo pid,command | grep 'demon.py' | grep -v grep | awk '{print $1}'| wc -l");
-		  log::add('mymodbus', 'debug', 'valeur de nbpid'.$nbpid);
+		  //log::add('mymodbus', 'debug', 'valeur de nbpid'.$nbpid);
 		  self::Kill_Process();
 
 		}
@@ -170,7 +170,7 @@ class mymodbus extends eqLogic {
 	if (exec(system::getCmdSudo() . system::get('cmd_check') . '-E "python3\-setuptools" | wc -l') == 0) $return['state'] = 'nok';
 	if (exec(system::getCmdSudo() . 'pip list | grep -E "pyModbus" | wc -l') == 0) $return['state'] = 'nok';
 	if (exec(system::getCmdSudo() . 'pip3 list | grep -E "pyserial" | wc -l') == 0) $return['state'] = 'nok';
-	log::add('mymodbus', 'info', 'valeur de return'.$return['state']);
+	//log::add('mymodbus', 'debug', 'valeur de return'.$return['state']);
 	if ($return['state'] == 'nok') message::add('mymodbus_dep', __('Si les dépendances sont/restent NOK, veuillez mettre à jour votre système linux, puis relancer l\'installation des dépendances générales. Merci', __FILE__));
     return $return;
     }
@@ -218,7 +218,7 @@ class mymodbus extends eqLogic {
 
     public function postInsert() {
 
-    }    
+    }
 
     public function preSave() {
 
