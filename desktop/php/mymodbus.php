@@ -129,8 +129,8 @@ foreach (jeeObject::all() as $object) {
             <div class="col-sm-3">
                 <select id="mode" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="mode">
 					<option value="tcpip">{{TCP/IP}}</option>
-					<option value="rtuovertcp">{{RTU over TCP}}</option>
-					<option value="rtu">{{RTU}}</option>
+					<!--<option value="rtuovertcp">{{RTU over TCP}}</option>
+					<option value="rtu">{{RTU}}</option>-->
 				</select>
             </div>
 	    </div>
