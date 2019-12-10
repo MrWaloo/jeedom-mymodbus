@@ -17,7 +17,7 @@ from threading import Thread, Lock
 
 # RTU over TCP
 from pymodbus.client.sync import ModbusTcpClient
-#from pymodbus.transaction import ModbusRtuFramer
+from pymodbus.transaction import ModbusRtuFramer
 
 # TCP/IP
 from pyModbusTCP.client import ModbusClient
@@ -95,7 +95,7 @@ def polling_thread():
           c.open()
     if model == "rtuovertcp":
      #Lecture mode bus over TCP
-      c = ModbusTcpClient(host=host, port=port, unit_id=unit_id, debug=False)
+      c = ModbusTcpClient(host=host, port=port, framer=ModbusRtuFramer, debug=False)
     if model == "rtu":
      #Lecture mode rtu
      sys.exit() 
