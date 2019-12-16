@@ -24,7 +24,7 @@ from pyModbusTCP.client import ModbusClient
 
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "h:p:P", ["help","unit_id=","polling=","keepopen=","coils=","dis=","hrs=","irs=","mode="])
+    opts, args = getopt.getopt(sys.argv[1:], "h:p:P", ["help","unit_id=","polling=","keepopen=","coils=","dis=","hrs=","irs=","protocol="])
 except getopt.GetoptError, err:
     print str(err)
     sys.exit()
@@ -55,9 +55,9 @@ for o, a in opts:
     elif o == "--irs":
         irs = a.split(',')
         irs.sort(key=int)
-    elif o == "--mode":
-        mode = a.split(',')
-        mode.sort(key=str)
+    elif o == "--protocol":
+        protocol = a.split(',')
+        protocol.sort(key=str)
   
 mymodbus = os.path.abspath(os.path.join(os.path.dirname(__file__), '../core/php/mymodbus.inc.php')) 
 
@@ -82,8 +82,8 @@ read_input_registers_lock = Lock()
 # modbus polling thread
 def polling_thread():
     global regs
-    if 'mode' in globals() :
-      model = mode[0]
+    if 'protocol' in globals() :
+      model = protocol[0]
     if model == "tcpip":
      # Lecture mode TCP: TCP/IP
       c = ModbusClient(host=host, port=port, unit_id=unit_id, debug=False)

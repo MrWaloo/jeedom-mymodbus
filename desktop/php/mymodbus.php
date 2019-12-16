@@ -59,6 +59,7 @@ foreach ($eqLogics as $eqLogic) {
     <div role="tabpanel" class="tab-pane active" id="eqlogictab">
       <br/>
     <form class="form-horizontal">
+	<legend><i class="fa fa-wrench"></i> {{Equipement :}}</legend>
         <fieldset>
             <div class="form-group">
                 <label class="col-sm-3 control-label">{{Nom de l'équipement}}</label>
@@ -98,50 +99,30 @@ foreach (jeeObject::all() as $object) {
 			<label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isEnable" checked/>{{Activer}}</label>
 			<label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isVisible" checked/>{{Visible}}</label>
 		</div>
+		<legend><i class="fa fa-list-alt"></i> {{Configuration :}}</legend>
 		<!--   ***********************************  -->
 	</div>
-       <div class="form-group">
-        <label class="col-sm-3 control-label">{{Adresse IP}}</label>
-        <div class="col-sm-3">
-            <input type="text" id="addr" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="addr" placeholder="{{Adresse IP}}"/>
-        </div>
-    </div>
-       <div class="form-group">
-        <label class="col-sm-3 control-label">{{Port}}</label>
-        <div class="col-sm-3">
-            <input type="text" id="port" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="port" placeholder="{{502}}"/>
-        </div>
-    </div>
 	   <div class="form-group">
-        <label class="col-sm-3 control-label">{{Unit ID}}</label>
-        <div class="col-sm-3">
-            <input type="text" id="port" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="unit" placeholder="{{Unit ID}}"/>
-        </div>
-	</div>	
-       <div class="form-group">
-        <label class="col-sm-3 control-label">{{Polling en secondes}}</label>
-        <div class="col-sm-3">
-            <input type="text" id="addr" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="polling" placeholder="{{Polling en secondes}}"/>
-        </div>
-	</div>
-	     <div class="form-group">
          <label class="col-sm-3 control-label">{{Mode de connection}}</label>
             <div class="col-sm-3">
-                <select id="mode" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="mode">
-					<option value="tcpip">{{TCP/IP}}</option>
-					<!--<option value="rtuovertcp">{{RTU over TCP}}</option>
-					<option value="rtu">{{RTU}}</option>-->
+                <select id="mode" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="protocol">
+					<option disabled selected value>-- {{Choisir un type}} --</option>
+<?php
+  foreach (mymodbus::supportedProtocol() as $protocol) {
+    echo '<option value="' . $protocol . '">' . $protocol . '</option>';
+  }
+?>
 				</select>
-            </div>
-	    </div>
-	    <div class="form-group">
-		<label class="col-sm-3 control-label">{{Garder la connexion ouverte}}</label>
-		<div class="col-sm-9">
-			<label class="checkbox-inline"><input type="checkbox" id="keepopen" class="eqLogicAttr" data-l1key="configuration" data-l2key="keepopen"checked/>{{Activer}}</label>
-	    </div>
-        </div>		
-</fieldset>
-</form>
+               </div>
+           </div>
+       </fieldset>
+<div>
+      
+        <fieldset>
+		<div id="div_protocolParameters"></div>
+        </fieldset>
+    </form>
+</div>
 </div>
       <div role="tabpanel" class="tab-pane" id="commandtab">
 <a class="btn btn-success btn-sm cmdAction pull-right" data-action="add" style="margin-top:5px;"><i class="fa fa-plus-circle"></i> {{Ajouter une E/S modbus}}</a><br/><br/>

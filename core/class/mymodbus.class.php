@@ -68,7 +68,7 @@ class mymodbus extends eqLogic {
 				$mymodbus_port = $mymodbus->getConfiguration('port');
 				$mymodbus_unit = $mymodbus->getConfiguration('unit');
 				$mymodbus_keepopen = $mymodbus->getConfiguration('keepopen');
-				$mymodbus_mode = $mymodbus->getConfiguration('mode');
+				$mymodbus_protocol = $mymodbus->getConfiguration('protocol');
 				if($mymodbus_port==""){
 					$mymodbus_port=502;
 				}
@@ -79,7 +79,7 @@ class mymodbus extends eqLogic {
 					$mymodbus_keepopen=0;
 				}
 		    	$mymodbus_polling = $mymodbus->getConfiguration('polling');
-		    	$request='-h '.$mymodbus_ip.' -p '.$mymodbus_port.' --unit_id='.$mymodbus_unit.' --polling='.$mymodbus_polling.' --keepopen='.$mymodbus_keepopen. ' --mode='.$mymodbus_mode;
+		    	$request='-h '.$mymodbus_ip.' -p '.$mymodbus_port.' --unit_id='.$mymodbus_unit.' --polling='.$mymodbus_polling.' --keepopen='.$mymodbus_keepopen. ' --protocol='.$mymodbus_protocol;
 		        //log::add('mymodbus', 'info', 'Lancement du démon modbus'.$request);
 		        $mymodbus_path = realpath(dirname(__FILE__) . '/../../ressources');
 				foreach ($mymodbus->getCmd('info') as $cmd) {
@@ -149,7 +149,14 @@ class mymodbus extends eqLogic {
 		return $return;
 
     }
-
+    public static function supportedProtocol() {
+        $return = array();
+        foreach (ls(dirname(__FILE__) . '/../../desktop/modal/') as $file) {
+            $protocol = explode('.', $file);
+            $return[] = $protocol[0];
+        }
+        return $return;
+    }
     public static function deamon_stop() {
 
 		$nbpid = exec("ps -eo pid,command | grep 'demon.py' | grep -v grep | awk '{print $1}'| wc -l");
