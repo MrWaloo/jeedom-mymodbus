@@ -20,6 +20,36 @@ $("#table_cmd").sortable({axis: "y", cursor: "move", items: ".cmd", placeholder:
 /*
  * Fonction pour l'ajout de commande, appellé automatiquement par plugin.template
  */
+ 
+ function prePrintEqLogic() {
+    $('.eqLogicAttr[data-l1key=configuration][data-l2key=protocol]').off();
+}
+
+
+function  printEqLogic(_eqLogic) {
+    $.showLoading();
+    $('.eqLogicAttr[data-l1key=configuration][data-l2key=protocol]').off();
+    if (isset(_eqLogic.configuration) && isset(_eqLogic.configuration.protocol)) {
+        $('#div_protocolParameters').load('index.php?v=d&plugin=mymodbus&modal=' + _eqLogic.configuration.protocol + '.configuration', function () {
+            $('body').setValues(_eqLogic, '.eqLogicAttr');
+            initCheckBox();
+            $('.eqLogicAttr[data-l1key=configuration][data-l2key=protocol]').off().on('change', function () {
+                $('#div_protocolParameters').load('index.php?v=d&plugin=mymodbus&modal=' + $(this).val() + '.configuration',function(){
+                    initCheckBox();
+                });
+            });
+            modifyWithoutSave = false;
+            $.hideLoading();
+        });
+    } else {
+        $('.eqLogicAttr[data-l1key=configuration][data-l2key=protocol]').on('change', function () {
+            $('#div_protocolParameters').load('index.php?v=d&plugin=mymodbus&modal=' + $(this).val() + '.configuration',function(){
+                initCheckBox();
+            });
+        });
+        $.hideLoading();
+    }
+}
 function addCmdToTable(_cmd) {
     if (!isset(_cmd)) {
         var _cmd = {configuration: {}};
