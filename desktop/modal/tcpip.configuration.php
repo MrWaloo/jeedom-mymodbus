@@ -50,5 +50,5 @@ if (!isConnect('admin')) {
 		<div class="col-sm-9">
 			<label class="checkbox-inline"><input type="checkbox" id="keepopen" class="eqLogicAttr" data-l1key="configuration" data-l2key="keepopen"checked/>{{Activer}}</label>
 	    </div>
-        </div>		
+        </div>	
 
