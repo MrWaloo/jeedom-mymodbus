@@ -44,11 +44,4 @@ if (!isConnect('admin')) {
             <input type="text" id="addr" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="polling" placeholder="{{Polling en secondes}}"/>
         </div>
 	</div>
-	     
-	    <div class="form-group">
-		<label class="col-sm-3 control-label">{{Garder la connexion ouverte}}</label>
-		<div class="col-sm-9">
-			<label class="checkbox-inline"><input type="checkbox" id="keepopen" class="eqLogicAttr" data-l1key="configuration" data-l2key="keepopen"checked/>{{Activer}}</label>
-	    </div>
-        </div>	
 
