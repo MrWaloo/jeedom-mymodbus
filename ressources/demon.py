@@ -13,7 +13,7 @@ import subprocess
 from threading import Thread, Lock
 
 # RTU
-#from pymodbus.client.sync import ModbusSerialClient
+from pymodbus.client.sync import ModbusSerialClient
 
 # RTU over TCP
 from pymodbus.client.sync import ModbusTcpClient
@@ -81,26 +81,30 @@ read_input_registers_lock = Lock()
 
 # modbus polling thread
 def polling_thread():
-    global regs
+    #global regs
     if 'protocol' in globals() :
-      model = protocol[0]
-    if model == "tcpip":
-     # Lecture mode TCP: TCP/IP
-      c = ModbusClient(host=host, port=port, unit_id=unit_id, debug=False)
-      # keep TCP open
-      if not c.is_open():
-          print "ouverture de "
-          print host
-          print port
-          c.open()
-    if model == "rtuovertcp":
-     #Lecture mode bus over TCP
-      c = ModbusTcpClient(host=host, port=port, framer=ModbusRtuFramer, debug=False)
-    if model == "rtu":
-     #Lecture mode rtu
-     sys.exit() 
-
-    # polling loop
+		model = protocol[0]
+		if model == "tcpip":
+		        # Lecture mode TCP: TCP/IP
+			c = ModbusClient(host=host, port=port, unit_id=unit_id, auto_open=True, auto_close=True, timeout=5)
+			# keep TCP open
+			#if not c.is_open():
+				#print "mode TCP/IP"
+				#print "ouverture de "
+				#print host
+				#print port
+				#c.open()
+		if model == "rtuovertcp":
+		#Lecture mode bus over TCP
+			#c = ModbusTcpClient(host=host, port=port, framer=ModbusRtuFramer, debug=False)
+			c = ModbusTcpClient(host=host, port=port, framer=ModbusRtuFramer, auto_open=True, auto_close=True, timeout=5)
+		if model == "rtu":
+			print "mode rtuovertcp"
+			#Lecture mode rtu
+			#sys.exit() 
+			c = ModbusClient(method = "rtu", port=port, stopbits = 1, bytesize = 8, parity = 'N', baudrate= 19200)
+		
+	# polling loop
     while True:
         
         if 'hrs' in globals() :
@@ -218,8 +222,8 @@ def polling_thread():
             #read_input_registers_list = c.read_input_registers(read_input_registers,read_input_registers_length-(read_input_registers-1))
             #print str(read_input_registers_list)
             #subprocess.Popen(['/usr/bin/php',mymodbus,'type=input_registers','inputs='+str(range(read_input_registers,read_input_registers_length+1)),'values='+str(read_input_registers_list),'add='+host])
-        if keepopen == 0 :
-            c.close()
+        #if keepopen == 0 :
+            #c.close()
         time.sleep(polling)
 
 # start polling thread
