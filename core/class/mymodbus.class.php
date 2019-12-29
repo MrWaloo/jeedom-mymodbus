@@ -55,7 +55,6 @@ class mymodbus extends eqLogic {
 
     public static function deamon_start(){
 		//self::deamon_stop();
-		//log::add('mymodbus', 'info', 'on en est là');
 		$deamon_info = self::deamon_info();
 		if ($deamon_info['launchable'] != 'ok') {
 			throw new Exception(__('Veuillez vérifier la configuration', __FILE__));
@@ -65,6 +64,9 @@ class mymodbus extends eqLogic {
 		foreach ($eqLogics as $mymodbus) {
 			if ($mymodbus->getIsEnable()) {
 		    	$mymodbus_ip = $mymodbus->getConfiguration('addr');
+				if($mymodbus_ip == ""){
+					throw new Exception(__('La requete adresse ip ne peut etre vide',__FILE__).$mymodbus_ip);
+				}
 				$mymodbus_port = $mymodbus->getConfiguration('port');
 				$mymodbus_unit = $mymodbus->getConfiguration('unit');
 				$mymodbus_keepopen = $mymodbus->getConfiguration('keepopen');
@@ -79,6 +81,9 @@ class mymodbus extends eqLogic {
 					$mymodbus_keepopen=0;
 				}
 		    	$mymodbus_polling = $mymodbus->getConfiguration('polling');
+				if($mymodbus_polling == ""  ){
+					throw new Exception(__('La requetes polling ne peut etre vide',__FILE__));
+				}
 		    	$request='-h '.$mymodbus_ip.' -p '.$mymodbus_port.' --unit_id='.$mymodbus_unit.' --polling='.$mymodbus_polling.' --keepopen='.$mymodbus_keepopen. ' --protocol='.$mymodbus_protocol;
 		        //log::add('mymodbus', 'info', 'Lancement du démon modbus'.$request);
 		        $mymodbus_path = realpath(dirname(__FILE__) . '/../../ressources');
@@ -215,27 +220,43 @@ class mymodbus extends eqLogic {
         //}
 		//$retry = 0;
 	}
-
-
+	public static function Lunch_Config_Crouzet () {
+	
+	
+		$eqLogics = eqLogic::byType('mymodbus');
+		foreach ($eqLogics as $mymodbus) {
+			$mymodbus_protocol = $mymodbus->getConfiguration('protocol');
+			if($mymodbus_protocol == 'crouzet_m3'){
+				log::add('mymodbus', 'debug', 'config Crouzet détectée');
+				for ($i = 20; $i <= 27; $i++) {
+					$mymodbusCmd = new mymodbusCmd();
+					$mymodbusCmd->setName(__('REG'.$i, __FILE__));
+					$mymodbusCmd->setEqLogic_id($this->id);
+					$mymodbusCmd->setConfiguration('type', 'holding_registers');
+					$mymodbusCmd->setConfiguration('id', 'REG'.$i);
+					$mymodbusCmd->setConfiguration('location', ''.$i);
+					$mymodbusCmd->setType('info');
+					$mymodbusCmd->setUnite('');
+					$mymodbusCmd->setSubType('other');
+					$mymodbusCmd->save();
+				}	
+			}		 		
+		}
+	}
     /*     * *********************Méthodes d'instance************************* */
 
     public function preInsert() {
-
+		
     }
-
     public function postInsert() {
-
-    }
-
+		
+	}
     public function preSave() {
-
-        if ($this->getConfiguration('request') == '') {
-            //throw new Exception(__('La requete ne peut etre vide',__FILE__));
-        }
-    }
-
+		
+	}	
     public function postSave() {
-    self::deamon_stop();
+		
+		self::deamon_stop();
 		sleep(1);
 		$deamonRunning = self::deamon_info();
         if ($deamonRunning['state'] != 'ok') {
@@ -253,7 +274,7 @@ class mymodbus extends eqLogic {
 
 
     public function preRemove() {
-
+		
     }
 
     public function postRemove() {
