@@ -43,5 +43,5 @@ if (!isConnect('admin')) {
         <div class="col-sm-3">
             <input type="text" id="addr" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="polling" placeholder="{{Polling en secondes}}"/>
         </div>
-	</div>	
+	</div>
 
