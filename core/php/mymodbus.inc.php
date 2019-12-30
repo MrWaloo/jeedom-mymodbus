@@ -42,7 +42,7 @@ $values=str_replace(']', '', $values);
 $values=str_replace('True', 1, $values);
 $values=str_replace('False', 0, $values);
 $values=str_replace(' ', '', $values);
-//log::add('modbus', 'event', 'tableau 1: ' . $values);
+//log::add('mymodbus', 'event', 'tableau 1: ' . $values);
 $values_arr=explode(',', $values);
 $values_inputs=str_replace('[', '', $_GET['inputs']);
 $values_inputs=str_replace(']', '', $values_inputs);

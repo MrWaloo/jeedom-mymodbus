@@ -19,7 +19,11 @@ if (!isConnect('admin')) {
     throw new Exception('{{401 - Accès non autorisé}}');
 }
 ?>
-
+<div class="form-group">
+	<div class="col-sm-3 form-group">
+		<img class="img_device" src="plugins/mymodbus/ressources/images/mymodbus_tcpip_icon.png" style="margin-left:20px;height : 100px;" />
+	</div>
+</div>
 <div class="form-group">
         <label class="col-sm-3 control-label">{{Adresse IP}}</label>
         <div class="col-sm-3">
@@ -45,4 +49,3 @@ if (!isConnect('admin')) {
         </div>
 	</div>
 </div>
-

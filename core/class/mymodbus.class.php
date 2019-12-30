@@ -54,15 +54,16 @@ class mymodbus extends eqLogic {
     }
 
     public static function deamon_start(){
-		//self::deamon_stop();
 		$deamon_info = self::deamon_info();
 		if ($deamon_info['launchable'] != 'ok') {
-			throw new Exception(__('Veuillez vérifier la configuration', __FILE__));
+			throw new Exception(__('Veuillez vérifier la configuration du demon', __FILE__));
 		}
 
-    	$eqLogics = eqLogic::byType('mymodbus');
-		foreach ($eqLogics as $mymodbus) {
-			if ($mymodbus->getIsEnable()) {
+    	//$eqLogics = eqLogic::byType('mymodbus');
+		foreach (self::byType('mymodbus') as $mymodbus) {
+		//foreach ($eqLogics as $mymodbus) {
+			if ($mymodbus->getIsEnable() == 1) {
+			//if ($mymodbus->getIsEnable()) {
 		    	$mymodbus_ip = $mymodbus->getConfiguration('addr');
 				if($mymodbus_ip == ""){
 					throw new Exception(__('La requete adresse ip ne peut etre vide',__FILE__).$mymodbus_ip);
@@ -96,7 +97,7 @@ class mymodbus extends eqLogic {
 						$discrete_inputs[]=$cmd->getConfiguration('location');
 					}
 					if($cmd->getConfiguration('type')=='holding_registers'){
-						$holding_registers[]=$cmd->getConfiguration('location');
+						$holding_registers[] =$cmd->getConfiguration('location');
 						log::add('mymodbus', 'info', 'holding_registers :'.$cmd->getConfiguration('location'));
 					}
 					if($cmd->getConfiguration('type')=='input_registers'){
@@ -116,12 +117,17 @@ class mymodbus extends eqLogic {
 					$request.=' --irs='.implode(',',$input_registers);
 				}
 		        $cmd = 'nice -n 19 /usr/bin/python ' . $mymodbus_path . '/demon.py ' . $request;
+				log::add('mymodbus', 'debug', 'debug a analyser'.$request);
 		        log::add('mymodbus', 'info', 'Lancement démon modbus : ' . $cmd);
 		        $result = exec('nohup ' . $cmd . ' >> ' . log::getPathToLog('mymodbus') . ' 2>&1 &');
 		        if (strpos(strtolower($result), 'error') !== false || strpos(strtolower($result), 'traceback') !== false) {
 		            log::add('mymodbus', 'error', $result);
 		            return false;
 		        }
+				$holding_registers = array();
+				$coils = array();
+				$discrete_inputs = array();
+				$input_registers = array();
 		        sleep(2);
 		        if (!self::deamon_info()) {
 		            sleep(10);
@@ -252,16 +258,16 @@ class mymodbus extends eqLogic {
 		
 	}
     public function preSave() {
+		self::deamon_stop();
 		
 	}	
     public function postSave() {
-		
-		self::deamon_stop();
-		sleep(1);
+		sleep(2);
 		$deamonRunning = self::deamon_info();
-        if ($deamonRunning['state'] != 'ok') {
+		if ($deamonRunning['state'] != 'ok') {
             self::deamon_start();
         }
+        
     }
 
     public function preUpdate() {
@@ -274,12 +280,12 @@ class mymodbus extends eqLogic {
 
 
     public function preRemove() {
+		self::deamon_stop();
 		
     }
 
     public function postRemove() {
-        self::deamon_stop();
-		sleep(1);
+		sleep(2);
 		$deamonRunning = self::deamon_info();
         if ($deamonRunning['state'] != 'ok') {
             self::deamon_start();

@@ -107,8 +107,8 @@ foreach (jeeObject::all() as $object) {
             <div class="col-sm-3">
                 <select id="mode" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="protocol">
 					<option disabled selected value>-- {{Choisir un mode de connection}} --</option>
-<?php
-  foreach (mymodbus::supportedProtocol() as $protocol) {
+					<?php
+foreach (mymodbus::supportedProtocol() as $protocol) {
     echo '<option value="' . $protocol . '">' . $protocol . '</option>';
   }
 ?>
