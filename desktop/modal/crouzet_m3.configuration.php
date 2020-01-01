@@ -39,12 +39,6 @@ if (!isConnect('admin')) {
         </div>
 </div>
 <div class="form-group">
-    <label class="col-sm-3 control-label">{{Unit ID}}</label>
-		<div class="col-sm-3">
-			<input type="text" id="port" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="unit" placeholder="{{Unit ID}}"/>
-        </div>
-</div>	
-<div class="form-group">
     <label class="col-sm-3 control-label">{{Polling en secondes}}</label>
 	<div class="col-sm-3">
 			<input type="text" id="addr" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="polling" placeholder="{{Polling en secondes}}"/>
