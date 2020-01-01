@@ -32,7 +32,7 @@ echo "-"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "Installation dependance  python-pip"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-//sudo apt-get -y install python{,3}-pip python{,3}-setuptools
+#sudo apt-get -y install python{,3}-pip python{,3}-setuptools
 
 echo 60 > ${PROGRESS_FILE}
 echo "-"
@@ -46,9 +46,9 @@ echo "-"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "Installation dependance  python-serial"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-//sudo apt-get -y install python-serial
-//sudo pip3 uninstall serial
-//sudo pip3 install pyserial
+#sudo apt-get -y install python-serial
+#sudo pip3 uninstall serial
+#sudo pip3 install pyserial
 
 echo 80 > ${PROGRESS_FILE}
 echo "-"
