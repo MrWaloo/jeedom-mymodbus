@@ -20,7 +20,9 @@ $("#table_cmd").sortable({axis: "y", cursor: "move", items: ".cmd", placeholder:
 /*
  * Fonction pour l'ajout de commande, appellé automatiquement par plugin.template
  */
- 
+$('.eqLogicAction[data-action=bt_docSpecific]').on('click', function () {
+    window.open('https://bebel27a.github.io/jeedom-mymobdus.github.io/fr_FR/');
+}); 
  function prePrintEqLogic() {
     $('.eqLogicAttr[data-l1key=configuration][data-l2key=protocol]').off();
 }
