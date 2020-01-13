@@ -135,7 +135,8 @@ foreach (mymodbus::supportedProtocol() as $protocol) {
             <th style="width: 150px;">{{Type E/S}}</th>
             <th style="width: 100px;">{{Adresse}}</th>
             <th>{{Parametre(s)}}</th>
-            <th>{{Options}}</th>
+			<th style="width: 100px;">{{Options}}</th>
+			<th>{{Configuration}}</th>
         </tr>
     </thead>
     <tbody>
