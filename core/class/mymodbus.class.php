@@ -269,27 +269,16 @@ class mymodbus extends eqLogic {
     /*     * *********************Méthodes d'instance************************* */
 
     public function preInsert() {
-		
     }
-    public function postInsert() {
-		
+    public function postInsert() {	
 	}
-    public function preSave() {	
-	
-		self::deamon_stop();
+    public function preSave() {
 	}	
     public function postSave() {
-		
-		sleep(2);
-        self::deamon_start();
     }
-
-    public function preUpdate() {
-
+	public function preUpdate() {
     }
-
     public function postUpdate() {
-
     }
 
 
@@ -305,7 +294,11 @@ class mymodbus extends eqLogic {
             self::deamon_start();
         }
     }
-
+	public function postAjax(){
+		self::deamon_stop();
+		sleep(2);
+		self::deamon_start();
+	}
     /*
      * Non obligatoire mais permet de modifier l'affichage du widget si vous en avez besoin
       public function toHtml($_version = 'dashboard') {
@@ -401,19 +394,12 @@ class mymodbusCmd extends cmd {
 		}
 
     }
-	public function postInsert() {
-		
+	public function postInsert() {	
 	}
-	public function postRemove() {
-			
+	public function postRemove() {		
     }
-	public function postSave() {
-		
-	}		
-		
-		//mymodbus::deamon_stop();
-		//sleep(2);
-        //mymodbus::deamon_start();
+	public function postSave() {	
+	}
         
         
     /*     * **********************Getteur Setteur*************************** */
