@@ -50,3 +50,6 @@ if (!isConnect('admin')) {
 			<label class="checkbox-inline"><input type="checkbox" id="mheure" class="eqLogicAttr" data-l1key="configuration" data-l2key="mheure"checked/>{{Activer}}</label>
 	    </div>
 </div>
+<div class="alert alert-info">{{Information concernant la mise à l'heure auto :<br>
+					- La mise à l'heure se fait par un cron journalier à 00:30 <br>}}
+</div>
