@@ -27,6 +27,12 @@ $deamonRunning = mymodbus::deamon_info();
     <br>
     <span>{{Configuration}}</span>
   </div>
+  <div class="cursor eqLogicAction" data-action="bt_docSpecific" >
+				<center>
+					<i class="fas fa-book" style="font-size: 38px !important;"></i>
+				</center>
+				<span style=><center>{{Documentation}}</center></span>
+			</div>
   </div>
   <legend><i class="fas fa-table"></i> {{Mes équipements}}</legend>
 	   <input class="form-control" placeholder="{{Rechercher}}" id="in_searchEqlogic" />
@@ -35,7 +41,12 @@ $deamonRunning = mymodbus::deamon_info();
 foreach ($eqLogics as $eqLogic) {
 	$opacity = ($eqLogic->getIsEnable()) ? '' : 'disableCard';
 	echo '<div class="eqLogicDisplayCard cursor '.$opacity.'" data-eqLogic_id="' . $eqLogic->getId() . '">';
+	$alternateImg = $eqLogic->getConfiguration('protocol');
+	if (file_exists(dirname(__FILE__) . '/../../ressources/images/' . $alternateImg ._icon . '.png')) {
+		echo '<img class="lazy" src="plugins/mymodbus/ressources/images/' . $alternateImg ._icon . '.png"/>';
+	} else {	
 	echo '<img src="' . $plugin->getPathImgIcon() . '"/>';
+	}
 	echo '<br>';
 	echo '<span class="name">' . $eqLogic->getHumanName(true, true) . '</span>';
 	echo '</div>';
@@ -135,7 +146,8 @@ foreach (mymodbus::supportedProtocol() as $protocol) {
             <th style="width: 150px;">{{Type E/S}}</th>
             <th style="width: 100px;">{{Adresse}}</th>
             <th>{{Parametre(s)}}</th>
-            <th>{{Options}}</th>
+			<th style="width: 100px;">{{Options}}</th>
+			<th>{{Configuration}}</th>
         </tr>
     </thead>
     <tbody>

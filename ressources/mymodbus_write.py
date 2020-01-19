@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-
+# TCP/IP
 from pyModbusTCP.client import ModbusClient
+
 import time
 import sys
 import getopt
@@ -10,7 +11,7 @@ import os
 import subprocess
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "h:p:P", ["help","wsc=","wsr=","value="])
+    opts, args = getopt.getopt(sys.argv[1:], "h:p:P", ["help","unit_id=","wsc=","wsr=","value="])
 except getopt.GetoptError, err:
     print str(err)
     usage()
@@ -21,6 +22,8 @@ for o, a in opts:
         host = str(a)
     elif o == "-p":
         port = a
+    elif o == "--unit_id":
+        unit_id = int(a)
     elif o in ("-h", "--help"):
         usage()
         sys.exit()
@@ -34,26 +37,27 @@ for o, a in opts:
         usage()
         sys.exit()    
 
-SERVER_HOST = "localhost"
-SERVER_PORT = 502
+#SERVER_HOST = "localhost"
+#SERVER_PORT = 502
 
 c = ModbusClient()
-
+#c = ModbusClient(host=host, port=port, unit_id=unit_id, debug=False)
 # uncomment this line to see debug message
 #c.debug(True)
 
-# define modbus server host, port
+# define modbus server host, port , unit_id
 c.host(host)
 c.port(port)
-
+c.unit_id(unit_id)
+#if 'unit_id' in globals() :
+#	slave_id = unit_id[0]
 if 'write_single_coil' in globals() and value == 1:
     val = True
 elif 'write_single_coil' in globals() and value == 0:
     val = False
 
-if not c.is_open():
-    if not c.open():
-        print("unable to connect to "+host+":"+str(port))
+if not c.open():
+    print("unable to connect to "+host+":"+str(port))
 
 if c.is_open():
     print("")
