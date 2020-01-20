@@ -210,7 +210,7 @@ def polling_thread():
                     i += 1
                     if int(ir) == int(irs[-1]):
                         read_irs_list = c.read_input_registers(int(ir_start),i)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=input_registers','sortie=2','inputs='+str(range(int(ir_start),int(ir_start)+i)),'values='+str(read_irs_list),'add='+host,'unit='+unit_id])
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=input_registers','sortie=2','inputs='+str(range(int(ir_start),int(ir_start)+i)),'values='+str(read_irs_list),'add='+host])
                 else :
                     read_irs_list = c.read_input_registers(int(ir_start),i)
                     subprocess.Popen(['/usr/bin/php',mymodbus,'type=input_registers','sortie=3','inputs='+str(range(int(ir_start),int(ir_start)+i)),'values='+str(read_irs_list),'add='+host])
