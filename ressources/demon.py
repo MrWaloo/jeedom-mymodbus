@@ -198,22 +198,22 @@ def polling_thread():
                     ir_previous=ir_start
                     if int(ir) == int(irs[-1]):
                         read_irs_list = c.read_input_registers(int(ir_start),i)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=input_registers','sortie=1','inputs='+str(int(ir_start)),'values='+str(read_irs_list),'add='+host])
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=input_registers','sortie=1','inputs='+str(int(ir_start)),'values='+str(read_irs_list),'add='+host,'unit='+str(unit_id)])
                 elif int(ir) == int(ir_previous) + 1 :
                     ir_previous=int(ir)
                     i += 1
                     if int(ir) == int(irs[-1]):
                         read_irs_list = c.read_input_registers(int(ir_start),i)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=input_registers','sortie=2','inputs='+str(range(int(ir_start),int(ir_start)+i)),'values='+str(read_irs_list),'add='+host])
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=input_registers','sortie=2','inputs='+str(range(int(ir_start),int(ir_start)+i)),'values='+str(read_irs_list),'add='+host,'unit='+str(unit_id)])
                 else :
                     read_irs_list = c.read_input_registers(int(ir_start),i)
-                    subprocess.Popen(['/usr/bin/php',mymodbus,'type=input_registers','sortie=3','inputs='+str(range(int(ir_start),int(ir_start)+i)),'values='+str(read_irs_list),'add='+host])
+                    subprocess.Popen(['/usr/bin/php',mymodbus,'type=input_registers','sortie=3','inputs='+str(range(int(ir_start),int(ir_start)+i)),'values='+str(read_irs_list),'add='+host,'unit='+str(unit_id)])
                     ir_start=int(ir)
                     ir_previous=int(ir)
                     i=1
                     if int(ir) == int(irs[-1]):
                         read_irs_list = c.read_input_registers(int(ir_start),i)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=input_registers','sortie=4','inputs='+str(range(int(ir_start),int(ir_start)+i)),'values='+str(read_irs_list),'add='+host])
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=input_registers','sortie=4','inputs='+str(range(int(ir_start),int(ir_start)+i)),'values='+str(read_irs_list),'add='+host,'unit='+str(unit_id)])
             
             #read_input_registers_list = c.read_input_registers(read_input_registers,read_input_registers_length-(read_input_registers-1))
             #print str(read_input_registers_list)
