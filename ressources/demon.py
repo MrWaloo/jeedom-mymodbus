@@ -117,28 +117,22 @@ def polling_thread():
                     hr_previous=hr_start
                     if int(hr) == int(hrs[-1]):
                         read_hrs_list = c.read_holding_registers(int(hr_start),i)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=holding_registers','sortie=1','inputs='+str(int(hr_start)),'values='+str(read_hrs_list),'add='+host])
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=holding_registers','sortie=1','inputs='+str(int(hr_start)),'values='+str(read_hrs_list),'add='+host,'unit='+str(unit_id)])
                 elif int(hr) == int(hr_previous) + 1 :
                     hr_previous=int(hr)
                     i += 1
                     if int(hr) == int(hrs[-1]):
                         read_hrs_list = c.read_holding_registers(int(hr_start),i)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=holding_registers','sortie=2','inputs='+str(range(int(hr_start),int(hr_start)+i)),'values='+str(read_hrs_list),'add='+host])
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=holding_registers','sortie=2','inputs='+str(range(int(hr_start),int(hr_start)+i)),'values='+str(read_hrs_list),'add='+host,'unit='+str(unit_id)])
                 else :
                     read_hrs_list = c.read_holding_registers(int(hr_start),i)
-                    subprocess.Popen(['/usr/bin/php',mymodbus,'type=holding_registers','sortie=3','inputs='+str(range(int(hr_start),int(hr_start)+i)),'values='+str(read_hrs_list),'add='+host])
+                    subprocess.Popen(['/usr/bin/php',mymodbus,'type=holding_registers','sortie=3','inputs='+str(range(int(hr_start),int(hr_start)+i)),'values='+str(read_hrs_list),'add='+host,'unit='+str(unit_id)])
                     hr_start=int(hr)
                     hr_previous=int(hr)
                     i=1
                     if int(hr) == int(hrs[-1]):
                         read_hrs_list = c.read_holding_registers(int(hr_start),i)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=holding_registers','sortie=4','inputs='+str(range(int(hr_start),int(hr_start)+i)),'values='+str(read_hrs_list),'add='+host])
-             
-            #print 'read holding'
-           #read_holding_registers_list = c.read_holding_registers(read_holding_registers,read_holding_registers_length-(read_holding_registers-1))
-            #read_holding_registers_list = c.read_holding_registers(0,124)
-            #print str(read_holding_registers_list)
-            #subprocess.Popen(['/usr/bin/php',mymodbus,'type=holding_registers','inputs='+str(range(read_holding_registers,read_holding_registers_length+1)),'values='+str(read_holding_registers_list),'add='+host])
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=holding_registers','sortie=4','inputs='+str(range(int(hr_start),int(hr_start)+i)),'values='+str(read_hrs_list),'add='+host,'unit='+str(unit_id)])
         if 'coils' in globals() :
             coil_start=coils[0]
             i=1

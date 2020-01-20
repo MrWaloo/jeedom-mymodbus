@@ -30,6 +30,8 @@ if (isset($argv)) {
         $argList = explode('=', $arg);
         if (isset($argList[0]) && isset($argList[1])) {
             $_GET[$argList[0]] = $argList[1];
+			log::add('mymodbus', 'debug', 'argv : ' . $argList[1]);
+			
         }
     }
 }
