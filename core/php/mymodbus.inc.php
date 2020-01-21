@@ -50,22 +50,25 @@ $values_inputs=str_replace('[', '', $_GET['inputs']);
 $values_inputs=str_replace(']', '', $values_inputs);
 $values_inputs=str_replace(' ', '', $values_inputs);
 log::add('mymodbus', 'debug', 'Evenement : ' . $message);
+
 if($values_inputs<>""){
-	
 	$values_inputs_arr=explode(',', trim($values_inputs));
 	if(count($values_inputs_arr)==count($values_arr)){
 		$arr_values=array_combine($values_inputs_arr,$values_arr);
 		//log::add('mymodbus', 'event', 'tableau 2: ' . json_encode($arr_values));
-		$mymodbus_all = eqLogic::byTypeAndSearhConfiguration('mymodbus',$_GET['add']);
+		//log::add('mymodbus', 'debug', 'inputarr : ' .json_encode($arr_values));
+		$mymodbus_all = eqLogic::byTypeAndSearhConfiguration('mymodbus',$_GET['add'],$_GET['unit']);
+		//log::add('mymodbus', 'debug', 'get : ' .json_encode($_GET));
 		if(count($mymodbus_all) == 0){
-			log::add('mymodbus', 'info', 'impossible de trouver le slave', 'config');
+			log::add('mymodbus', 'info', 'impossible de trouver l adresse ip ', 'config');
 			return;
 		}
+		// c'est ici qu'il faut que je regarde demain
 		foreach ($mymodbus_all as $mymodbus) {
 			$add_max=0;
 		
 		foreach ($mymodbus->getCmd('info') as $cmd) {
-			if ($cmd->getConfiguration('type') == $_GET['type'] && isset($arr_values[$cmd->getConfiguration('location')])){
+			if ($cmd->getConfiguration('type') == $_GET['type'] && isset($arr_values[$cmd->getConfiguration('location')])){  // type et id 
 				$old_value=$cmd->getValue();
 				$new_value=$arr_values[$cmd->getConfiguration('location')];
 				if($old_value<>$new_value){	
