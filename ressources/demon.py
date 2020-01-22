@@ -119,13 +119,13 @@ def polling_thread():
                     hr_previous=hr_start
                     if int(hr) == int(hrs[-1]):
                         read_hrs_list = c.read_holding_registers(int(hr_start),i)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=holding_registers','sortie=1','inputs='+str(int(hr_start)),'values='+str(read_hrs_list),'add='+host,'unit='+str(unit_id),'eqid='+int(eq_id)])
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=holding_registers','sortie=1','inputs='+str(int(hr_start)),'values='+str(read_hrs_list),'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id)])
                 elif int(hr) == int(hr_previous) + 1 :
                     hr_previous=int(hr)
                     i += 1
                     if int(hr) == int(hrs[-1]):
                         read_hrs_list = c.read_holding_registers(int(hr_start),i)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=holding_registers','sortie=2','inputs='+str(range(int(hr_start),int(hr_start)+i)),'values='+str(read_hrs_list),'add='+host,'unit='+str(unit_id),'eqid='+int(eq_id)])
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=holding_registers','sortie=2','inputs='+str(range(int(hr_start),int(hr_start)+i)),'values='+str(read_hrs_list),'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id)])
                 else :
                     read_hrs_list = c.read_holding_registers(int(hr_start),i)
                     subprocess.Popen(['/usr/bin/php',mymodbus,'type=holding_registers','sortie=3','inputs='+str(range(int(hr_start),int(hr_start)+i)),'values='+str(read_hrs_list),'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id)])
