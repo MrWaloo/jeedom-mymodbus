@@ -24,7 +24,7 @@ from pyModbusTCP.client import ModbusClient
 
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "h:p:P", ["help","unit_id=","polling=","keepopen=","coils=","dis=","hrs=","irs=","protocol="])
+    opts, args = getopt.getopt(sys.argv[1:], "h:p:P", ["help","unit_id=","polling=","keepopen=","coils=","dis=","hrs=","irs=","protocol=","eqid="])
 except getopt.GetoptError, err:
     print str(err)
     sys.exit()
@@ -58,8 +58,10 @@ for o, a in opts:
     elif o == "--protocol":
         protocol = a.split(',')
         protocol.sort(key=str)
-  
-mymodbus = os.path.abspath(os.path.join(os.path.dirname(__file__), '../core/php/mymodbus.inc.php')) 
+    elif o == "--eqid":
+        eq_id = int(a)
+
+mymodbus = os.path.abspath(os.path.join(os.path.dirname(__file__), '../core/php/mymodbus.inc.php'))
 
 # set global
 regs = []
@@ -101,14 +103,14 @@ def polling_thread():
 		if model == "rtu":
 			print "mode rtuovertcp"
 			#Lecture mode rtu
-			#sys.exit() 
+			#sys.exit()
 			c = ModbusClient(method = "rtu", port=port, stopbits = 1, bytesize = 8, parity = 'N', baudrate= 19200)
 		if model == "crouzet_m3":
 		        # Lecture mode TCP: TCP/IP
 			c = ModbusClient(host=host, port=port, unit_id=unit_id, auto_open=True, auto_close=True, timeout=5)
 	# polling loop
     while True:
-        
+
         if 'hrs' in globals() :
             hr_start=hrs[0]
             i=1
@@ -117,22 +119,22 @@ def polling_thread():
                     hr_previous=hr_start
                     if int(hr) == int(hrs[-1]):
                         read_hrs_list = c.read_holding_registers(int(hr_start),i)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=holding_registers','sortie=1','inputs='+str(int(hr_start)),'values='+str(read_hrs_list),'add='+host,'unit='+str(unit_id)])
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=holding_registers','sortie=1','inputs='+str(int(hr_start)),'values='+str(read_hrs_list),'add='+host,'unit='+str(unit_id),'eqid='+int(eq_id)])
                 elif int(hr) == int(hr_previous) + 1 :
                     hr_previous=int(hr)
                     i += 1
                     if int(hr) == int(hrs[-1]):
                         read_hrs_list = c.read_holding_registers(int(hr_start),i)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=holding_registers','sortie=2','inputs='+str(range(int(hr_start),int(hr_start)+i)),'values='+str(read_hrs_list),'add='+host,'unit='+str(unit_id)])
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=holding_registers','sortie=2','inputs='+str(range(int(hr_start),int(hr_start)+i)),'values='+str(read_hrs_list),'add='+host,'unit='+str(unit_id),'eqid='+int(eq_id)])
                 else :
                     read_hrs_list = c.read_holding_registers(int(hr_start),i)
-                    subprocess.Popen(['/usr/bin/php',mymodbus,'type=holding_registers','sortie=3','inputs='+str(range(int(hr_start),int(hr_start)+i)),'values='+str(read_hrs_list),'add='+host,'unit='+str(unit_id)])
+                    subprocess.Popen(['/usr/bin/php',mymodbus,'type=holding_registers','sortie=3','inputs='+str(range(int(hr_start),int(hr_start)+i)),'values='+str(read_hrs_list),'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id)])
                     hr_start=int(hr)
                     hr_previous=int(hr)
                     i=1
                     if int(hr) == int(hrs[-1]):
                         read_hrs_list = c.read_holding_registers(int(hr_start),i)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=holding_registers','sortie=4','inputs='+str(range(int(hr_start),int(hr_start)+i)),'values='+str(read_hrs_list),'add='+host,'unit='+str(unit_id)])
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=holding_registers','sortie=4','inputs='+str(range(int(hr_start),int(hr_start)+i)),'values='+str(read_hrs_list),'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id)])
         if 'coils' in globals() :
             coil_start=coils[0]
             i=1
@@ -141,23 +143,23 @@ def polling_thread():
                     coil_previous=coil_start
                     if int(coil) == int(coils[-1]):
                         read_coils_list = c.read_coils(int(coil_start),i)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=coils','sortie=1','inputs='+str(int(coil_start)),'values='+str(read_coils_list),'add='+host])
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=coils','sortie=1','inputs='+str(int(coil_start)),'values='+str(read_coils_list),'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id)])
                 elif int(coil) == int(coil_previous) + 1 :
                     coil_previous=int(coil)
                     i += 1
                     if int(coil) == int(coils[-1]):
                         read_coils_list = c.read_coils(int(coil_start),i)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=coils','sortie=2','inputs='+str(range(int(coil_start),int(coil_start)+i)),'values='+str(read_coils_list),'add='+host])
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=coils','sortie=2','inputs='+str(range(int(coil_start),int(coil_start)+i)),'values='+str(read_coils_list),'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id)])
                 else :
                     read_coils_list = c.read_coils(int(coil_start),i)
-                    subprocess.Popen(['/usr/bin/php',mymodbus,'type=coils','sortie=3','inputs='+str(range(int(coil_start),int(coil_start)+i)),'values='+str(read_coils_list),'add='+host])
+                    subprocess.Popen(['/usr/bin/php',mymodbus,'type=coils','sortie=3','inputs='+str(range(int(coil_start),int(coil_start)+i)),'values='+str(read_coils_list),'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id)])
                     coil_start=int(coil)
                     coil_previous=int(coil)
                     i=1
                     if int(coil) == int(coils[-1]):
                         read_coils_list = c.read_coils(int(coil_start),i)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=coils','sortie=4','inputs='+str(range(int(coil_start),int(coil_start)+i)),'values='+str(read_coils_list),'add='+host])
-                    
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=coils','sortie=4','inputs='+str(range(int(coil_start),int(coil_start)+i)),'values='+str(read_coils_list),'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id)])
+
             #print 'read coil'
             #read_coils_list = c.read_coils(read_coils,read_coils_length-(read_coils-1))
             #print str(read_coils_list)
@@ -170,23 +172,23 @@ def polling_thread():
                     di_previous=di_start
                     if int(di) == int(dis[-1]):
                         read_dis_list = c.read_discrete_inputs(int(di_start),i)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=discrete_inputs','sortie=1','inputs='+str(int(di_start)),'values='+str(read_dis_list),'add='+host])
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=discrete_inputs','sortie=1','inputs='+str(int(di_start)),'values='+str(read_dis_list),'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id)])
                 elif int(di) == int(di_previous) + 1 :
                     di_previous=int(di)
                     i += 1
                     if int(di) == int(dis[-1]):
                         read_dis_list = c.read_discrete_inputs(int(di_start),i)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=discrete_inputs','sortie=2','inputs='+str(range(int(di_start),int(di_start)+i)),'values='+str(read_dis_list),'add='+host])
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=discrete_inputs','sortie=2','inputs='+str(range(int(di_start),int(di_start)+i)),'values='+str(read_dis_list),'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id)])
                 else :
                     read_dis_list = c.read_discrete_inputs(int(di_start),i)
-                    subprocess.Popen(['/usr/bin/php',mymodbus,'type=discrete_inputs','sortie=3','inputs='+str(range(int(di_start),int(di_start)+i)),'values='+str(read_dis_list),'add='+host])
+                    subprocess.Popen(['/usr/bin/php',mymodbus,'type=discrete_inputs','sortie=3','inputs='+str(range(int(di_start),int(di_start)+i)),'values='+str(read_dis_list),'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id)])
                     di_start=int(di)
                     di_previous=int(di)
                     i=1
                     if int(di) == int(dis[-1]):
                         read_dis_list = c.read_discrete_inputs(int(di_start),i)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=discrete_inputs','sortie=4','inputs='+str(range(int(di_start),int(di_start)+i)),'values='+str(read_dis_list),'add='+host])
-            
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=discrete_inputs','sortie=4','inputs='+str(range(int(di_start),int(di_start)+i)),'values='+str(read_dis_list),'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id)])
+
             #read_discrete_inputs_list = c.read_discrete_inputs(read_discrete_inputs,read_discrete_inputs_length-(read_discrete_inputs-1))
             #print str(read_discrete_inputs_list)
             #subprocess.Popen(['/usr/bin/php',mymodbus,'type=discrete_inputs','inputs='+str(range(read_discrete_inputs,read_discrete_inputs_length+1)),'values='+str(read_discrete_inputs_list),'add='+host])
@@ -198,23 +200,23 @@ def polling_thread():
                     ir_previous=ir_start
                     if int(ir) == int(irs[-1]):
                         read_irs_list = c.read_input_registers(int(ir_start),i)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=input_registers','sortie=1','inputs='+str(int(ir_start)),'values='+str(read_irs_list),'add='+host,'unit='+str(unit_id)])
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=input_registers','sortie=1','inputs='+str(int(ir_start)),'values='+str(read_irs_list),'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id)])
                 elif int(ir) == int(ir_previous) + 1 :
                     ir_previous=int(ir)
                     i += 1
                     if int(ir) == int(irs[-1]):
                         read_irs_list = c.read_input_registers(int(ir_start),i)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=input_registers','sortie=2','inputs='+str(range(int(ir_start),int(ir_start)+i)),'values='+str(read_irs_list),'add='+host,'unit='+str(unit_id)])
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=input_registers','sortie=2','inputs='+str(range(int(ir_start),int(ir_start)+i)),'values='+str(read_irs_list),'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id)])
                 else :
                     read_irs_list = c.read_input_registers(int(ir_start),i)
-                    subprocess.Popen(['/usr/bin/php',mymodbus,'type=input_registers','sortie=3','inputs='+str(range(int(ir_start),int(ir_start)+i)),'values='+str(read_irs_list),'add='+host,'unit='+str(unit_id)])
+                    subprocess.Popen(['/usr/bin/php',mymodbus,'type=input_registers','sortie=3','inputs='+str(range(int(ir_start),int(ir_start)+i)),'values='+str(read_irs_list),'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id)])
                     ir_start=int(ir)
                     ir_previous=int(ir)
                     i=1
                     if int(ir) == int(irs[-1]):
                         read_irs_list = c.read_input_registers(int(ir_start),i)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=input_registers','sortie=4','inputs='+str(range(int(ir_start),int(ir_start)+i)),'values='+str(read_irs_list),'add='+host,'unit='+str(unit_id)])
-            
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'type=input_registers','sortie=4','inputs='+str(range(int(ir_start),int(ir_start)+i)),'values='+str(read_irs_list),'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id)])
+
             #read_input_registers_list = c.read_input_registers(read_input_registers,read_input_registers_length-(read_input_registers-1))
             #print str(read_input_registers_list)
             #subprocess.Popen(['/usr/bin/php',mymodbus,'type=input_registers','inputs='+str(range(read_input_registers,read_input_registers_length+1)),'values='+str(read_input_registers_list),'add='+host])
