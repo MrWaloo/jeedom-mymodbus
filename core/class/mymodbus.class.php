@@ -77,6 +77,7 @@ class mymodbus extends eqLogic {
 				if($mymodbus_ip == ""){
 					throw new Exception(__('La requete adresse ip ne peut etre vide',__FILE__).$mymodbus_ip);
 				}
+				$mymodbus_id = $mymodbus->getId(); // récupére l'id 
 				$mymodbus_port = $mymodbus->getConfiguration('port');
 				$mymodbus_unit = $mymodbus->getConfiguration('unit');
 				$mymodbus_keepopen = $mymodbus->getConfiguration('keepopen');
@@ -124,7 +125,7 @@ class mymodbus extends eqLogic {
 								
 					}
 				}	
-		    	$request='-h '.$mymodbus_ip.' -p '.$mymodbus_port.' --unit_id='.$mymodbus_unit.' --polling='.$mymodbus_polling.' --keepopen='.$mymodbus_keepopen. ' --protocol='.$mymodbus_protocol;
+		    	$request='-h '.$mymodbus_ip.' -p '.$mymodbus_port.' --unit_id='.$mymodbus_unit.' --polling='.$mymodbus_polling.' --keepopen='.$mymodbus_keepopen. ' --protocol='.$mymodbus_protocol.' --eqid='.$mymodbus_id ;
 		        //log::add('mymodbus', 'info', 'Lancement du démon modbus'.$request);
 		        $mymodbus_path = realpath(dirname(__FILE__) . '/../../ressources');
 				foreach ($mymodbus->getCmd('info') as $cmd) {
@@ -340,7 +341,7 @@ class mymodbusCmd extends cmd {
     public function execute($_options = null) {
 
 
-		log::add('mymodbus', 'info', 'Debut de l action');
+		//log::add('mymodbus', 'info', 'Debut de l action');
     	$mymodbus = $this->getEqLogic();
         $mymodbus_ip = $mymodbus->getConfiguration('addr');
 		$mymodbus_port = $mymodbus->getConfiguration('port');
@@ -351,7 +352,7 @@ class mymodbusCmd extends cmd {
 		if($mymodbus_unit==""){
 			$mymodbus_unit=1;
 		}
-		log::add('mymodbus', 'info', 'Debut de l action 2:'.$mymodbus_ip);
+		//log::add('mymodbus', 'info', 'Debut de l action 2:'.$mymodbus_ip);
 		if ($this->type == 'action') {
 			$value="";
 		try {
