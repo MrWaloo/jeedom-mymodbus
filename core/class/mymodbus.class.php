@@ -341,7 +341,7 @@ class mymodbusCmd extends cmd {
     public function execute($_options = null) {
 
 
-		log::add('mymodbus', 'info', 'Debut de l action');
+		//log::add('mymodbus', 'info', 'Debut de l action');
     	$mymodbus = $this->getEqLogic();
         $mymodbus_ip = $mymodbus->getConfiguration('addr');
 		$mymodbus_port = $mymodbus->getConfiguration('port');
@@ -352,7 +352,7 @@ class mymodbusCmd extends cmd {
 		if($mymodbus_unit==""){
 			$mymodbus_unit=1;
 		}
-		log::add('mymodbus', 'info', 'Debut de l action 2:'.$mymodbus_ip);
+		//log::add('mymodbus', 'info', 'Debut de l action 2:'.$mymodbus_ip);
 		if ($this->type == 'action') {
 			$value="";
 		try {
