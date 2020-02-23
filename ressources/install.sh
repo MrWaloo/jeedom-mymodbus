@@ -27,14 +27,14 @@ cd /tmp
 #sudo apt-get -y dist-upgrade
 #sudo  pip uninstall pyModbusTCP -y
 
-echo 50 > ${PROGRESS_FILE}
+echo 10 > ${PROGRESS_FILE}
 echo "-"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "Installation dependance  python-pip"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-#sudo apt-get -y install python{,3}-pip python{,3}-setuptools
+sudo apt-get -y install python{,3}-pip python{,3}-setuptools
 
-echo 60 > ${PROGRESS_FILE}
+echo 40 > ${PROGRESS_FILE}
 echo "-"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "Installation dependance  pypModbusTCP"
