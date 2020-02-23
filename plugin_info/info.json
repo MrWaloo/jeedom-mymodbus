@@ -4,7 +4,7 @@
 	"description" : "Plugin pour la gestion de matériel qui ont le protocol ModBus",
 	"licence" : "AGPL",
 	"author" : "Bebel27",
-	"require" : "4.0",
+	"require" : "3.3",
 	"category" : "automation protocol",
 	"hasDependency" : 1,
 	"hasOwnDeamon" : 1,
