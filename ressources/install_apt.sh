@@ -24,7 +24,7 @@ echo "-"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "Installation dependance  python-pip"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-sudo apt-get -y install python{,3}-pip python{,3}-setuptools
+sudo apt-get -y install python3-pip
 
 echo 40 > ${PROGRESS_FILE}
 echo "-"
@@ -35,12 +35,12 @@ sudo pip install pyModbus
 sudo pip install pyModbusTCP
 echo 70 > ${PROGRESS_FILE}
 echo "-"
-echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-echo "Installation dependance  python-serial"
-echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-sudo apt-get -y install python-serial
-sudo pip3 uninstall serial
-sudo pip3 install pyserial
+#echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+#echo "Installation dependance  python-serial"
+#echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+#sudo apt-get -y install python-serial
+#sudo pip3 uninstall serial
+#sudo pip3 install pyserial
 
 echo 80 > ${PROGRESS_FILE}
 echo "-"
@@ -67,5 +67,10 @@ echo "-"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "Fin de l'installation des dependances MyModbus..."
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+echo " Version de python"
+sudo python --version
+echo " Version de PIP "
+sudo pip --version
+
 sudo chmod -R 755 ${PROGRESS_FILE}
 rm ${PROGRESS_FILE}
