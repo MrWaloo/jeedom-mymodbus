@@ -1,6 +1,6 @@
 echo "++++++++++++++++++++++++++++++++++++++"
 echo "+  MyModbus Install dependancies"
-echo "+  v1.2"
+echo "+  v1.3"
 echo "+  By Bebel27"
 echo "++++++++++++++++++++++++++++++++++++++"
 
