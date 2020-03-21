@@ -108,6 +108,8 @@ def polling_thread():
 		if model == "crouzet_m3":
 		        # Lecture mode TCP: TCP/IP
 			c = ModbusClient(host=host, port=port, unit_id=unit_id, auto_open=True, auto_close=False)
+		if model == "wago":
+			c = ModbusClient(host=host, port=port, unit_id=unit_id, auto_open=True, auto_close=False)
 	# polling loop
     while True:
 
