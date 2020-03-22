@@ -26,7 +26,10 @@ $('.eqLogicAction[data-action=bt_docSpecific]').on('click', function () {
  function prePrintEqLogic() {
     $('.eqLogicAttr[data-l1key=configuration][data-l2key=protocol]').off();
 }
-
+$('#bt_healthmymodbus').on('click', function () {
+    $('#md_modal').dialog({title: "{{Santé mymodbus}}"});
+    $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=health').dialog('open');
+});
 
 function  printEqLogic(_eqLogic) {
     $.showLoading();
