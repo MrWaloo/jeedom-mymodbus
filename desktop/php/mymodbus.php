@@ -18,20 +18,24 @@ $deamonRunning = mymodbus::deamon_info();
   <legend><i class="fas fa-cog"></i>  {{Gestion}}</legend>
   <div class="eqLogicThumbnailContainer">
       <div class="cursor eqLogicAction logoPrimary" data-action="add">
-        <i class="fas fa-plus-circle"></i>
+        <i class="fas fa-plus-circle"style="font-size : 6em;color:#0000c8;"></i>
         <br>
         <span>{{Ajouter}}</span>
     </div>
       <div class="cursor eqLogicAction logoSecondary" data-action="gotoPluginConf">
-      <i class="fas fa-wrench"></i>
+      <i class="fas fa-wrench"style="font-size : 6em;color:#0000c8;"></i>
     <br>
     <span>{{Configuration}}</span>
   </div>
-  <div class="cursor eqLogicAction" data-action="bt_docSpecific" >
-				<center>
-					<i class="fas fa-book" style="font-size: 38px !important;"></i>
-				</center>
-				<span style=><center>{{Documentation}}</center></span>
+  <div class="cursor eqLogicAction logoSecondary" data-action="bt_docSpecific" >
+		<i class="fas fa-book"style="font-size : 6em;color:#0000c8;"></i>
+ 		<br>
+		<span>{{Documentation}}</span>
+		</div>
+  <div class="cursor logoSecondary" id="bt_healthmymodbus">
+				<i class="fas fa-medkit"style="font-size : 6em;color:#0000c8;"></i>
+				<br/>
+				<span>{{Santé}}</span>
 			</div>
   </div>
   <legend><i class="fas fa-table"></i> {{Mes équipements}}</legend>
