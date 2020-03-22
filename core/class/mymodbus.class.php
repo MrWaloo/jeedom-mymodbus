@@ -181,6 +181,11 @@ class mymodbus extends eqLogic {
 		        }
 		}
     }
+	
+	public static function health() {
+    $return = array();
+    return $return;
+    }
 
 
     public static function deamon_info() {
@@ -204,7 +209,9 @@ class mymodbus extends eqLogic {
         $return = array();
         foreach (ls(dirname(__FILE__) . '/../../desktop/modal/') as $file) {
             $protocol = explode('.', $file);
-            $return[] = $protocol[0];
+          	if($protocol[1]=="configuration"){
+			$return[] = $protocol[0];
+            }
         }
         return $return;
     }
