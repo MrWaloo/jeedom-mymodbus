@@ -56,23 +56,15 @@ class mymodbus extends eqLogic {
 			}
 		}
 	}
-   
-    //public static function cron() {
-     //       if (!self::deamon_info()) {
-     //           self::deamon_start();
-     //       }
-    //}
+
     public static function deamon_start(){
 		$deamon_info = self::deamon_info();
 		if ($deamon_info['launchable'] != 'ok') {
 			throw new Exception(__('Veuillez vérifier la configuration du demon', __FILE__));
 		}
 
-    	//$eqLogics = eqLogic::byType('mymodbus');
 		foreach (self::byType('mymodbus') as $mymodbus) {
-		//foreach ($eqLogics as $mymodbus) {
 			if ($mymodbus->getIsEnable() == 1) {
-			//if ($mymodbus->getIsEnable()) {
 		    	$mymodbus_ip = $mymodbus->getConfiguration('addr');
 				if($mymodbus_ip == ""){
 					throw new Exception(__('La requete adresse ip ne peut etre vide',__FILE__).$mymodbus_ip);
@@ -126,11 +118,9 @@ class mymodbus extends eqLogic {
 					}
 				}	
 		    	$request='-h '.$mymodbus_ip.' -p '.$mymodbus_port.' --unit_id='.$mymodbus_unit.' --polling='.$mymodbus_polling.' --keepopen='.$mymodbus_keepopen. ' --protocol='.$mymodbus_protocol.' --eqid='.$mymodbus_id ;
-		        //log::add('mymodbus', 'info', 'Lancement du démon modbus'.$request);
 		        $mymodbus_path = realpath(dirname(__FILE__) . '/../../ressources');
 				foreach ($mymodbus->getCmd('info') as $cmd) {
 					if($cmd->getConfiguration('type')=='coils'){
-						//log::add('mymodbus', 'info', 'coil trouvé :'.$cmd->getConfiguration('location'));
 						$coils[]=$cmd->getConfiguration('location');
 					}
 					if($cmd->getConfiguration('type')=='discrete_inputs'){
@@ -157,7 +147,6 @@ class mymodbus extends eqLogic {
 					$request.=' --irs='.implode(',',$input_registers);
 				}
 		        $cmd = 'nice -n 19 /usr/bin/python ' . $mymodbus_path . '/demon.py ' . $request;
-				//log::add('mymodbus', 'debug', 'bug a analyser'.$request);
 		        log::add('mymodbus', 'info', 'Lancement du démon mymodbus : ' . $cmd);
 		        $result = exec('nohup ' . $cmd . ' >> ' . log::getPathToLog('mymodbus') . ' 2>&1 &');
 		        if (strpos(strtolower($result), 'error') !== false || strpos(strtolower($result), 'traceback') !== false) {
@@ -177,7 +166,6 @@ class mymodbus extends eqLogic {
 		            }
 		        }
 		        message::removeAll('mymodbus', 'unableStartDeamon');
-		        //log::add('mymodbus', 'info', 'Démon modbus lancé');
 		        }
 		}
     }
@@ -218,10 +206,8 @@ class mymodbus extends eqLogic {
     public static function deamon_stop() {
 
 		$nbpid = exec("ps -eo pid,command | grep 'demon.py' | grep -v grep | awk '{print $1}'| wc -l");
-		//log::add('mymodbus', 'debug', 'valeur de nbpiddébut'.$nbpid);
 		While ($nbpid > 0) {
 		  $nbpid = exec("ps -eo pid,command | grep 'demon.py' | grep -v grep | awk '{print $1}'| wc -l");
-		  //log::add('mymodbus', 'debug', 'valeur de nbpid'.$nbpid);
 		  self::Kill_Process();
 
 		}
@@ -233,19 +219,12 @@ class mymodbus extends eqLogic {
     $return = array();
 	$return['progress_file'] = jeedom::getTmpFolder('mymodbus') . '/dependance';
     $return['state'] = 'ok';
-	//if (exec(system::getCmdSudo() . system::get('cmd_check') . '-E "python3\-setuptools" | wc -l') == 0) $return['state'] = 'nok';
 	if (exec(system::getCmdSudo() . 'pip list | grep -E "pyModbus" | wc -l') == 0) $return['state'] = 'nok';
 	if (exec(system::getCmdSudo() . 'pip list | grep -E "pyModbusTCP" | wc -l') == 0) $return['state'] = 'nok';
 	if (exec(system::getCmdSudo() . 'pip3 list | grep -E "pyserial" | wc -l') == 0) $return['state'] = 'nok';
-	//log::add('mymodbus', 'debug', 'valeur de return'.$return['state']);
 	if ($return['state'] == 'nok') message::add('mymodbus_dep', __('Si les dépendances sont/restent NOK, veuillez mettre à jour votre système linux, puis relancer l\'installation des dépendances générales. Merci', __FILE__));
     return $return;
     }
-    //public static function dependancy_install()
-	//{
-		//log::remove(__CLASS__ . '_update');
-		//return array('script' => dirname(__FILE__) . '/../../ressources/install.sh /tmp/dependances_MyModbus_en_cours', 'log' => log::getPathToLog(__CLASS__ . '_update'));
-	//}
 	
 	public static function dependancy_install()
 	{
@@ -260,43 +239,8 @@ class mymodbus extends eqLogic {
         exec('kill ' . $pid);
         $check = self::deamon_info();
         $retry = 0;
-        //while ($check) {
-           // $check = self::deamon_info();
-            //$retry++;
-            //if ($retry > 10) {
-                //$check = false;
-            //} else {
-                //sleep(1);
-            //}
-        //}
-        //exec('kill -9 ' . $pid);
-        //$check = self::deamon_info();
-        //$retry = 0;
-        //while ($check) {
-            //$check = self::deamon_info();
-            //$retry++;
-            //if ($retry > 10) {
-                //$check = false;
-            //} else {
-                //sleep(1);
-            //}
-        //}
-		//$retry = 0;
 	}
     /*     * *********************Méthodes d'instance************************* */
-
-    public function preInsert() {
-    }
-    public function postInsert() {	
-	}
-    public function preSave() {
-	}	
-    public function postSave() {
-    }
-	public function preUpdate() {
-    }
-    public function postUpdate() {
-    }
 
 
     public function preRemove() {
@@ -357,7 +301,6 @@ class mymodbusCmd extends cmd {
     public function execute($_options = null) {
 
 
-		//log::add('mymodbus', 'info', 'Debut de l action');
     	$mymodbus = $this->getEqLogic();
         $mymodbus_ip = $mymodbus->getConfiguration('addr');
 		$mymodbus_port = $mymodbus->getConfiguration('port');
@@ -368,7 +311,6 @@ class mymodbusCmd extends cmd {
 		if($mymodbus_unit==""){
 			$mymodbus_unit=1;
 		}
-		//log::add('mymodbus', 'info', 'Debut de l action 2:'.$mymodbus_ip);
 		if ($this->type == 'action') {
 			$value="";
 		try {
