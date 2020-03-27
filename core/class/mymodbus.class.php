@@ -221,7 +221,7 @@ class mymodbus extends eqLogic {
     $return['state'] = 'ok';
 	if (exec(system::getCmdSudo() . 'pip list | grep -E "pyModbus" | wc -l') == 0) $return['state'] = 'nok';
 	if (exec(system::getCmdSudo() . 'pip list | grep -E "pyModbusTCP" | wc -l') == 0) $return['state'] = 'nok';
-	if (exec(system::getCmdSudo() . 'pip list | grep -E "pyserial" | wc -l') == 0) $return['state'] = 'nok';
+	//if (exec(system::getCmdSudo() . 'pip list | grep -E "pyserial" | wc -l') == 0) $return['state'] = 'nok';
 	if ($return['state'] == 'nok') message::add('mymodbus_dep', __('Si les dépendances sont/restent NOK, veuillez mettre à jour votre système linux, puis relancer l\'installation des dépendances générales. Merci', __FILE__));
     return $return;
     }
