@@ -140,7 +140,8 @@ foreach (mymodbus::supportedProtocol() as $protocol) {
 </div>
 </div>
       <div role="tabpanel" class="tab-pane" id="commandtab">
-<a class="btn btn-success btn-sm cmdAction pull-right" data-action="add" style="margin-top:5px;"><i class="fa fa-plus-circle"></i> {{Ajouter une E/S modbus}}</a><br/><br/>
+<a class="btn btn-default btn-sm pull-right" id="bt_add_Info" style="margin-top:5px;"><i class="fas fa-plus-circle"></i> {{Ajouter une info}}</a>
+<a class="btn btn-default btn-sm  pull-right" id="bt_add_Action" style="margin-top:5px;"><i class="fas fa-plus-circle"></i> {{Ajouter une action}}</a><br/><br/>
 <table id="table_cmd" class="table table-bordered table-condensed">
     <thead>
         <tr>
