@@ -330,10 +330,12 @@ class mymodbusCmd extends cmd {
                     default:
 						$value=$this->getConfiguration('request');
 						if (!is_numeric($value)) {
-							//$value=cmd::cmdToValue($value);
 							$value=jeedom::evaluateExpression($value);
 						}
 						$return_value=$this->getConfiguration('parameters');
+                    	if (!is_numeric($return_value)) {
+							$return_value=jeedom::evaluateExpression($return_value);
+						}
                         break;
                 }
 			}else{
