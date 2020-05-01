@@ -24,7 +24,7 @@ echo "-"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "Installation dependance  python-pip"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-sudo apt-get -y install python3-pip
+sudo apt-get -y install python-pip
 
 echo 40 > ${PROGRESS_FILE}
 echo "-"

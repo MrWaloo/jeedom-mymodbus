@@ -66,14 +66,20 @@ class mymodbus extends eqLogic {
 		foreach (self::byType('mymodbus') as $mymodbus) {
 			if ($mymodbus->getIsEnable() == 1) {
 		    	$mymodbus_ip = $mymodbus->getConfiguration('addr');
-				if($mymodbus_ip == ""){
-					throw new Exception(__('La requete adresse ip ne peut etre vide',__FILE__).$mymodbus_ip);
-				}
 				$mymodbus_id = $mymodbus->getId(); // récupére l'id 
 				$mymodbus_port = $mymodbus->getConfiguration('port');
 				$mymodbus_unit = $mymodbus->getConfiguration('unit');
 				$mymodbus_keepopen = $mymodbus->getConfiguration('keepopen');
 				$mymodbus_protocol = $mymodbus->getConfiguration('protocol');
+              	// Equipement commun tcpip
+              	if($mymodbus_protocol== "wago" || $mymodbus_protocol== "crouzet_m3" || $mymodbus_protocol== "adam" ){
+					$mymodbus_protocold="tcpip";
+                  	if($mymodbus_ip == ""){
+						throw new Exception(__('La requete adresse ip ne peut etre vide',__FILE__).$mymodbus_ip);
+					}
+              	} else {
+                	$mymodbus_protocold = $mymodbus_protocol;
+            	}
 				if($mymodbus_port==""){
 					throw new Exception(__('La requetes port ne peut etre vide',__FILE__));
 				}
@@ -87,37 +93,8 @@ class mymodbus extends eqLogic {
 				if($mymodbus_polling == ""  ){
 					throw new Exception(__('La requetes polling ne peut etre vide',__FILE__));
 				}
-				$mymodbus_mheure = $mymodbus->getConfiguration('mheure');
-				if($mymodbus_mheure== 1)
-				{
-							$ntp = $mymodbus->getCmd(null, 'ntp');
-							if (!is_object($ntp)) {
-								log::add('mymodbus', 'info', 'Ajout cmd synchro heure');
-								$ntp = new mymodbusCmd();
-								$ntp->setName(__('Synchro_Heure', __FILE__));
-							}
-							$ntp->setLogicalId('ntp');
-							$ntp->setEqLogic_id($mymodbus->getId());
-							$ntp->setConfiguration('type', 'holding_registers');
-							$ntp->setConfiguration('request', '30');
-							$ntp->setConfiguration('location', '33');
-							$ntp->setType('action');
-							$ntp->setSubType('other');
-							$ntp->setIsVisible(0);
-							$ntp->save();
-					
-				} 
-				else
-				{
-					
-					$ntp = $mymodbus->getCmd(null, 'ntp');	
-					if (is_object($ntp)) {
-						$ntp->remove();
-						log::add('mymodbus', 'info', 'suppression cmd synchro heure');
-								
-					}
-				}	
-		    	$request='-h '.$mymodbus_ip.' -p '.$mymodbus_port.' --unit_id='.$mymodbus_unit.' --polling='.$mymodbus_polling.' --keepopen='.$mymodbus_keepopen. ' --protocol='.$mymodbus_protocol.' --eqid='.$mymodbus_id ;
+				//explod
+		    	$request='-h '.$mymodbus_ip.' -p '.$mymodbus_port.' --unit_id='.$mymodbus_unit.' --polling='.$mymodbus_polling.' --keepopen='.$mymodbus_keepopen. ' --protocol='.$mymodbus_protocold.' --eqid='.$mymodbus_id ;
 		        $mymodbus_path = realpath(dirname(__FILE__) . '/../../ressources');
 				foreach ($mymodbus->getCmd('info') as $cmd) {
 					if($cmd->getConfiguration('type')=='coils'){
@@ -174,7 +151,10 @@ class mymodbus extends eqLogic {
     $return = array();
     return $return;
     }
-
+	
+	public static function ntp_crouzet_m3() {
+		
+	}
 
     public static function deamon_info() {
 		$return = array();
@@ -247,7 +227,6 @@ class mymodbus extends eqLogic {
 		self::deamon_stop();
 		
     }
-
     public function postRemove() {
 		sleep(2);
 		$deamonRunning = self::deamon_info();
@@ -255,6 +234,48 @@ class mymodbus extends eqLogic {
             self::deamon_start();
         }
     }
+	public function postSave() {
+		
+		foreach (self::byType('mymodbus') as $mymodbus) {
+			$mymodbus_mheure = $mymodbus->getConfiguration('mheure');
+			$mymodbus_auto_cmd = $mymodbus->getConfiguration('auto_cmd');
+			
+			if($mymodbus_mheure== 1)
+				{
+					$ntp = $mymodbus->getCmd(null, 'ntp');
+					if (!is_object($ntp)) {
+						log::add('mymodbus', 'info', 'Ajout cmd synchro heure');
+						$ntp = new mymodbusCmd();
+						$ntp->setName(__('Synchro_Heure', __FILE__));
+					}
+					$ntp->setLogicalId('ntp');
+					$ntp->setEqLogic_id($mymodbus->getId());
+					$ntp->setConfiguration('type', 'holding_registers');
+					$ntp->setConfiguration('request', '30');
+					$ntp->setConfiguration('location', '33');
+					$ntp->setType('action');
+					$ntp->setSubType('other');
+					$ntp->setIsVisible(0);
+					$ntp->save();
+					
+				} 
+				else
+				{
+					
+					$ntp = $mymodbus->getCmd(null, 'ntp');	
+					if (is_object($ntp)) {
+						$ntp->remove();
+						log::add('mymodbus', 'info', 'suppression cmd synchro heure');
+								
+					}
+				}
+			
+			
+			
+			
+			
+		}
+	}
 	public function postAjax(){
 		self::deamon_stop();
 		sleep(2);

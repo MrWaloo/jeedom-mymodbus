@@ -58,13 +58,16 @@ if($values_inputs<>""){
 			if ($cmd->getConfiguration('type') == $_GET['type'] && isset($arr_values[$cmd->getConfiguration('location')])){
 				$old_value=$cmd->getValue();
 				$new_value=$arr_values[$cmd->getConfiguration('location')];
+				$Options=$cmd->getConfiguration('request');
+				if (is_numeric($new_value)) {  // evite le calcul sur un none
+					$new_value = $new_value.$Options;
+					$new_value=jeedom::evaluateExpression($new_value);
+				}
 				if($old_value<>$new_value){	
-					log::add('mymodbus', 'info', 'mise à jour : '.' Add =>'.$_GET['add'].' Unit => '.$_GET['unit'] .' '.$_GET['type'] .'=> '.$cmd->getConfiguration('location').' -> old value:'.$old_value.' new value:'.$new_value, 'config');
-					if($new_value <= $cmd->getConfiguration('maxValue', $new_value) && $new_value >= $cmd->getConfiguration('minValue', $new_value)){
-						$cmd->event($new_value);
-						$cmd->setValue($new_value);
-						$cmd->save();
-					}
+				log::add('mymodbus', 'info', 'mise à jour : '.' Add =>'.$_GET['add'].' Unit => '.$_GET['unit'] .' '.$_GET['type'] .'=> '.$cmd->getConfiguration('location').' -> old value:'.$old_value.' new value:'.$new_value, 'config');
+				$cmd->event($new_value);
+				$cmd->setValue($new_value);
+				$cmd->save();
 				}
 			}
 		}

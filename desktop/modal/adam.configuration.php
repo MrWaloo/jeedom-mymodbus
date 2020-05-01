@@ -21,7 +21,7 @@ if (!isConnect('admin')) {
 ?>
 <div class="form-group">
 	<div class="col-sm-3 form-group">
-		<img class="img_device" src="plugins/mymodbus/ressources/images/crouzet_m3_icon.png" style="margin-left:20px;height : 100px;" />
+		<img class="img_device" src="plugins/mymodbus/ressources/images/adam_icon.png" style="margin-left:20px;height : 100px;" />
 	</div>
 </div>
 
@@ -45,11 +45,11 @@ if (!isConnect('admin')) {
 	</div>
 </div>
 <div class="form-group">
-	<label class="col-sm-3 control-label">{{Mise à l'heure auto}}</label>
+	<label class="col-sm-3 control-label">{{Création auto des commandes}}</label>
 		<div class="col-sm-9">
-			<label class="checkbox-inline"><input type="checkbox" id="mheure" class="eqLogicAttr" data-l1key="configuration" data-l2key="mheure"/>{{Activer}}</label>
+			<label class="checkbox-inline"><input type="checkbox" id="mheure" class="eqLogicAttr" data-l1key="configuration" data-l2key="auto_cmd"/>{{Activer}}</label>
 	    </div>
 </div>
-<div class="alert alert-info">{{Information concernant la mise à l'heure auto :<br>
-					- La mise à l'heure se fait par un cron journalier à 00:30 <br>}}
+<div class="alert alert-info">{{Information concernant la création auto des commandes :<br>
+					- commandes testés pour un Adam modèle 6050 <br>}}
 </div>

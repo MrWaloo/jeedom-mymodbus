@@ -8,7 +8,7 @@ $eqLogics = eqLogic::byType($plugin->getId());
 
 $deamonRunning = mymodbus::deamon_info();
     if ($deamonRunning['state'] != 'ok') {
-        echo '<div class="alert alert-danger">ATTENTION LE DEMON DE MYMODBUS NE TOURNE PAS , Avant de le lancer il faut toujours toujours avoir un équipement MyModbus de céer ! </div>';
+        echo '<div class="alert alert-danger">ATTENTION LE DEMON MYMODBUS NE TOURNE PAS , Avant de le lancer il faut toujours avoir un équipement MyModbus de céer ! </div>';
     }
 	
 ?>
@@ -18,22 +18,22 @@ $deamonRunning = mymodbus::deamon_info();
   <legend><i class="fas fa-cog"></i>  {{Gestion}}</legend>
   <div class="eqLogicThumbnailContainer">
       <div class="cursor eqLogicAction logoPrimary" data-action="add">
-        <i class="fas fa-plus-circle"style="font-size : 6em;color:#0000c8;"></i>
+        <i class="fas fa-plus-circle"style="font-size : 6em;color:#337aff;"></i>
         <br>
         <span>{{Ajouter}}</span>
     </div>
       <div class="cursor eqLogicAction logoSecondary" data-action="gotoPluginConf">
-      <i class="fas fa-wrench"style="font-size : 6em;color:#0000c8;"></i>
+      <i class="fas fa-wrench"style="font-size : 6em;color:#337aff;"></i>
     <br>
     <span>{{Configuration}}</span>
   </div>
   <div class="cursor eqLogicAction logoSecondary" data-action="bt_docSpecific" >
-		<i class="fas fa-book"style="font-size : 6em;color:#0000c8;"></i>
+		<i class="fas fa-book"style="font-size : 6em;color:#337aff;"></i>
  		<br>
 		<span>{{Documentation}}</span>
 		</div>
   <div class="cursor logoSecondary" id="bt_healthmymodbus">
-				<i class="fas fa-medkit"style="font-size : 6em;color:#0000c8;"></i>
+				<i class="fas fa-medkit"style="font-size : 6em;color:#337aff;"></i>
 				<br/>
 				<span>{{Santé}}</span>
 			</div>
@@ -62,13 +62,14 @@ foreach ($eqLogics as $eqLogic) {
 <div class="col-xs-12 eqLogic" style="display: none;">
 		<div class="input-group pull-right" style="display:inline-flex">
 			<span class="input-group-btn">
-				<a class="btn btn-default btn-sm eqLogicAction roundedLeft" data-action="configure"><i class="fa fa-cogs"></i> {{Configuration avancée}}</a><a class="btn btn-default btn-sm eqLogicAction" data-action="copy"><i class="fas fa-copy"></i> {{Dupliquer}}</a><a class="btn btn-sm btn-success eqLogicAction" data-action="save"><i class="fas fa-check-circle"></i> {{Sauvegarder}}</a><a class="btn btn-danger btn-sm eqLogicAction roundedRight" data-action="remove"><i class="fas fa-minus-circle"></i> {{Supprimer}}</a>
+				<a class="btn btn-primary btn-sm bt_showNoteManagement roundedLeft"><i class="fas fa-file"></i> {{Notes}}</a><a class="btn btn-primary btn-sm bt_showExpressionTest roundedLeft"><i class="fas fa-check"></i> {{Expression}}</a><a <a class="btn btn-default btn-sm eqLogicAction" data-action="configure"><i class="fas fa-cogs"></i> {{Configuration avancée}}</a><a class="btn btn-default btn-sm eqLogicAction" data-action="copy"><i class="fas fa-copy"></i> {{Dupliquer}}</a><a class="btn btn-sm btn-success eqLogicAction" data-action="save"><i class="fas fa-check-circle"></i> {{Sauvegarder}}</a><a class="btn btn-danger btn-sm eqLogicAction roundedRight" data-action="remove"><i class="fas fa-minus-circle"></i> {{Supprimer}}</a>
 			</span>
 		</div>
   <ul class="nav nav-tabs" role="tablist">
     <li role="presentation"><a href="#" class="eqLogicAction" aria-controls="home" role="tab" data-toggle="tab" data-action="returnToThumbnailDisplay"><i class="fa fa-arrow-circle-left"></i></a></li>
     <li role="presentation" class="active"><a href="#eqlogictab" aria-controls="home" role="tab" data-toggle="tab"><i class="fas fa-tachometer-alt"></i> {{Equipement}}</a></li>
     <li role="presentation"><a href="#commandtab" aria-controls="profile" role="tab" data-toggle="tab"><i class="fa fa-list-alt"></i> {{Commandes}}</a></li>
+	<li role="presentation"><a href="#filtrestab" aria-controls="profile" role="tab" data-toggle="tab"><i class="fas fa-cog"></i> {{Logic}}</a></li>
   </ul>
   <div class="tab-content" style="height:calc(100% - 50px);overflow:auto;overflow-x: hidden;">
     <div role="tabpanel" class="tab-pane active" id="eqlogictab">
@@ -160,6 +161,33 @@ foreach (mymodbus::supportedProtocol() as $protocol) {
 </table>
 
 </div>
+<div role="tabpanel" class="tab-pane" id="filtrestab">
+					<br/>
+					<fieldset>
+						<form class="form-horizontal">
+							<legend><i class="fa fa-list-alt"></i> {{Filtres}}
+								<a class="btn btn-default btn-xs pull-right" style="margin-right:15px;" id="bt_addFiltres"><i class="fas fa-plus"></i> {{Ajouter}}</a>
+							</legend>
+							<table class="table table-condensed" id="table_mymodbusFilters">
+								<thead>
+									<tr>
+										<th style="width: 50px;"> ID</th>
+										<th style="width: 230px;">{{Nom}}</th>
+										<th style="width: 110px;">{{Sous-Type}}</th>
+										<th>{{Valeur}}</th>
+									</tr>
+								</thead>
+								<tbody>
+									
+								</tbody>
+							</table>
+						</fieldset>
+					</form>
+					<br/>
+					<div class="alert alert-info">{{Dans cet onglet vous allez définir les filtres pour vos registres d'entrées : <br>
+						- Exemple_1.
+						}}
+					</div>
 </div>
 
 </div>

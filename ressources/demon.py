@@ -88,16 +88,8 @@ def polling_thread():
 			#c = ModbusTcpClient(host=host, port=port, framer=ModbusRtuFramer, debug=False)
 			c = ModbusTcpClient(host=host, port=port, framer=ModbusRtuFramer, auto_open=True, auto_close=True, timeout=5)
 		if model == "rtu":
-			print "mode rtuovertcp"
 			#Lecture mode rtu
-			#sys.exit()
 			c = ModbusClient(method = "rtu", port=port, stopbits = 1, bytesize = 8, parity = 'N', baudrate= 19200)
-		if model == "crouzet_m3":
-		        # Lecture mode TCP: TCP/IP
-			c = ModbusClient(host=host, port=port, unit_id=unit_id, auto_open=True, auto_close=False)
-		if model == "wago":
-			c = ModbusClient(host=host, port=port, unit_id=unit_id, auto_open=True, auto_close=False)
-	# polling loop
     while True:
 
         if 'hrs' in globals() :
