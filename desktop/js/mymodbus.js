@@ -22,7 +22,10 @@ $("#table_mymodbusFilters").sortable({axis: "y", cursor: "move", items: ".filter
  */
 $('.eqLogicAction[data-action=bt_docSpecific]').on('click', function () {
     window.open('https://bebel27a.github.io/jeedom-mymobdus.github.io/fr_FR/');
-}); 
+});
+$('.pluginAction[data-action=openLink]').on('click',function(){
+    window.open($(this).attr("data-location"), "_blank", null);
+});
 $('#bt_healthmymodbus').on('click', function () {
     $('#md_modal').dialog({title: "{{Santé mymodbus}}"});
     $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=health').dialog('open');
