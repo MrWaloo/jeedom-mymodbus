@@ -69,12 +69,6 @@ rhr = []
 rc = []
 rdi = []
 rir = []
-#read_holding_registers = []
-#read_coils = []
-#read_discrete_inputs = []
-#read_input_registers = []
-#print polling
-# init a thread lock
 regs_lock = Lock()
 read_holding_registers_lock = Lock()
 read_coils_lock = Lock()
@@ -89,13 +83,6 @@ def polling_thread():
 		if model == "tcpip":
 		        # Lecture mode TCP: TCP/IP
 			c = ModbusClient(host=host, port=port, unit_id=unit_id, auto_open=True, auto_close=False)
-			# keep TCP open
-			#if not c.is_open():
-				#print "mode TCP/IP"
-				#print "ouverture de "
-				#print host
-				#print port
-				#c.open()
 		if model == "rtuovertcp":
 		#Lecture mode bus over TCP
 			#c = ModbusTcpClient(host=host, port=port, framer=ModbusRtuFramer, debug=False)
@@ -107,6 +94,8 @@ def polling_thread():
 			c = ModbusClient(method = "rtu", port=port, stopbits = 1, bytesize = 8, parity = 'N', baudrate= 19200)
 		if model == "crouzet_m3":
 		        # Lecture mode TCP: TCP/IP
+			c = ModbusClient(host=host, port=port, unit_id=unit_id, auto_open=True, auto_close=False)
+		if model == "wago":
 			c = ModbusClient(host=host, port=port, unit_id=unit_id, auto_open=True, auto_close=False)
 	# polling loop
     while True:
@@ -160,10 +149,6 @@ def polling_thread():
                         read_coils_list = c.read_coils(int(coil_start),i)
                         subprocess.Popen(['/usr/bin/php',mymodbus,'type=coils','sortie=4','inputs='+str(range(int(coil_start),int(coil_start)+i)),'values='+str(read_coils_list),'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id)])
 
-            #print 'read coil'
-            #read_coils_list = c.read_coils(read_coils,read_coils_length-(read_coils-1))
-            #print str(read_coils_list)
-            #subprocess.Popen(['/usr/bin/php',mymodbus,'type=coils','inputs='+str(range(read_coils,read_coils_length+1)),'values='+str(read_coils_list),'add='+host])
         if 'dis' in globals() :
             di_start=dis[0]
             i=1
@@ -189,9 +174,6 @@ def polling_thread():
                         read_dis_list = c.read_discrete_inputs(int(di_start),i)
                         subprocess.Popen(['/usr/bin/php',mymodbus,'type=discrete_inputs','sortie=4','inputs='+str(range(int(di_start),int(di_start)+i)),'values='+str(read_dis_list),'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id)])
 
-            #read_discrete_inputs_list = c.read_discrete_inputs(read_discrete_inputs,read_discrete_inputs_length-(read_discrete_inputs-1))
-            #print str(read_discrete_inputs_list)
-            #subprocess.Popen(['/usr/bin/php',mymodbus,'type=discrete_inputs','inputs='+str(range(read_discrete_inputs,read_discrete_inputs_length+1)),'values='+str(read_discrete_inputs_list),'add='+host])
         if 'irs' in globals() :
             ir_start=irs[0]
             i=1
@@ -217,11 +199,6 @@ def polling_thread():
                         read_irs_list = c.read_input_registers(int(ir_start),i)
                         subprocess.Popen(['/usr/bin/php',mymodbus,'type=input_registers','sortie=4','inputs='+str(range(int(ir_start),int(ir_start)+i)),'values='+str(read_irs_list),'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id)])
 
-            #read_input_registers_list = c.read_input_registers(read_input_registers,read_input_registers_length-(read_input_registers-1))
-            #print str(read_input_registers_list)
-            #subprocess.Popen(['/usr/bin/php',mymodbus,'type=input_registers','inputs='+str(range(read_input_registers,read_input_registers_length+1)),'values='+str(read_input_registers_list),'add='+host])
-        #if keepopen == 0 :
-            #c.close()
         time.sleep(polling)
 
 # start polling thread
@@ -230,20 +207,7 @@ tp = Thread(target=polling_thread)
 tp.daemon = True
 tp.start()
 
-# display loop (in main thread)
+
 while True:
-    # print regs list (with thread lock synchronization)
     pass
-    #with read_holding_registers_lock:
-    #    print ""
-        #subprocess.Popen(['/usr/bin/php',mymodbus,'type=holding_registers','values='+str(rhr),'add='+host])
-    #with read_coils_lock:
-    #    print ""
-        #subprocess.Popen(['/usr/bin/php',mymodbus,'type=coils','values='+str(rc),'add='+host])
-    #with read_discrete_inputs_lock:
-    #    print ""
-        #subprocess.Popen(['/usr/bin/php',mymodbus,'type=discrete_inputs','values='+str(rdi),'add='+host])
-    #with read_input_registers_lock:
-    #    print ""
-        #subprocess.Popen(['/usr/bin/php',mymodbus,'type=input_registers','values='+str(rir),'add='+host])
     time.sleep(polling)
