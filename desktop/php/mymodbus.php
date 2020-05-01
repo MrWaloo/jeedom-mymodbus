@@ -32,6 +32,11 @@ $deamonRunning = mymodbus::deamon_info();
  		<br>
 		<span>{{Documentation}}</span>
 		</div>
+  <div class="cursor pluginAction" data-action="openLink" data-location="https://community.jeedom.com/t/plugin-<?=$plugin->getId()?>" >
+         <i class="fas fa-comments" style="font-size : 6em;color:#337aff;"></i>
+         <br>
+         <span>{{Commmunity}}</span>
+        </div>
   <div class="cursor logoSecondary" id="bt_healthmymodbus">
 				<i class="fas fa-medkit"style="font-size : 6em;color:#337aff;"></i>
 				<br/>
