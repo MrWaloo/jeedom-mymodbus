@@ -18,20 +18,24 @@ $deamonRunning = mymodbus::deamon_info();
   <legend><i class="fas fa-cog"></i>  {{Gestion}}</legend>
   <div class="eqLogicThumbnailContainer">
       <div class="cursor eqLogicAction logoPrimary" data-action="add">
-        <i class="fas fa-plus-circle"></i>
+        <i class="fas fa-plus-circle"style="font-size : 6em;color:#0000c8;"></i>
         <br>
         <span>{{Ajouter}}</span>
     </div>
       <div class="cursor eqLogicAction logoSecondary" data-action="gotoPluginConf">
-      <i class="fas fa-wrench"></i>
+      <i class="fas fa-wrench"style="font-size : 6em;color:#0000c8;"></i>
     <br>
     <span>{{Configuration}}</span>
   </div>
-  <div class="cursor eqLogicAction" data-action="bt_docSpecific" >
-				<center>
-					<i class="fas fa-book" style="font-size: 38px !important;"></i>
-				</center>
-				<span style=><center>{{Documentation}}</center></span>
+  <div class="cursor eqLogicAction logoSecondary" data-action="bt_docSpecific" >
+		<i class="fas fa-book"style="font-size : 6em;color:#0000c8;"></i>
+ 		<br>
+		<span>{{Documentation}}</span>
+		</div>
+  <div class="cursor logoSecondary" id="bt_healthmymodbus">
+				<i class="fas fa-medkit"style="font-size : 6em;color:#0000c8;"></i>
+				<br/>
+				<span>{{Santé}}</span>
 			</div>
   </div>
   <legend><i class="fas fa-table"></i> {{Mes équipements}}</legend>
@@ -136,7 +140,8 @@ foreach (mymodbus::supportedProtocol() as $protocol) {
 </div>
 </div>
       <div role="tabpanel" class="tab-pane" id="commandtab">
-<a class="btn btn-success btn-sm cmdAction pull-right" data-action="add" style="margin-top:5px;"><i class="fa fa-plus-circle"></i> {{Ajouter une E/S modbus}}</a><br/><br/>
+<a class="btn btn-default btn-sm pull-right" id="bt_add_Info" style="margin-top:5px;"><i class="fas fa-plus-circle"></i> {{Ajouter une info}}</a>
+<a class="btn btn-default btn-sm  pull-right" id="bt_add_Action" style="margin-top:5px;"><i class="fas fa-plus-circle"></i> {{Ajouter une action}}</a><br/><br/>
 <table id="table_cmd" class="table table-bordered table-condensed">
     <thead>
         <tr>
