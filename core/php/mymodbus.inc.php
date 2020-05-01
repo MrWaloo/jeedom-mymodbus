@@ -29,9 +29,7 @@ if (isset($argv)) {
     foreach ($argv as $arg) {
         $argList = explode('=', $arg);
         if (isset($argList[0]) && isset($argList[1])) {
-            $_GET[$argList[0]] = $argList[1];
-			//log::add('mymodbus', 'debug', 'argv : ' . $argList[1]);
-			
+            $_GET[$argList[0]] = $argList[1];			
         }
     }
 }
@@ -44,7 +42,6 @@ $values=str_replace(']', '', $values);
 $values=str_replace('True', 1, $values);
 $values=str_replace('False', 0, $values);
 $values=str_replace(' ', '', $values);
-//log::add('mymodbus', 'event', 'tableau 1: ' . $values);
 $values_arr=explode(',', $values);
 $values_inputs=str_replace('[', '', $_GET['inputs']);
 $values_inputs=str_replace(']', '', $values_inputs);
@@ -55,14 +52,7 @@ if($values_inputs<>""){
 	$values_inputs_arr=explode(',', trim($values_inputs));
 	if(count($values_inputs_arr)==count($values_arr)){
 		$arr_values=array_combine($values_inputs_arr,$values_arr);
-		//log::add('mymodbus', 'event', 'tableau 2: ' . json_encode($arr_values));
-		//log::add('mymodbus', 'debug', 'inputarr : ' .json_encode($arr_values));
-		//$mymodbus_all = eqLogic::byTypeAndSearhConfiguration('mymodbus',$_GET['add']); // mettre à jour par l'id et non l'ip
-		//$mymodbus_all = eqLogic::fullById($_GET['eqid']);
 		$mymodbus = eqLogic::byid($_GET['eqid']);
-		//log::add('mymodbus', 'debug',$_GET['eqid'], 'config');
-		//log::add('mymodbus', 'debug', 'get : ' .json_encode($_GET));
-		//foreach ($_GET['eqid'] as $id) $EqLogics[] = eqLogic::byId($id);
 		
 		foreach ($mymodbus->getCmd('info') as $cmd) {
 			if ($cmd->getConfiguration('type') == $_GET['type'] && isset($arr_values[$cmd->getConfiguration('location')])){
