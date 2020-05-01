@@ -1,6 +1,6 @@
 echo "++++++++++++++++++++++++++++++++++++++"
 echo "+  MyModbus Install dependancies"
-echo "+  v1.2"
+echo "+  v1.3"
 echo "+  By Bebel27"
 echo "++++++++++++++++++++++++++++++++++++++"
 
@@ -71,6 +71,13 @@ echo " Version de python"
 sudo python --version
 echo " Version de PIP "
 sudo pip --version
-
+echo "-- test install --"
+if [ ! -d "/usr/local/lib/python2.7/dist-packages/pymodbus" ];
+then
+echo "pymodbus non installé , lancement installation en local";
+sudo unzip /var/www/html/plugins/mymodbus/ressources/Biblio.zip -d /usr/local/lib/python2.7/dist-packages/
+else
+echo "OK"
+fi
 sudo chmod -R 755 ${PROGRESS_FILE}
 rm ${PROGRESS_FILE}
