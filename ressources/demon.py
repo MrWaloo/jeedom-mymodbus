@@ -83,6 +83,10 @@ def polling_thread():
 		if model == "tcpip":
 		        # Lecture mode TCP: TCP/IP
 			c = ModbusClient(host=host, port=port, unit_id=unit_id, auto_open=True, auto_close=False)
+		if model == "logo":
+		        # Lecture mode TCP: TCP/IP
+			c = ModbusClient(host=host, port=port, unit_id=unit_id, auto_open=True, auto_close=True)
+
 		if model == "rtuovertcp":
 		#Lecture mode bus over TCP
 			#c = ModbusTcpClient(host=host, port=port, framer=ModbusRtuFramer, debug=False)
