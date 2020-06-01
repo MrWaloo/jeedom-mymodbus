@@ -38,9 +38,6 @@ $('.bt_showNoteManagement').off('click').on('click', function () {
   $('#md_modal').dialog({title: "{{Notes}}"});
   $("#md_modal").load('index.php?v=d&modal=note.manager').dialog('open');
 });
-$('#table_mymodbusFilters').off('click','.bt_removeFilter').on('click','.bt_removeFilter',function(){
-  $(this).closest('tr').remove();
-});
 
 
  function prePrintEqLogic() {
@@ -337,27 +334,6 @@ $("#bt_add_Info").on('click', function (event) {
   addCmdToTable({type: 'info'});
   modifyWithoutSave = true;
 });
-$('#bt_addFiltres').off('click').on('click',function(){
-  addFiltres({});
-});
-
-function addFiltres(_filtres){
-
-	var tr = '<tr class="filtres">';
-	tr += '<td>';
-	tr += '<input class="form-control filtresAttr" data-l1key="filter_imput" />';
-	tr += '</td>';
-	tr += '<td>';
-	tr += '<input class="form-control filtresAttr" data-l1key="filter_condition" />';
-	tr += '</td>';
-	tr += '<td>';
-	tr += '<i class="fas fa-minus-circle cursor bt_removeFilter"></i>';
-	tr += '</td>';
-	tr += '</tr>';
-	$('#table_mymodbusFilters').find('tbody').append(tr);
-	$('#table_mymodbusFilters').find('tbody tr').last().setValues(_filtres, '.filtresAttr');
-}
-
 
 function addCmdToTable(_cmd) {
     if (!isset(_cmd)) {
@@ -375,10 +351,8 @@ function addCmdToTable(_cmd) {
    		tr += '<span class="subType" subType="' + init(_cmd.subType) + '"></span>';
     	tr += '</td>';
     	tr += '<td>';
-		//tr += '<select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="type"><option value="coils">Coil</option><option value="discrete_inputs">Discrete Input</option><option value="holding_registers">Holding Register</option><option value="input_registers">Input Register</option></select>';
-    	//tr += '<select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="datatype"><option value="bitsize_16">16 bits</option><option value="bitsize_32">32 bits</option></select>';
 		tr += '<div class="input-group" style="margin-bottom : 5px;">';
-    	tr += '<select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="type"><option value="coils">Coil</option><option value="discrete_inputs">Discrete Input</option><option value="holding_registers">Holding Register</option><option value="input_registers">Input Register</option></select>';
+    	tr += '<select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="type"><option value="coils">Coil</option><option value="discrete_inputs">Discrete Input</option><option value="holding_registers">Holding Register</option><option value="input_registers">Input Register</option><option value="sign">Register Int</option><option value="virg">Register Float</option></select>';
 		tr += '</div>';
 		tr += '<div class="input-group">';
 		tr += '<select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="datatype"><option value="bitsize_16">16 bits</option><option value="bitsize_32">32 bits</option></select>';
@@ -391,11 +365,6 @@ function addCmdToTable(_cmd) {
     	tr += '<span class="input-group-btn">';
     	tr += '<a class="btn btn-default btn-sm cursor listEquipementInfo2 roundedRight" data-input="configuration"><i class="fa fa-list-alt "></i></a>';
 		tr += '</span>';
-		tr += '</div>';
-    	tr += '<div class="input-group">';
-		tr += '<span><label class="checkbox-inline"><input type="checkbox" class="cmdAttr checkbox-inline" data-l1key="configuration" data-l2key="signe" title="{{la valeur peut être négative}}" unchecked/>{{ -  }}</label></span> ';
-    	tr += '<span><label class="checkbox-inline"><input type="checkbox" class="cmdAttr checkbox-inline" data-l1key="configuration" data-l2key="float" title="{{la valeur est à virgule}}"unchecked/>{{ , }}</label></span> ';
-    	tr += '</span>';
 		tr += '</div>';
     	tr += '</td>';  
 		tr += '<td>';

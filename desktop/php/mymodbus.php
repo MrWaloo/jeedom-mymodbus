@@ -18,27 +18,27 @@ $deamonRunning = mymodbus::deamon_info();
   <legend><i class="fas fa-cog"></i>  {{Gestion}}</legend>
   <div class="eqLogicThumbnailContainer">
       <div class="cursor eqLogicAction logoPrimary" data-action="add">
-        <i class="fas fa-plus-circle"style="font-size : 6em;color:#337aff;"></i>
+        <i class="fas fa-plus-circle"style="font-size : 6em;color:#0F9DE8;"></i>
         <br>
         <span>{{Ajouter}}</span>
     </div>
       <div class="cursor eqLogicAction logoSecondary" data-action="gotoPluginConf">
-      <i class="fas fa-wrench"style="font-size : 6em;color:#337aff;"></i>
+      <i class="fas fa-wrench"style="font-size : 6em;color:#0F9DE8;"></i>
     <br>
     <span>{{Configuration}}</span>
   </div>
   <div class="cursor eqLogicAction logoSecondary" data-action="bt_docSpecific" >
-		<i class="fas fa-book"style="font-size : 6em;color:#337aff;"></i>
+		<i class="fas fa-book"style="font-size : 6em;color:#0F9DE8;"></i>
  		<br>
 		<span>{{Documentation}}</span>
 		</div>
   <div class="cursor pluginAction" data-action="openLink" data-location="https://community.jeedom.com/t/plugin-<?=$plugin->getId()?>" >
-         <i class="fas fa-comments" style="font-size : 6em;color:#337aff;"></i>
+         <i class="fas fa-comments" style="font-size : 6em;color:#0F9DE8;"></i>
          <br>
          <span>{{Commmunity}}</span>
         </div>
   <div class="cursor logoSecondary" id="bt_healthmymodbus">
-				<i class="fas fa-medkit"style="font-size : 6em;color:#337aff;"></i>
+				<i class="fas fa-medkit"style="font-size : 6em;color:#0F9DE8;"></i>
 				<br/>
 				<span>{{Santé}}</span>
 			</div>
@@ -74,7 +74,6 @@ foreach ($eqLogics as $eqLogic) {
     <li role="presentation"><a href="#" class="eqLogicAction" aria-controls="home" role="tab" data-toggle="tab" data-action="returnToThumbnailDisplay"><i class="fa fa-arrow-circle-left"></i></a></li>
     <li role="presentation" class="active"><a href="#eqlogictab" aria-controls="home" role="tab" data-toggle="tab"><i class="fas fa-tachometer-alt"></i> {{Equipement}}</a></li>
     <li role="presentation"><a href="#commandtab" aria-controls="profile" role="tab" data-toggle="tab"><i class="fa fa-list-alt"></i> {{Commandes}}</a></li>
-	<li role="presentation"><a href="#filtrestab" aria-controls="profile" role="tab" data-toggle="tab"><i class="fas fa-cog"></i> {{Logic}}</a></li>
   </ul>
   <div class="tab-content" style="height:calc(100% - 50px);overflow:auto;overflow-x: hidden;">
     <div role="tabpanel" class="tab-pane active" id="eqlogictab">
@@ -165,34 +164,6 @@ foreach (mymodbus::supportedProtocol() as $protocol) {
     </tbody>
 </table>
 
-</div>
-<div role="tabpanel" class="tab-pane" id="filtrestab">
-					<br/>
-					<fieldset>
-						<form class="form-horizontal">
-							<legend><i class="fa fa-list-alt"></i> {{Filtres}}
-								<a class="btn btn-default btn-xs pull-right" style="margin-right:15px;" id="bt_addFiltres"><i class="fas fa-plus"></i> {{Ajouter}}</a>
-							</legend>
-							<table class="table table-condensed" id="table_mymodbusFilters">
-								<thead>
-									<tr>
-										<th style="width: 50px;"> ID</th>
-										<th style="width: 230px;">{{Nom}}</th>
-										<th style="width: 110px;">{{Sous-Type}}</th>
-										<th>{{Valeur}}</th>
-									</tr>
-								</thead>
-								<tbody>
-									
-								</tbody>
-							</table>
-						</fieldset>
-					</form>
-					<br/>
-					<div class="alert alert-info">{{Dans cet onglet vous allez définir les filtres pour vos registres d'entrées : <br>
-						- Exemple_1.
-						}}
-					</div>
 </div>
 
 </div>

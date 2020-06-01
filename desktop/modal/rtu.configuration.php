@@ -23,7 +23,16 @@ if (!isConnect('admin')) {
 <div class="form-group">
         <label class="col-sm-3 control-label">{{Port série}}</label>
         <div class="col-sm-3">
-            <input type="text" id="port" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="port" placeholder="{{/dev/bus/usb/}}"/>
+			<select class="eqLogicAttr form-control"  data-l1key="configuration" data-l2key="port">
+				<option value="none">{{Aucun}}</option>
+				<optgroup label="Ports disponibles">
+					<?php
+                    foreach (jeedom::getUsbMapping('', true) as $name => $value){
+						echo '<option value="' . $value . '">' . $name . ' (' . $value . ')</option>';
+                    }
+                    ?>
+				</optgroup>
+			</select>
         </div>
     </div>
 	   <div class="form-group">

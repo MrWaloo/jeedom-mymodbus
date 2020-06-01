@@ -45,6 +45,12 @@ if (!isConnect('admin')) {
 	</div>
 </div>
 <div class="form-group">
+	<label class="col-sm-3 control-label">{{Garder la connexion active}}</label>
+		<div class="col-sm-9">
+			<label class="checkbox-inline"><input type="checkbox" id="keepopen" class="eqLogicAttr" data-l1key="configuration" data-l2key="keepopen"/>{{Activer}}</label>
+	    </div>
+</div>
+<div class="form-group">
 	<label class="col-sm-3 control-label">{{Création auto des commandes}}</label>
 		<div class="col-sm-9">
 			<label class="checkbox-inline"><input type="checkbox" id="mheure" class="eqLogicAttr" data-l1key="configuration" data-l2key="auto_cmd"/>{{Activer}}</label>
