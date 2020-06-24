@@ -39,7 +39,7 @@ from pymodbus.payload import BinaryPayloadDecoder
 from pymodbus.payload import BinaryPayloadBuilder
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "h:p:P", ["help","unit_id=","polling=","virg=","coils=","dis=","hrs=","sign=","irs=","protocol=","keepopen=","eqid="])
+    opts, args = getopt.getopt(sys.argv[1:], "h:p:P", ["help","unit_id=","polling=","virg=","swapi32=","coils=","dis=","hrs=","sign=","irs=","protocol=","keepopen=","eqid="])
 except getopt.GetoptError as err:
     print(err)
     sys.exit(2)
@@ -74,7 +74,10 @@ for o, a in opts:
         sign.sort(key=int)        
     elif o == "--virg":
         virg = a.split(',')
-        virg.sort(key=int)  
+        virg.sort(key=int)
+    elif o == "--swapi32":
+        swapi32 = a.split(',')
+        swapi32.sort(key=int)
     elif o == "--irs":
         irs = a.split(',')
         irs.sort(key=int)
@@ -232,6 +235,14 @@ def polling_thread():
                 rr = client.read_holding_registers(int(virg_reg),i,unit=unit_id)
                 decoder = BinaryPayloadDecoder.fromRegisters(rr.registers,byteorder=Endian.Big,wordorder=Endian.Little)
                 subprocess.Popen(['/usr/bin/php',mymodbus,'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id),'type=virg','sortie=1','inputs='+str(int(virg_reg)),'values='+str(float(round(decoder.decode_32bit_float(),2)))])
+
+        if 'swapi32' in globals() : #lecture des imputregisterwap
+            i= 2   
+            swapi32_first=swapi32[0]
+            for swapi32_reg in swapi32:
+                rr = client.read_input_registers(int(swapi32_reg),i,unit=unit_id)
+                decoder = BinaryPayloadDecoder.fromRegisters(rr.registers,byteorder=Endian.Big,wordorder=Endian.Big)
+                subprocess.Popen(['/usr/bin/php',mymodbus,'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id),'type=swapi32','sortie=1','inputs='+str(int(swapi32_reg)),'values='+str(float(round(decoder.decode_32bit_float(),2)))])
 
         # ----------------------------------------------------------------------- #
         # close the client
