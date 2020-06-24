@@ -352,7 +352,7 @@ function addCmdToTable(_cmd) {
     	tr += '</td>';
     	tr += '<td>';
 		tr += '<div class="input-group" style="margin-bottom : 5px;">';
-    	tr += '<select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="type"><option value="coils">Coil</option><option value="discrete_inputs">Discrete Input</option><option value="holding_registers">Holding Register</option><option value="input_registers">Input Register</option><option value="sign">Register Int</option><option value="virg">Register Float</option></select>';
+    	tr += '<select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="type"><option value="coils">Coil</option><option value="discrete_inputs">Discrete Input</option><option value="holding_registers">Holding Register</option><option value="input_registers">Input Register</option><option value="sign">Register Int</option><option value="virg">Register Float</option><option value="swapi32">Eastron Imput</option></select>';
 		tr += '</div>';
 		tr += '<div class="input-group">';
 		tr += '<select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="datatype"><option value="bitsize_16">16 bits</option><option value="bitsize_32">32 bits</option></select>';
