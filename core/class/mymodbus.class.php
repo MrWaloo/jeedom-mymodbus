@@ -119,6 +119,10 @@ class mymodbus extends eqLogic {
 						$virg[]=$cmd->getConfiguration('location');
 						log::add('mymodbus', 'info', 'holding_float trouvées :'.$cmd->getConfiguration('location'));
 					}
+					if($cmd->getConfiguration('type')=='swapi32'){
+						$swapi32[]=$cmd->getConfiguration('location');
+						log::add('mymodbus', 'info', 'imput_register_swap_32 trouvées :'.$cmd->getConfiguration('location'));
+					}
 				}
 				if($coils){
 					$request.=' --coils='.implode(',',$coils);
@@ -138,6 +142,9 @@ class mymodbus extends eqLogic {
 				if($virg){
 					$request.=' --virg='.implode(',',$virg);
 				}
+				if($swapi32){
+					$request.=' --swapi32='.implode(',',$swapi32);
+				}
 		        $cmd = 'nice -n 19 /usr/bin/python3 ' . $mymodbus_path . '/mymodbus_demond.py ' . $request;
 		        log::add('mymodbus', 'info', 'Lancement du démon mymodbus : ' . $cmd);
 		        $result = exec('nohup ' . $cmd . ' >> ' . log::getPathToLog('mymodbus') . ' 2>&1 &');
@@ -152,6 +159,7 @@ class mymodbus extends eqLogic {
 				$input_registers = array();
               	$sign = array();
 				$virg = array();
+				$swapi32 = array();
 				
 		        sleep(2);
 		        if (!self::deamon_info()) {
