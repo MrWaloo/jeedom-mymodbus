@@ -1,8 +1,22 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# TCP/IP
-from pyModbusTCP.client import ModbusClient
+"""
+Code : Write Mymobus
+date: 27/12/2020
+Auteur: @Bebel27
+Version: b1.0
+"""
+import sys
+import time
+
+from pymodbus.compat import IS_PYTHON3, PYTHON_VERSION
+if IS_PYTHON3 and PYTHON_VERSION >= (3, 4):
+    print("Version de python ok")
+    
+else:
+    sys.stderr("merci d'installer Python 3 ou de relancer les dépendances Mymodbus")
+    sys.exit(1)
 
 import time
 import sys
@@ -10,10 +24,12 @@ import getopt
 import os
 import subprocess
 
+#from pymodbus.client.sync import ModbusTcpClient as ModbusClient
+from pymodbus.client.sync import ModbusTcpClient as ModbusClient
 try:
     opts, args = getopt.getopt(sys.argv[1:], "h:p:P", ["help","unit_id=","wsc=","wsr=","value="])
-except getopt.GetoptError, err:
-    print str(err)
+except getopt.GetoptError as err:
+    print (str(err))
     usage()
     sys.exit()
 
@@ -40,15 +56,12 @@ for o, a in opts:
 #SERVER_HOST = "localhost"
 #SERVER_PORT = 502
 
-c = ModbusClient()
+client = ModbusClient(host=host, port=port)
 #c = ModbusClient(host=host, port=port, unit_id=unit_id, debug=False)
 # uncomment this line to see debug message
 #c.debug(True)
 
-# define modbus server host, port , unit_id
-c.host(host)
-c.port(port)
-c.unit_id(unit_id)
+
 #if 'unit_id' in globals() :
 #	slave_id = unit_id[0]
 if 'write_single_coil' in globals() and value == 1:
@@ -56,24 +69,26 @@ if 'write_single_coil' in globals() and value == 1:
 elif 'write_single_coil' in globals() and value == 0:
     val = False
 
-if not c.open():
+
+    
+if not client.connect():
     print("unable to connect to "+host+":"+str(port))
 
-if c.is_open():
+if  client.connect():
     print("")
     print("write bits")
     print("----------")
     print("")
     if 'write_single_coil' in globals() :
-        is_ok = c.write_single_coil(write_single_coil, val)
+        is_ok = client.write_coil(write_single_coil, val, unit=unit_id)
         if is_ok:
             print("bit #" + str(write_single_coil) + ": write to " + str(val))
         else:
             print("bit #" + str(write_single_coil) + ": unable to write " + str(val))
     if 'write_single_register' in globals() :
-        is_ok = c.write_single_register(write_single_register, value)
+        is_ok = client.write_registers(write_single_register, value, unit=unit_id)
         if is_ok:
-            print("bit #" + str(write_single_register) + ": write to " + str(value))
+            print("bit #" + str(write_single_register) + ":unit Id " + str(unit_id)+ ": write to " + str(value))
         else:
             print("bit #" + str(write_single_register) + ": unable to write " + str(value))
-    c.close()
+    client.close()
