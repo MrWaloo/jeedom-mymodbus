@@ -366,14 +366,26 @@ class mymodbusCmd extends cmd {
 				$type_input='--wsc=';
 				$value=$this->getConfiguration('request');
 				$return_value=$this->getConfiguration('parameters');
-			}else if($this->getConfiguration('type')=='holding_registers'){
-				$type_input='--wsr=';
-				switch ($this->subType) {
+			}
+		    else if($this->getConfiguration('type')=='holding_registers'){
+				$type_input='--whr=';
+			}
+			else if($this->getConfiguration('type')=='Write_Multiple_Holding'){
+				$type_input='--wmhr=';
+			}
+			
+			else{
+				return;
+			}
+			switch ($this->subType) {
                     case 'message':
 						$value = urlencode(str_replace('#message#', $_options['message'], $this->getConfiguration('request')));
                         break;
                     case 'slider':
 						$value = str_replace('#slider#', $_options['slider'], $this->getConfiguration('request'));
+                		if (!is_numeric($value)) {
+							$value=jeedom::evaluateExpression($value);
+						}
                         break;
                     default:
 						$value=$this->getConfiguration('request');
@@ -385,10 +397,7 @@ class mymodbusCmd extends cmd {
 							$return_value=jeedom::evaluateExpression($return_value);
 						}
                         break;
-                }
-			}else{
-				return;
-			}
+            }
 			log::add('mymodbus', 'info', 'Debut de l action '.'/usr/bin/python ' . $mymodbus_path . '/mymodbus_write.py -h '.$mymodbus_ip.' -p '.$mymodbus_port.' --unit_id='.$mymodbus_unit.' ' . $type_input . ''.$mymodbus_location.' --value='.$value.' 2>&1');
 			$result = shell_exec('/usr/bin/python3 ' . $mymodbus_path . '/mymodbus_write.py -h '.$mymodbus_ip.' -p '.$mymodbus_port.' --unit_id='.$mymodbus_unit.' ' . $type_input . ''.$mymodbus_location.' --value='.$value.' 2>&1');
 			if($return_value<>""){

@@ -27,7 +27,7 @@ import subprocess
 #from pymodbus.client.sync import ModbusTcpClient as ModbusClient
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "h:p:P", ["help","unit_id=","wsc=","wsr=","value="])
+    opts, args = getopt.getopt(sys.argv[1:], "h:p:P", ["help","unit_id=","wsc=","whr=","wmhr=","value="])
 except getopt.GetoptError as err:
     print (str(err))
     usage()
@@ -45,8 +45,10 @@ for o, a in opts:
         sys.exit()
     elif o == "--wsc":
         write_single_coil = int(a)
-    elif o == "--wsr":
+    elif o == "--whr":
         write_single_register = int(a)
+    elif o == "--wmhr":
+        write_multiple_holding = int(a)
     elif o == "--value":
         value = int(a)
     else:
@@ -86,9 +88,12 @@ if  client.connect():
         else:
             print("bit #" + str(write_single_coil) + ": unable to write " + str(val))
     if 'write_single_register' in globals() :
-        is_ok = client.write_registers(write_single_register, value, unit=unit_id)
+        is_ok = client.write_register(write_single_register, value, unit=unit_id)
         if is_ok:
             print("bit #" + str(write_single_register) + ":unit Id " + str(unit_id)+ ": write to " + str(value))
         else:
             print("bit #" + str(write_single_register) + ": unable to write " + str(value))
+    if 'write_multiple_holding' in globals() :
+        is_ok = client.write_registers(write_multiple_holding, value, unit=unit_id)
+        
     client.close()

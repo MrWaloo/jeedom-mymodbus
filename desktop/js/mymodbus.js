@@ -410,7 +410,7 @@ function addCmdToTable(_cmd) {
     	tr += '<input class="cmdAttr form-control type input-sm" data-l1key="type" value="action" disabled style="margin-bottom : 5px;" />';
    		tr += '<span class="subType" subType="' + init(_cmd.subType) + '"></span>';
     	tr += '</td>';
-    	tr += '<td><select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="type"><option value="coils">Coil</option><option value="discrete_inputs">Discrete Input</option><option value="holding_registers">Holding Register</option><option value="input_registers">Input Register</option></select></td>'
+    	tr += '<td><select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="type"><option value="coils">Coil</option><option value="discrete_inputs">Discrete Input</option><option value="holding_registers">Holding Register</option><option value="Write_Multiple_Holding">Write Multiple Holding</option><option value="input_registers">Input Register</option></select></td>'
     	tr += '<td><input class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="location"></td>';
 		tr += '<td>';
     	tr += '<div class="input-group" style="margin-bottom : 5px;">';
