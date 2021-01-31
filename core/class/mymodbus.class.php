@@ -243,7 +243,8 @@ class mymodbus extends eqLogic {
     public static function Kill_Process() {
 
 		$pid = exec("ps -eo pid,command | grep 'mymodbus_demond.py' | grep -v grep | awk '{print $1}'");
-        exec('kill ' . $pid);
+        //exec('kill ' . $pid);
+		exec(' sudo kill ' . $pid . ' 2>&1 &');
         $check = self::deamon_info();
         $retry = 0;
 	}
