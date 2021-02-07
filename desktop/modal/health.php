@@ -31,6 +31,7 @@ $eqLogics = mymodbus::byType('mymodbus');
 			<th>{{Adresse IP}}</th>
   			<th>{{Port}}</th>
 			<th>{{Statut}}</th>
+			<th>{{Démon}}</th>
 			<th>{{Dernière communication}}</th>
 			<th>{{Date création}}</th>
 		</tr>
@@ -45,10 +46,17 @@ foreach ($eqLogics as $eqLogic) {
 	echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . $eqLogic->getConfiguration('addr') . '</span></td>';
     echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . $eqLogic->getConfiguration('port') . '</span></td>';
 	$status = '<span class="label label-success" style="font-size : 1em; cursor : default;">{{OK}}</span>';
-	if ($eqLogic->getStatus('state') == 'nok') {
+	if ($eqLogic->getIsEnable()==0) {
 		$status = '<span class="label label-danger" style="font-size : 1em; cursor : default;">{{NOK}}</span>';
 	}
 	echo '<td>' . $status . '</td>';
+	//$result = '<span class="label label-success" style="font-size : 1em; cursor : default;">{{OK}}</span>';
+	$result = exec("ps -eo pid,command | grep 'eqid={$eqLogic->getId()}' | grep -v grep | awk '{print $1}' | wc -l");
+	if ($result==0) {
+		$result = '<span class="label label-danger" style="font-size : 1em; cursor : default;">{{NOK}}</span>';
+	} else {$result = '<span class="label label-success" style="font-size : 1em; cursor : default;">{{OK}}</span>';
+	}
+	echo '<td>' . $result . '</td>';
 	echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . $eqLogic->getStatus('lastCommunication') . '</span></td>';
 	echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . $eqLogic->getConfiguration('createtime') . '</span></td></tr>';
 }

@@ -174,10 +174,37 @@ class mymodbus extends eqLogic {
 		}
     }
 
-	public static function health() {
-    $return = array();
-    return $return;
-    }
+	public static function health()
+	
+	{
+		$return = array();
+		$return['test'] = __('Etat(s) démon(s)', __FILE__);
+		$return['result'] ='OK';
+		$return['advice'] = '';
+		$return['state'] = true;
+
+  		$eqLogics = eqLogic::byType('mymodbus');
+ 		foreach ($eqLogics as $eqLogic)
+		{
+			if ($eqLogic->getIsEnable() == 0) continue;
+			// vérifie si l'eq à un démon qui tourne 
+			$result = exec("ps -eo pid,command | grep 'eqid={$eqLogic->getId()}' | grep -v grep | awk '{print $1}' | wc -l");
+			if ($result == 0) {
+
+				$return['state'] = 'nok';
+				$return['state'] = false;
+				$return['result'] = 'NOK';
+				$return['advice'] = __('Au moins un démon ne tourne pas ! Voir la page santé dans la configuration de MyModbus.', __FILE__);
+				break;
+
+        } else {
+		     $return['state'] = 'ok';
+		}
+
+		}
+		return array($return);
+	}
+	
 
 	public static function ntp_crouzet_m3() {
 
