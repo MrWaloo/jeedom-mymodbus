@@ -267,4 +267,4 @@ if __name__ == '__main__':
         else:
             #print("thread_Ko")
             raise ParameterException('Thread en défaut')
-        time.sleep(polling)
+        time.sleep(1)
