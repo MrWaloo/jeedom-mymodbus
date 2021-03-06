@@ -66,7 +66,7 @@ args = parser.parse_args()
     
 if args.protocol == 'rtu':
     from pymodbus.client.sync import ModbusSerialClient as ModbusClient
-    client = ModbusClient(method='rtu', port=args.port, timeout=2,stopbits = 1, bytesize = 8, parity = 'N', baudrate= args.baudrate, Reconnects = 3)
+    client = ModbusClient(method='rtu', port=args.port, timeout=10,stopbits = 1, bytesize = 8, parity = 'N', baudrate= args.baudrate)
     
 if args.protocol == 'tcpip':
     from pymodbus.client.sync import ModbusTcpClient as ModbusClient
