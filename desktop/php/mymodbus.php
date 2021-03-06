@@ -122,19 +122,20 @@ foreach (jeeObject::all() as $object) {
 		<legend><i class="fa fa-list-alt"></i> {{Configuration :}}</legend>
 		<!--   ***********************************  -->
 	</div>
-	   <div class="form-group">
+	<div class="form-group">
          <label class="col-sm-3 control-label">{{Mode de connection}}</label>
             <div class="col-sm-3">
                 <select id="mode" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="protocol">
 					<option disabled selected value>-- {{Choisir un mode de connection}} --</option>
 					<?php
-foreach (mymodbus::supportedProtocol() as $protocol) {
-    echo '<option value="' . $protocol . '">' . $protocol . '</option>';
-  }
-?>
+					foreach (mymodbus::supportedProtocol() as $protocol) {
+					echo '<option value="' . $protocol . '">' . $protocol . '</option>';
+					}
+					?>
 				</select>
-               </div>
-           </div>
+            </div>
+    </div>
+
        </fieldset>
 <div>
       

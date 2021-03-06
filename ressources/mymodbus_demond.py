@@ -3,13 +3,23 @@
 
 """
 Code : Demond Mymobus
-date: 28/03/2020
+date: 17/02/2021
 Auteur: @Bebel27
-Version: b1.0
+Version: b2.0
 """
 import sys
 import time
+import argparse
+import os
+import subprocess
+from threading import Thread, Lock
 
+# Conversion
+from pymodbus.constants import Endian
+from pymodbus.payload import BinaryPayloadDecoder
+from pymodbus.payload import BinaryPayloadBuilder
+
+#Compatibility
 from pymodbus.compat import IS_PYTHON3, PYTHON_VERSION
 if IS_PYTHON3 and PYTHON_VERSION >= (3, 4):
     print("Version de python ok")
@@ -18,238 +28,223 @@ else:
     sys.stderr("merci d'installer Python 3 ou de relancer les dépendances Mymodbus")
     sys.exit(1)
 
-import getopt
-import os
-import subprocess
-from threading import Thread, Lock
 
-# RTU
-from pymodbus.client.sync import ModbusSerialClient as ModbusClient
-
-# RTU over TCP
-from pymodbus.client.sync import ModbusTcpClient
-from pymodbus.transaction import ModbusRtuFramer
-
-# TCP/IP
-from pymodbus.client.sync import ModbusTcpClient as ModbusClient
-
-# Conversion
-from pymodbus.constants import Endian
-from pymodbus.payload import BinaryPayloadDecoder
-from pymodbus.payload import BinaryPayloadBuilder
-
-try:
-    opts, args = getopt.getopt(sys.argv[1:], "h:p:P", ["help","unit_id=","polling=","virg=","swapi32=","coils=","dis=","hrs=","sign=","irs=","protocol=","keepopen=","eqid="])
-except getopt.GetoptError as err:
-    print(err)
-    sys.exit(2)
-
-for o, a in opts:
-    if o == "-h":
-        host = str(a)
-    elif o == "-p":
-        port = a
-    elif o == "--unit_id":
-        unit_id = int(a)
-    elif o == "--polling":
-        polling = int(a)
-    elif o == "--size":
-        size = int(a)
-    elif o == "--keepopen":
-        keepopen = int(a) 
-    elif o in ("-h", "--help"):
-        usage()
-        sys.exit()
-    elif o == "--coils":
-        coils = a.split(',')
-        coils.sort(key=int)
-    elif o == "--dis":
-        dis = a.split(',')
-        dis.sort(key=int)
-    elif o == "--hrs":
-        hrs = a.split(',')
-        hrs.sort(key=int)
-    elif o == "--sign":
-        sign = a.split(',')
-        sign.sort(key=int)        
-    elif o == "--virg":
-        virg = a.split(',')
-        virg.sort(key=int)
-    elif o == "--swapi32":
-        swapi32 = a.split(',')
-        swapi32.sort(key=int)
-    elif o == "--irs":
-        irs = a.split(',')
-        irs.sort(key=int)
-    elif o == "--protocol":
-        protocol = a.split(',')
-        protocol.sort(key=str)
-    elif o == "--eqid":
-        eq_id = int(a)
 
 mymodbus = os.path.abspath(os.path.join(os.path.dirname(__file__), '../core/php/mymodbus.inc.php'))
 
-# set global
+parser = argparse.ArgumentParser(description='Mymodbus values.')
+#-----------Générale---------------------------------------------------------------------
+parser.add_argument("--verbosity", help="mode debug")
+parser.add_argument("--protocol", type=str ,help="Choix protocole Modbus" ,required=True)
+parser.add_argument("--host", type=str ,help="Choix de l'adresse host")
+parser.add_argument("--port", type=str ,help="Choix du port", required=True)
+parser.add_argument("--polling", type=int ,help="polling en s", required=True)
+parser.add_argument("--unid", type=int ,help="choix Unit Id", required=True)
+parser.add_argument("--keepopen", type=int ,help="Garde la connexion ouverte")
+parser.add_argument("--eqid", type=int ,help="Numero equipement Jeedom", required=True)
+#------------RTU-----------------------------------------------------------
+parser.add_argument("--baudrate", type=int ,help="vitesse de com en bauds")
+parser.add_argument("--stopbits", type=int ,help="bit de stop 1 ou 2")
+parser.add_argument("--parity", type=int ,help="parity oui ou non ")
+parser.add_argument("--bytesize", type=int ,help="Taile du mot 7 ou 8 ")
+#-----------Fonctions---------------------------------------------
+parser.add_argument("--coils", type=str ,help="Type Coils")
+parser.add_argument("--dis", type=str, help="discrete imput")
+parser.add_argument("--hrs", type=str ,help="Holding register")
+parser.add_argument("--irs", type=str ,help="imput register")
+#------------------------------------------------------------------
+# Options demandées
+#---------------------
+parser.add_argument("--virg", type=str ,help="Holding à virgules")
+parser.add_argument("--swapi32", type=str ,help="inverse 32bit")
+parser.add_argument("--sign", type=str ,help="valeurs signées")
 
-# PID
-PID = os.getppid()
+args = parser.parse_args()
+
+#if args.verbosity:
+#    print("verbosity turned on")
+    
+if args.protocol == 'rtu':
+    from pymodbus.client.sync import ModbusSerialClient as ModbusClient
+    client = ModbusClient(method='rtu', port=args.port, timeout=2,stopbits = 1, bytesize = 8, parity = 'N', baudrate= args.baudrate, Reconnects = 3)
+    
+if args.protocol == 'tcpip':
+    from pymodbus.client.sync import ModbusTcpClient as ModbusClient
+    client = ModbusClient(host=args.host, port=args.port, retries=3, retry_on_empty=True, timeout=10)
+    
+if args.protocol == 'rtuovertcp':
+    from pymodbus.client.sync import ModbusTcpClient as ModbusClient
+    from pymodbus.transaction import ModbusRtuFramer as ModbusFramer
+    client = ModbusClient(host=args.host, port=args.port, framer=ModbusFramer)
 
 # mymodbus polling thread
 def polling_thread():
-    #global regs
-    if 'protocol' in globals():
-        model = protocol[0]
-        if model == "tcpip":
-            # Lecture mode TCP: TCP/IP
-            #client = ModbusClient(host=host, port=port)
-            client = ModbusClient(host=host, port=port,retries=3, retry_on_empty=True)
-        if model == "rtuovertcp":
-            #Lecture mode bus over TCP
-            client = ModbusClient(host=host, port=port, framer=ModbusRtuFramer)
-        if model == "rtu":
-            #Lecture mode rtu
-            client = ModbusClient(method='rtu', port=port, timeout=1,baudrate=9600)
-            #client= ModbusClient(method = 'rtu', port=port, stopbits = 1, bytesize = 8, parity = 'N', baudrate= 9600)   
+  
     while True:
         client.connect()
-        if 'hrs' in globals() : #lecture des valeurs holding_register simple
-            hreg_first=hrs[0]
-            i=1
-            for table in hrs:
-                if int(table) == int(hreg_first):
-                    hr_previous=hreg_first
-                    if int(table) == int(hrs[-1]):
-                        rr = client.read_holding_registers(int(hreg_first),i,unit=unit_id)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id),'type=holding_registers','sortie=1','inputs='+str(int(hreg_first)),'values='+str(rr.registers)])
-                elif int(table) == int(hr_previous)+1:
-                    hr_previous=int(table)
-                    i += 1
-                    if int(table) == int(hrs[-1]):
-                        rr = client.read_holding_registers(int(hreg_first),i,unit=unit_id)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id),'type=holding_registers','sortie=2','inputs='+str(list(range(int(hreg_first),int(hreg_first)+i))),'values='+str(rr.registers)])
-                else :
-                    if int(table) != int(hr_previous):
-                    	rr = client.read_holding_registers(int(hreg_first),i,unit=unit_id)
-                    	subprocess.Popen(['/usr/bin/php',mymodbus,'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id),'type=holding_registers','sortie=3','inputs='+str(list(range(int(hreg_first),int(hreg_first)+i))),'values='+str(rr.registers)])
-                    	hreg_first=int(table)
-                    	hr_previous=int(table)
-                    	i=1
-                    	if int(table) == int(hrs[-1]):
-                        	rr = client.read_holding_registers(int(hreg_first),i,unit=unit_id)
-                        	subprocess.Popen(['/usr/bin/php',mymodbus,'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id),'type=holding_registers','sortie=4','inputs='+str(list(range(int(hreg_first),int(hreg_first)+i))),'values='+str(rr.registers)])
 
-        if 'coils' in globals() :
-            coil_start=coils[0]
-            i=1
-            for coil in coils:
-                if int(coil) == int(coil_start):
-                    coil_previous=coil_start
-                    if int(coil) == int(coils[-1]):
-                        rr = client.read_coils(int(coil_start),i,unit=unit_id)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id),'type=coils','sortie=1','inputs='+str(int(coil_start)),'values='+str(rr.bits[:i])])
-                elif int(coil) == int(coil_previous) + 1 :
-                    coil_previous=int(coil)
-                    i += 1
-                    if int(coil) == int(coils[-1]):
-                        rr = client.read_coils(int(coil_start),i,unit=unit_id)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id),'type=coils','sortie=2','inputs='+str(list(range(int(coil_start),int(coil_start)+i))),'values='+str(rr.bits[:i])])
-                else :
-                    if int(coil) != int(coil_previous):
-                        rr = client.read_coils(int(coil_start),i,unit=unit_id)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id),'type=coils','sortie=3','inputs='+str(list(range(int(coil_start),int(coil_start)+i))),'values='+str(rr.bits[:i])])
-                        coil_start=int(coil)
-                        coil_previous=int(coil)
-                        i=1
-                        if int(coil) == int(coils[-1]):
-                            rr = client.read_coils(int(coil_start),i,unit=unit_id)
-                            subprocess.Popen(['/usr/bin/php',mymodbus,'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id),'type=coils','sortie=4','inputs='+str(list(range(int(coil_start),int(coil_start)+i))),'values='+str(rr.bits[:i])])
+        #lecture Discrete_inputs (2)
 
-        if 'dis' in globals() :
-            di_start=dis[0]
+        if (args.dis) != None :
+            List_dis = (args.dis).split(',')
+            di_start=List_dis[0]
             i=1
-            for di in dis:
+            for di in List_dis:
                 if int(di) == int(di_start):
                     di_previous=di_start
-                    if int(di) == int(dis[-1]):
-                        rr = client.read_discrete_inputs(int(di_start),i,unit=unit_id)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id),'type=discrete_inputs','sortie=1','inputs='+str(int(di_start)),'values='+str(rr.bits[:i])])
+                    if int(di) == int(List_dis[-1]):
+                        rr = client.read_discrete_inputs(int(di_start),i,unit=args.unid)
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'add='+args.host,'unit='+str(args.unid),'eqid='+str(args.eqid),'type=discrete_inputs','sortie=1','inputs='+str(int(di_start)),'values='+str(rr.bits[:i])])
+                        print(int(di_start))
                 elif int(di) == int(di_previous) + 1 :
                     di_previous=int(di)
                     i += 1
-                    if int(di) == int(dis[-1]):
-                        rr = client.read_discrete_inputs(int(di_start),i,unit=unit_id)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id),'type=discrete_inputs','sortie=2','inputs='+str(list(range(int(di_start),int(di_start)+i))),'values='+str(rr.bits[:i])])
+                    if int(di) == int(List_dis[-1]):
+                        rr = client.read_discrete_inputs(int(di_start),i,unit=args.unid)
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'add='+args.host,'unit='+str(args.unid),'eqid='+str(args.eqid),'type=discrete_inputs','sortie=2','inputs='+str(list(range(int(di_start),int(di_start)+i))),'values='+str(rr.bits[:i])])
                 else :
                     if int(di) != int(di_previous):
-                        rr = client.read_discrete_inputs(int(di_start),i,unit=unit_id)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id),'type=discrete_inputs','sortie=3','inputs='+str(list(range(int(di_start),int(di_start)+i))),'values='+str(rr.bits[:i])])
+                        rr = client.read_discrete_inputs(int(di_start),i,unit=args.unid)
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'add='+args.host,'unit='+str(args.unid),'eqid='+str(args.eqid),'type=discrete_inputs','sortie=3','inputs='+str(list(range(int(di_start),int(di_start)+i))),'values='+str(rr.bits[:i])])
                         di_start=int(di)
                         di_previous=int(di)
                         i=1
-                        if int(di) == int(dis[-1]):
-                            rr = client.read_discrete_inputs(int(di_start),i,unit=unit_id)
-                            subprocess.Popen(['/usr/bin/php',mymodbus,'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id),'type=discrete_inputs','sortie=4','inputs='+str(list(range(int(di_start),int(di_start)+i))),'values='+str(rr.bits[:i])])
+                        if int(di) == int(List_dis[-1]):
+                            rr = client.read_discrete_inputs(int(di_start),i,unit=args.unid)
+                            subprocess.Popen(['/usr/bin/php',mymodbus,'add='+args.host,'unit='+str(args.unid),'eqid='+str(args.eqid),'type=discrete_inputs','sortie=4','inputs='+str(list(range(int(di_start),int(di_start)+i))),'values='+str(rr.bits[:i])])
+                            print('sortie4')
 
-        if 'irs' in globals() :
-            ir_start=irs[0]
+
+        #lecture holding register (3)
+                            
+        if (args.hrs) != None :
+            List_hrs = (args.hrs).split(',')
+            hreg_first=List_hrs[0]
             i=1
-            for ir in irs:
+            for table in List_hrs:
+                if int(table) == int(hreg_first):
+                    hr_previous=hreg_first
+                    if int(table) == int(List_hrs[-1]):
+                        rr = client.read_holding_registers(int(hreg_first),i,unit=args.unid)
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'add='+args.host,'unit='+str(args.unid),'eqid='+str(args.eqid),'type=holding_registers','sortie=1','inputs='+str(int(hreg_first)),'values='+str(rr.registers)])
+                elif int(table) == int(hr_previous)+1:
+                    hr_previous=int(table)
+                    i += 1
+                    if int(table) == int(List_hrs[-1]):
+                        rr = client.read_holding_registers(int(hreg_first),i,unit=args.unid)
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'add='+args.host,'unit='+str(args.unid),'eqid='+str(args.eqid),'type=holding_registers','sortie=2','inputs='+str(list(range(int(hreg_first),int(hreg_first)+i))),'values='+str(rr.registers)])
+                else :
+                    if int(table) != int(hr_previous):
+                    	rr = client.read_holding_registers(int(hreg_first),i,unit=args.unid)
+                    	subprocess.Popen(['/usr/bin/php',mymodbus,'add='+args.host,'unit='+str(args.unid),'eqid='+str(args.eqid),'type=holding_registers','sortie=3','inputs='+str(list(range(int(hreg_first),int(hreg_first)+i))),'values='+str(rr.registers)])
+                    	hreg_first=int(table)
+                    	hr_previous=int(table)
+                    	i=1
+                    	if int(table) == int(List_hrs[-1]):
+                            rr = client.read_holding_registers(int(hreg_first),i,unit=args.unid)
+                            subprocess.Popen(['/usr/bin/php',mymodbus,'add='+args.host,'unit='+str(args.unid),'eqid='+str(args.eqid),'type=holding_registers','sortie=4','inputs='+str(list(range(int(hreg_first),int(hreg_first)+i))),'values='+str(rr.registers)])
+
+        #lecture coils (1)
+                        	
+        if (args.coils) != None :
+            List_coils = (args.coils).split(',')
+            coil_start=List_coils[0]
+            i=1
+            for coil in List_coils:
+                if int(coil) == int(coil_start):
+                    coil_previous=coil_start
+                    if int(coil) == int(List_coils[-1]):
+                        rr = client.read_coils(int(coil_start),i,unit=args.unid)
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'add='+args.host,'unit='+str(args.unid),'eqid='+str(args.eqid),'type=coils','sortie=1','inputs='+str(int(coil_start)),'values='+str(rr.bits[:i])])
+                elif int(coil) == int(coil_previous) + 1 :
+                    coil_previous=int(coil)
+                    i += 1
+                    if int(coil) == int(List_coils[-1]):
+                        rr = client.read_coils(int(coil_start),i,unit=args.unid)
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'add='+args.host,'unit='+str(args.unid),'eqid='+str(args.eqid),'type=coils','sortie=2','inputs='+str(list(range(int(coil_start),int(coil_start)+i))),'values='+str(rr.bits[:i])])
+                else :
+                    if int(coil) != int(coil_previous):
+                        rr = client.read_coils(int(coil_start),i,unit=args.unid)
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'add='+args.host,'unit='+str(args.unid),'eqid='+str(args.eqid),'type=coils','sortie=3','inputs='+str(list(range(int(coil_start),int(coil_start)+i))),'values='+str(rr.bits[:i])])
+                        coil_start=int(coil)
+                        coil_previous=int(coil)
+                        i=1
+                        if int(coil) == int(List_coils[-1]):
+                            rr = client.read_coils(int(coil_start),i,unit=args.unid)
+                            subprocess.Popen(['/usr/bin/php',mymodbus,'add='+args.host,'unit='+str(args.unid),'eqid='+str(args.eqid),'type=coils','sortie=4','inputs='+str(list(range(int(coil_start),int(coil_start)+i))),'values='+str(rr.bits[:i])])
+
+        #lecture input registers
+                            
+        if (args.irs) != None :
+            List_irs = (args.irs).split(',')
+            ir_start=List_irs[0]
+            i=1
+            for ir in List_irs:
                 if int(ir) == int(ir_start):
                     ir_previous=ir_start
-                    if int(ir) == int(irs[-1]):
-                        rr = client.read_input_registers(int(ir_start),i,unit=unit_id)
+                    if int(ir) == int(List_irs[-1]):
+                        rr = client.read_input_registers(int(ir_start),i,unit=args.unid)
                         #assert(not rr.isError()
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id),'type=input_registers','sortie=1','inputs='+str(int(ir_start)),'values='+str(rr.registers)])
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'add='+args.host,'unit='+str(args.unid),'eqid='+str(args.eqid),'type=input_registers','sortie=1','inputs='+str(int(ir_start)),'values='+str(rr.registers)])
                 elif int(ir) == int(ir_previous) + 1 :
                     ir_previous=int(ir)
                     i += 1
-                    if int(ir) == int(irs[-1]):
-                        rr = client.read_input_registers(int(ir_start),i,unit=unit_id)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id),'type=input_registers','sortie=2','inputs='+str(list(range(int(ir_start),int(ir_start)+i))),'values='+str(rr.registers)])
+                    if int(ir) == int(List_irs[-1]):
+                        rr = client.read_input_registers(int(ir_start),i,unit=args.unid)
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'add='+args.host,'unit='+str(args.unid),'eqid='+str(args.eqid),'type=input_registers','sortie=2','inputs='+str(list(range(int(ir_start),int(ir_start)+i))),'values='+str(rr.registers)])
                 else :
                     if int(ir) != int(ir_previous):
-                        rr = client.read_input_registers(int(ir_start),i,unit=unit_id)
-                        subprocess.Popen(['/usr/bin/php',mymodbus,'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id),'type=input_registers','sortie=3','inputs='+str(list(range(int(ir_start),int(ir_start)+i))),'values='+str(rr.registers)])
+                        rr = client.read_input_registers(int(ir_start),i,unit=args.unid)
+                        subprocess.Popen(['/usr/bin/php',mymodbus,'add='+args.host,'unit='+str(args.unid),'eqid='+str(args.eqid),'type=input_registers','sortie=3','inputs='+str(list(range(int(ir_start),int(ir_start)+i))),'values='+str(rr.registers)])
                         ir_start=int(ir)
                         ir_previous=int(ir)
                         i=1
-                        if int(ir) == int(irs[-1]):
-                            rr = client.read_input_registers(int(ir_start),i,unit=unit_id)
-                            subprocess.Popen(['/usr/bin/php',mymodbus,'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id),'type=input_registers','sortie=4','inputs='+str(list(range(int(ir_start),int(ir_start)+i))),'values='+str(rr.registers)])
+                        if int(ir) == int(List_irs[-1]):
+                            rr = client.read_input_registers(int(ir_start),i,unit=args.unid)
+                            subprocess.Popen(['/usr/bin/php',mymodbus,'add='+args.host,'unit='+str(args.unid),'eqid='+str(args.eqid),'type=input_registers','sortie=4','inputs='+str(list(range(int(ir_start),int(ir_start)+i))),'values='+str(rr.registers)])
 
-        if 'sign' in globals() : #lecture des valeurs signées
+
+        #lecture des valeurs signées
+                            
+        if (args.sign) != None :
+            List_sign = (args.sign).split(',')
             i = 1
-            int_first=sign[0]
-            for sign_16 in sign:
-                rr = client.read_holding_registers(int(sign_16),i,unit=unit_id)
+            int_first=List_sign[0]
+            for sign_16 in List_sign:
+                rr = client.read_holding_registers(int(sign_16),i,unit=args.unid)
                 #assert(not rr.isError())
                 decoder = BinaryPayloadDecoder.fromRegisters(rr.registers,byteorder=Endian.Big,wordorder=Endian.Little)
                 #print (int (decoder.decode_16bit_int()))
-                subprocess.Popen(['/usr/bin/php',mymodbus,'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id),'type=sign','sortie=1','inputs='+str(int(sign_16)),'values='+str(int(decoder.decode_16bit_int()))])
+                subprocess.Popen(['/usr/bin/php',mymodbus,'add='+args.host,'unit='+str(args.unid),'eqid='+str(args.eqid),'type=sign','sortie=1','inputs='+str(int(sign_16)),'values='+str(int(decoder.decode_16bit_int()))])
 
+        #lecture des valeurs à virgules
 
-        if 'virg' in globals() : #lecture des valeurs à virgules
+        if (args.virg) != None :
+            List_virg = (args.virg).split(',')
             i= 2   
-            virg_first=virg[0]
-            for virg_reg in virg:
-                rr = client.read_holding_registers(int(virg_reg),i,unit=unit_id)
+            virg_first=List_virg[0]
+            for virg_reg in List_virg:
+                rr = client.read_holding_registers(int(virg_reg),i,unit=args.unid)
                 decoder = BinaryPayloadDecoder.fromRegisters(rr.registers,byteorder=Endian.Big,wordorder=Endian.Little)
-                subprocess.Popen(['/usr/bin/php',mymodbus,'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id),'type=virg','sortie=1','inputs='+str(int(virg_reg)),'values='+str(float(round(decoder.decode_32bit_float(),2)))])
+                subprocess.Popen(['/usr/bin/php',mymodbus,'add='+args.host,'unit='+str(args.unid),'eqid='+str(args.eqid),'type=virg','sortie=1','inputs='+str(int(virg_reg)),'values='+str(float(round(decoder.decode_32bit_float(),2)))])
 
-        if 'swapi32' in globals() : #lecture des imputregisterwap
+        #lecture des imputregisters swapées
+
+        if (args.swapi32) != None :
+            List_swapi32 = (args.swapi32).split(',')
             i= 2   
-            swapi32_first=swapi32[0]
-            for swapi32_reg in swapi32:
-                rr = client.read_input_registers(int(swapi32_reg),i,unit=unit_id)
+            swapi32_first=List_swapi32[0]
+            for swapi32_reg in List_swapi32:
+                rr = client.read_input_registers(int(swapi32_reg),i,unit=args.unid)
                 decoder = BinaryPayloadDecoder.fromRegisters(rr.registers,byteorder=Endian.Big,wordorder=Endian.Big)
-                subprocess.Popen(['/usr/bin/php',mymodbus,'add='+host,'unit='+str(unit_id),'eqid='+str(eq_id),'type=swapi32','sortie=1','inputs='+str(int(swapi32_reg)),'values='+str(float(round(decoder.decode_32bit_float(),2)))])
+                subprocess.Popen(['/usr/bin/php',mymodbus,'add='+args.host,'unit='+str(args.unid),'eqid='+str(args.eqid),'type=swapi32','sortie=1','inputs='+str(int(swapi32_reg)),'values='+str(float(round(decoder.decode_32bit_float(),2)))])
 
         # ----------------------------------------------------------------------- #
         # close the client
         # ----------------------------------------------------------------------- #
-        if keepopen == 0 :
+        if args.keepopen == 0 :
             client.close()
-        time.sleep(polling)
+        time.sleep(args.polling)
         
     
 # start polling thread

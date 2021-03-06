@@ -71,6 +71,7 @@ class mymodbus extends eqLogic {
 				$mymodbus_unit = $mymodbus->getConfiguration('unit');
 				$mymodbus_protocol = $mymodbus->getConfiguration('protocol');
 				$mymodbus_keepopen = $mymodbus->getConfiguration('keepopen');
+				$mymodbus_baudrate = $mymodbus->getConfiguration('baudrate');
               	// Equipement commun tcpip
               	if($mymodbus_protocol== "wago" || $mymodbus_protocol== "crouzet_m3" || $mymodbus_protocol== "adam" || $mymodbus_protocol== "logo"  ){
 					$mymodbus_protocold="tcpip";
@@ -94,7 +95,11 @@ class mymodbus extends eqLogic {
 					throw new Exception(__('La requetes polling ne peut etre vide',__FILE__));
 				}
 				//explod
-		    	$request='-h '.$mymodbus_ip.' -p '.$mymodbus_port.' --unit_id='.$mymodbus_unit.' --polling='.$mymodbus_polling.' --keepopen='.$mymodbus_keepopen.' --protocol='.$mymodbus_protocold.' --eqid='.$mymodbus_id ;
+				if($mymodbus_protocold== "rtu" ){
+					$request='--host='.$mymodbus_ip.' --port='.$mymodbus_port.' --unid='.$mymodbus_unit.' --polling='.$mymodbus_polling.' --protocol='.$mymodbus_protocold.' --eqid='.$mymodbus_id.' --baudrate='.$mymodbus_baudrate ;
+              	} else {
+                	$request='--host='.$mymodbus_ip.' --port='.$mymodbus_port.' --unid='.$mymodbus_unit.' --polling='.$mymodbus_polling.' --keepopen='.$mymodbus_keepopen.' --protocol='.$mymodbus_protocold.' --eqid='.$mymodbus_id ;
+            	}
 		        $mymodbus_path = realpath(dirname(__FILE__) . '/../../ressources');
 				foreach ($mymodbus->getCmd('info') as $cmd) {
 					if($cmd->getConfiguration('type')=='coils'){
@@ -146,7 +151,7 @@ class mymodbus extends eqLogic {
 					$request.=' --swapi32='.implode(',',$swapi32);
 				}
 		        $cmd = 'nice -n 19 /usr/bin/python3 ' . $mymodbus_path . '/mymodbus_demond.py ' . $request;
-		        log::add('mymodbus', 'info', 'Lancement du démon mymodbus : ' . $cmd);
+		        log::add('mymodbus', 'info', 'Lancement du démon mymodbus : ' . $cmd);				
 		        $result = exec('nohup ' . $cmd . ' >> ' . log::getPathToLog('mymodbus') . ' 2>&1 &');
 		        if (strpos(strtolower($result), 'error') !== false || strpos(strtolower($result), 'traceback') !== false) {
 		            log::add('mymodbus', 'error', $result);
@@ -253,6 +258,7 @@ class mymodbus extends eqLogic {
     $return = array();
 	$return['progress_file'] = jeedom::getTmpFolder('mymodbus') . '/dependance';
     $return['state'] = 'ok';
+	if (exec(system::getCmdSudo() . 'pip3 freeze | grep -E "pymodbus==2.5.0" | wc -l') == 0) $return['state'] = 'nok';
 	if (exec(system::getCmdSudo() . 'pip3 list | grep -E "pymodbus" | wc -l') == 0) $return['state'] = 'nok';
 	if (exec(system::getCmdSudo() . 'pip3 list | grep -E "six" | wc -l') == 0) $return['state'] = 'nok';
 	if (exec(system::getCmdSudo() . 'pip3 list | grep -E "pyserial" | wc -l') == 0) $return['state'] = 'nok';
@@ -382,6 +388,8 @@ class mymodbusCmd extends cmd {
 		$mymodbus_port = $mymodbus->getConfiguration('port');
 		$mymodbus_unit = $mymodbus->getConfiguration('unit');
 		$mymodbus_location = $this->getConfiguration('location');
+		$mymodbus_protocol = $mymodbus->getConfiguration('protocol');
+		$mymodbus_baudrate = $mymodbus->getConfiguration('baudrate');
 		$mymodbus_path = realpath(dirname(__FILE__) . '/../../ressources');
 		$response = true;
 		if($mymodbus_unit==""){
@@ -389,6 +397,15 @@ class mymodbusCmd extends cmd {
 		}
 		if ($this->type == 'action') {
 			$value="";
+			
+		if($mymodbus_protocol!= "rtu"){
+					$mymodbus_baudrate=0;
+              	}
+				
+		if($mymodbus_protocol== "wago" || $mymodbus_protocol== "crouzet_m3" || $mymodbus_protocol== "adam" || $mymodbus_protocol== "logo"  ){
+					$mymodbus_protocol="tcpip";
+              	}
+
 		try {
 			if($this->getConfiguration('type')=='coils'){
 				$type_input='--wsc=';
@@ -426,12 +443,12 @@ class mymodbusCmd extends cmd {
 						}
                         break;
             }
-			log::add('mymodbus', 'info', 'Debut de l action '.'/usr/bin/python ' . $mymodbus_path . '/mymodbus_write.py -h '.$mymodbus_ip.' -p '.$mymodbus_port.' --unit_id='.$mymodbus_unit.' ' . $type_input . ''.$mymodbus_location.' --value='.$value.' 2>&1');
-			$result = shell_exec('/usr/bin/python3 ' . $mymodbus_path . '/mymodbus_write.py -h '.$mymodbus_ip.' -p '.$mymodbus_port.' --unit_id='.$mymodbus_unit.' ' . $type_input . ''.$mymodbus_location.' --value='.$value.' 2>&1');
+			log::add('mymodbus', 'info', 'Debut de l action '.'/usr/bin/python3 ' . $mymodbus_path . '/mymodbus_write.py --host='.$mymodbus_ip.' --protocol='.$mymodbus_protocol.' --port='.$mymodbus_port.' --baudrate='.$mymodbus_baudrate.' --unid='.$mymodbus_unit.' ' . $type_input . ''.$mymodbus_location.' --value='.$value.' 2>&1');
+			$result = shell_exec('/usr/bin/python3 ' . $mymodbus_path . '/mymodbus_write.py --host='.$mymodbus_ip.' --protocol='.$mymodbus_protocol.' --port='.$mymodbus_port.' --baudrate='.$mymodbus_baudrate.' --unid='.$mymodbus_unit.' ' . $type_input . ''.$mymodbus_location.' --value='.$value.' 2>&1');
 			if($return_value<>""){
 				sleep(1);
-				log::add('mymodbus', 'info', 'Debut de l action '.'/usr/bin/python ' . $mymodbus_path . '/mymodbus_write.py -h '.$mymodbus_ip.' -p '.$mymodbus_port.'--unit_id='.$mymodbus_unit.' ' . $type_input . ''.$mymodbus_location.' --value='.$return_value.' 2>&1');
-				$result = shell_exec('/usr/bin/python3 ' . $mymodbus_path . '/mymodbus_write.py -h '.$mymodbus_ip.' -p '.$mymodbus_port.' --unit_id='.$mymodbus_unit.' ' . $type_input . ''.$mymodbus_location.' --value='.$return_value.' 2>&1');
+				log::add('mymodbus', 'info', 'Debut de l action retour'.'/usr/bin/python3 ' . $mymodbus_path . '/mymodbus_write.py --host='.$mymodbus_ip.' --protocol='.$mymodbus_protocol.' --port='.$mymodbus_port.' --baudrate='.$mymodbus_baudrate.' --unid='.$mymodbus_unit.' ' . $type_input . ''.$mymodbus_location.' --value='.$return_value.' 2>&1');
+				$result = shell_exec('/usr/bin/python3 ' . $mymodbus_path . '/mymodbus_write.py --host='.$mymodbus_ip.' --protocol='.$mymodbus_protocol.' --port='.$mymodbus_port.' --baudrate='.$mymodbus_baudrate.' --unid='.$mymodbus_unit.' ' . $type_input . ''.$mymodbus_location.' --value='.$return_value.' 2>&1');
 			}
 			return true;
 		} catch (Exception $e)  {
