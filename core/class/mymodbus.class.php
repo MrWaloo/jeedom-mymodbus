@@ -26,12 +26,32 @@ class mymodbus extends eqLogic {
 
     /*     * ***********************Methode static*************************** */
 
-    /*
-     * Fonction exécutée automatiquement toutes les minutes par Jeedom
-      public static function cron() {
+    
+    //public static $_widgetPossibility = array('custom' => true);
+	public static $_version = '2.0';
+  
+  
+    //* Fonction exécutée automatiquement toutes les minutes par Jeedom
+    public static function cron() {
+		  
+		//SI Restart des Démons
+		
+		if (config::byKey('ActiveRestart', 'mymodbus', true)){
+          	$deamonInfo = self::deamon_info();
+			$deamonsRunning = self::health();
+          	$deamonsRunning = $deamonsRunning[0];  // peut importe l'index  0 
+			
+			// Si Healt Nok et que le demon principal est OK alors Restart 
+        	if (($deamonsRunning['result'] == 'NOK') and ($deamonInfo['state'] == 'ok')){
+				log::add('mymodbus', 'info', 'restart by Health');
+				self::deamon_stop();
+				sleep(2);
+				self::deamon_start();
+			}
+		}
+	}
 
-      }
-     */
+
 
 
     /*
@@ -199,12 +219,12 @@ class mymodbus extends eqLogic {
 				$return['state'] = 'nok';
 				$return['state'] = false;
 				$return['result'] = 'NOK';
-				$return['advice'] = __('Au moins un démon ne tourne pas ! Voir la page santé dans la configuration de MyModbus.', __FILE__);
+				$return['advice'] = __('Au moins un démon ne tourne pas ! Voir la page santé dans la configuration de MyModbus.', __FILE__);	
 				break;
 
-        } else {
-		     $return['state'] = 'ok';
-		}
+			} else {
+				$return['state'] = 'ok';
+			}
 
 		}
 		return array($return);
@@ -219,8 +239,6 @@ class mymodbus extends eqLogic {
 		$return = array();
 		$return['state'] = 'nok';
 	    $return['launchable'] = 'ok';
-
-
 		$result = exec("ps -eo pid,command | grep 'mymodbus_demond.py' | grep -v grep | awk '{print $1}'");
 		if ($result == 0) {
 
