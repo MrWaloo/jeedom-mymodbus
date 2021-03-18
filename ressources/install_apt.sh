@@ -1,6 +1,6 @@
 echo "++++++++++++++++++++++++++++++++++++++"
 echo "+  MyModbus Install dependancies"
-echo "+  v1.4"
+echo "+  v1.5"
 echo "+  By Bebel27"
 echo "++++++++++++++++++++++++++++++++++++++"
 
@@ -30,9 +30,10 @@ sudo apt-get -y install python{,3}-pip python{,3}-setuptools
 echo 40 > ${PROGRESS_FILE}
 echo "-"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-echo "Installation dependance  pypModbus 2.5.0"
+echo "Installation dependance  pypModbus 2.4.0"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-sudo pip3 install pyModbus==2.5.0
+sudo pip3 uninstall pyModbus==2.5.0
+sudo pip3 install pyModbus==2.4.0
 echo 70 > ${PROGRESS_FILE}
 echo "-"
 #echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"

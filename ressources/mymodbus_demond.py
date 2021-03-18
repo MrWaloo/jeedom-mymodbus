@@ -64,21 +64,23 @@ args = parser.parse_args()
 #if args.verbosity:
 #    print("verbosity turned on")
     
-if args.protocol == 'rtu':
-    from pymodbus.client.sync import ModbusSerialClient as ModbusClient
-    client = ModbusClient(method='rtu', port=args.port, timeout=10,stopbits = 1, bytesize = 8, parity = 'N', baudrate= args.baudrate)
-    
-if args.protocol == 'tcpip':
-    from pymodbus.client.sync import ModbusTcpClient as ModbusClient
-    client = ModbusClient(host=args.host, port=args.port, retries=3, retry_on_empty=True, timeout=10)
-    
-if args.protocol == 'rtuovertcp':
-    from pymodbus.client.sync import ModbusTcpClient as ModbusClient
-    from pymodbus.transaction import ModbusRtuFramer as ModbusFramer
-    client = ModbusClient(host=args.host, port=args.port, framer=ModbusFramer)
+
 
 # mymodbus polling thread
 def polling_thread():
+
+    if args.protocol == 'rtu':
+        from pymodbus.client.sync import ModbusSerialClient as ModbusClient
+        client = ModbusClient(method='rtu', port=args.port, timeout=10,stopbits = 1, bytesize = 8, parity = 'N', baudrate= args.baudrate)
+    
+    if args.protocol == 'tcpip':
+        from pymodbus.client.sync import ModbusTcpClient as ModbusClient
+        client = ModbusClient(host=args.host, port=args.port, timeout=10)
+    
+    if args.protocol == 'rtuovertcp':
+        from pymodbus.client.sync import ModbusTcpClient as ModbusClient
+        from pymodbus.transaction import ModbusRtuFramer as ModbusFramer
+        client = ModbusClient(host=args.host, port=args.port, framer=ModbusFramer)
   
     while True:
         client.connect()
@@ -112,7 +114,6 @@ def polling_thread():
                         if int(di) == int(List_dis[-1]):
                             rr = client.read_discrete_inputs(int(di_start),i,unit=args.unid)
                             subprocess.Popen(['/usr/bin/php',mymodbus,'add='+args.host,'unit='+str(args.unid),'eqid='+str(args.eqid),'type=discrete_inputs','sortie=4','inputs='+str(list(range(int(di_start),int(di_start)+i))),'values='+str(rr.bits[:i])])
-                            print('sortie4')
 
 
         #lecture holding register (3)
@@ -126,22 +127,26 @@ def polling_thread():
                     hr_previous=hreg_first
                     if int(table) == int(List_hrs[-1]):
                         rr = client.read_holding_registers(int(hreg_first),i,unit=args.unid)
+                        assert(not rr.isError())     # test that we are not an error
                         subprocess.Popen(['/usr/bin/php',mymodbus,'add='+args.host,'unit='+str(args.unid),'eqid='+str(args.eqid),'type=holding_registers','sortie=1','inputs='+str(int(hreg_first)),'values='+str(rr.registers)])
                 elif int(table) == int(hr_previous)+1:
                     hr_previous=int(table)
                     i += 1
                     if int(table) == int(List_hrs[-1]):
                         rr = client.read_holding_registers(int(hreg_first),i,unit=args.unid)
+                        assert(not rr.isError())     # test that we are not an error
                         subprocess.Popen(['/usr/bin/php',mymodbus,'add='+args.host,'unit='+str(args.unid),'eqid='+str(args.eqid),'type=holding_registers','sortie=2','inputs='+str(list(range(int(hreg_first),int(hreg_first)+i))),'values='+str(rr.registers)])
                 else :
                     if int(table) != int(hr_previous):
                     	rr = client.read_holding_registers(int(hreg_first),i,unit=args.unid)
+                    	assert(not rr.isError())     # test that we are not an error
                     	subprocess.Popen(['/usr/bin/php',mymodbus,'add='+args.host,'unit='+str(args.unid),'eqid='+str(args.eqid),'type=holding_registers','sortie=3','inputs='+str(list(range(int(hreg_first),int(hreg_first)+i))),'values='+str(rr.registers)])
                     	hreg_first=int(table)
                     	hr_previous=int(table)
                     	i=1
                     	if int(table) == int(List_hrs[-1]):
                             rr = client.read_holding_registers(int(hreg_first),i,unit=args.unid)
+                            assert(not rr.isError())     # test that we are not an error
                             subprocess.Popen(['/usr/bin/php',mymodbus,'add='+args.host,'unit='+str(args.unid),'eqid='+str(args.eqid),'type=holding_registers','sortie=4','inputs='+str(list(range(int(hreg_first),int(hreg_first)+i))),'values='+str(rr.registers)])
 
         #lecture coils (1)
