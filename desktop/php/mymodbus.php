@@ -51,8 +51,8 @@ foreach ($eqLogics as $eqLogic) {
 	$opacity = ($eqLogic->getIsEnable()) ? '' : 'disableCard';
 	echo '<div class="eqLogicDisplayCard cursor '.$opacity.'" data-eqLogic_id="' . $eqLogic->getId() . '">';
 	$alternateImg = $eqLogic->getConfiguration('protocol');
-	if (file_exists(dirname(__FILE__) . '/../../ressources/images/' . $alternateImg ._icon . '.png')) {
-		echo '<img class="lazy" src="plugins/mymodbus/ressources/images/' . $alternateImg ._icon . '.png"/>';
+	if (file_exists(dirname(__FILE__) . '/../../ressources/images/' . $alternateImg .'_icon.png')) {
+		echo '<img class="lazy" src="plugins/mymodbus/ressources/images/' . $alternateImg .'_icon.png"/>';
 	} else {	
 	echo '<img src="' . $plugin->getPathImgIcon() . '"/>';
 	}
