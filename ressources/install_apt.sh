@@ -34,6 +34,7 @@ echo "Installation dependance  pypModbus 2.4.0"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 sudo pip3 uninstall pyModbus==2.5.0
 sudo pip3 install pyModbus==2.4.0
+sudo pip3 install pyserial==3.3
 echo 70 > ${PROGRESS_FILE}
 echo "-"
 #echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
