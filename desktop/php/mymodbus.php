@@ -32,7 +32,7 @@ $deamonRunning = mymodbus::deamon_info();
  		<br>
 		<span>{{Documentation}}</span>
 		</div>
-  <div class="cursor pluginAction" data-action="openLink" data-location="https://community.jeedom.com/t/plugin-<?=$plugin->getId()?>" >
+  <div class="cursor pluginAction" data-action="openLink" data-location="https://community.jeedom.com/t/plugin-<?=$plugin->getId()?>/9395" >
          <i class="fas fa-comments" style="font-size : 6em;color:#0F9DE8;"></i>
          <br>
          <span>{{Commmunity}}</span>
@@ -41,6 +41,11 @@ $deamonRunning = mymodbus::deamon_info();
 				<i class="fas fa-medkit"style="font-size : 6em;color:#0F9DE8;"></i>
 				<br/>
 				<span>{{Santé}}</span>
+			</div>
+	<div class="cursor logoSecondary" id="bt_templatesmymodbus">
+				<i class="fas fa-cubes"style="font-size : 6em;color:#0F9DE8;"></i>
+				<br/>
+				<span>{{Templates}}</span>
 			</div>
   </div>
   <legend><i class="fas fa-table"></i> {{Mes équipements}}</legend>
@@ -51,8 +56,8 @@ foreach ($eqLogics as $eqLogic) {
 	$opacity = ($eqLogic->getIsEnable()) ? '' : 'disableCard';
 	echo '<div class="eqLogicDisplayCard cursor '.$opacity.'" data-eqLogic_id="' . $eqLogic->getId() . '">';
 	$alternateImg = $eqLogic->getConfiguration('protocol');
-	if (file_exists(dirname(__FILE__) . '/../../ressources/images/' . $alternateImg .'_icon.png')) {
-		echo '<img class="lazy" src="plugins/mymodbus/ressources/images/' . $alternateImg .'_icon.png"/>';
+	if (file_exists(dirname(__FILE__) . '/../../desktop/images/' . $alternateImg .'_icon.png')) {
+		echo '<img class="lazy" src="plugins/mymodbus/desktop/images/' . $alternateImg .'_icon.png"/>';
 	} else {	
 	echo '<img src="' . $plugin->getPathImgIcon() . '"/>';
 	}

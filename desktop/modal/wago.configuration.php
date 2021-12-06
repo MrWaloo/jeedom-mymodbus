@@ -21,7 +21,7 @@ if (!isConnect('admin')) {
 ?>
 <div class="form-group">
 	<div class="col-sm-3 form-group">
-		<img class="img_device" src="plugins/mymodbus/ressources/images/wago_icon.png" style="margin-left:20px;height : 100px;" />
+		<img class="img_device" src="plugins/mymodbus/desktop/images/wago_icon.png" style="margin-left:20px;height : 100px;" />
 	</div>
 </div>
 

@@ -14,8 +14,15 @@
  * along with Jeedom. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-$("#table_cmd").sortable({axis: "y", cursor: "move", items: ".cmd", placeholder: "ui-state-highlight", tolerance: "intersect", forcePlaceholderSize: true});
+/* Permet la réorganisation des commandes dans l'équipement */
+$("#table_cmd").sortable({
+  axis: "y",
+  cursor: "move",
+  items: ".cmd",
+  placeholder: "ui-state-highlight",
+  tolerance: "intersect",
+  forcePlaceholderSize: true
+});
 $("#table_mymodbusFilters").sortable({axis: "y", cursor: "move", items: ".filter", placeholder: "ui-state-highlight", tolerance: "intersect", forcePlaceholderSize: true});
 /*
  * Fonction pour l'ajout de commande, appellé automatiquement par plugin.template
@@ -38,7 +45,10 @@ $('.bt_showNoteManagement').off('click').on('click', function () {
   $('#md_modal').dialog({title: "{{Notes}}"});
   $("#md_modal").load('index.php?v=d&modal=note.manager').dialog('open');
 });
-
+$('#bt_templatesmymodbus').on('click', function () {
+    $('#md_modal').dialog({title: "{{Gestion des templates d'équipements mymobus}}"});
+    $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=templates').dialog('open');
+});
 
  function prePrintEqLogic() {
     $('.eqLogicAttr[data-l1key=configuration][data-l2key=protocol]').off();
@@ -50,10 +60,10 @@ function  printEqLogic(_eqLogic) {
     if (isset(_eqLogic.configuration) && isset(_eqLogic.configuration.protocol)) {
         $('#div_protocolParameters').load('index.php?v=d&plugin=mymodbus&modal=' + _eqLogic.configuration.protocol + '.configuration', function () {
             $('body').setValues(_eqLogic, '.eqLogicAttr');
-            initCheckBox();
+            //initCheckBox();
             $('.eqLogicAttr[data-l1key=configuration][data-l2key=protocol]').off().on('change', function () {
                 $('#div_protocolParameters').load('index.php?v=d&plugin=mymodbus&modal=' + $(this).val() + '.configuration',function(){
-                    initCheckBox();
+                    //initCheckBox();
                 });
             });
             modifyWithoutSave = false;
@@ -62,7 +72,7 @@ function  printEqLogic(_eqLogic) {
     } else {
         $('.eqLogicAttr[data-l1key=configuration][data-l2key=protocol]').on('change', function () {
             $('#div_protocolParameters').load('index.php?v=d&plugin=mymodbus&modal=' + $(this).val() + '.configuration',function(){
-                initCheckBox();
+                //initCheckBox();
             });
         });
         $.hideLoading();

@@ -143,6 +143,7 @@ def polling_thread():
                     	subprocess.Popen(['/usr/bin/php',mymodbus,'add='+args.host,'unit='+str(args.unid),'eqid='+str(args.eqid),'type=holding_registers','sortie=3','inputs='+str(list(range(int(hreg_first),int(hreg_first)+i))),'values='+str(rr.registers)])
                     	hreg_first=int(table)
                     	hr_previous=int(table)
+                    	time.sleep(0.1) #pause pour la pac 
                     	i=1
                     	if int(table) == int(List_hrs[-1]):
                             rr = client.read_holding_registers(int(hreg_first),i,unit=args.unid)
