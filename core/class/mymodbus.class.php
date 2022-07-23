@@ -276,7 +276,7 @@ class mymodbus extends eqLogic {
     $return = array();
 	$return['progress_file'] = jeedom::getTmpFolder('mymodbus') . '/dependance';
     $return['state'] = 'ok';
-	if (exec(system::getCmdSudo() . 'pip3 freeze | grep -E "pymodbus==2.4.0" | wc -l') == 0) $return['state'] = 'nok';
+	if (exec(system::getCmdSudo() . 'pip3 freeze | grep -E "pymodbus==2.5.3" | wc -l') == 0) $return['state'] = 'nok';
 	//if (exec(system::getCmdSudo() . 'pip3 list | grep -E "pymodbus" | wc -l') == 0) $return['state'] = 'nok';
 	if (exec(system::getCmdSudo() . 'pip3 list | grep -E "six" | wc -l') == 0) $return['state'] = 'nok';
 	if (exec(system::getCmdSudo() . 'pip3 list | grep -E "pyserial" | wc -l') == 0) $return['state'] = 'nok';
