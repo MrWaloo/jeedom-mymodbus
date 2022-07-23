@@ -30,7 +30,7 @@ sudo apt-get -y install python{,3}-pip python{,3}-setuptools
 echo 40 > ${PROGRESS_FILE}
 echo "-"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-echo "Installation dependance  pypModbus 2.4.0"
+echo "Installation dependance  pypModbus"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 sudo pip3 install pyModbus==2.5.3
 #sudo pip3 install pyModbus==2.4.0
