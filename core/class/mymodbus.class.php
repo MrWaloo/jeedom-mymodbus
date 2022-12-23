@@ -146,7 +146,7 @@ class mymodbus extends eqLogic {
 					}
 					if($cmd->getConfiguration('type')=='swapi32'){
 						$swapi32[]=$cmd->getConfiguration('location');
-						log::add('mymodbus', 'info', 'imput_register_swap_32 trouvées :'.$cmd->getConfiguration('location'));
+						log::add('mymodbus', 'info', 'input_register_swap_32 trouvées :'.$cmd->getConfiguration('location'));
 					}
 				}
 				if($coils){
