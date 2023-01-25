@@ -8,7 +8,7 @@ $eqLogics = eqLogic::byType($plugin->getId());
 
 $deamonRunning = mymodbus::deamon_info();
     if ($deamonRunning['state'] != 'ok') {
-        echo '<div class="alert alert-danger">ATTENTION LE DEMON DE MYMODBUS NE TOURNE PAS , Avant de le lancer il faut toujours toujours avoir un équipement MyModbus de céer ! </div>';
+        echo '<div class="alert alert-danger">ATTENTION LE DEMON MYMODBUS NE TOURNE PAS , Avant de le lancer il faut toujours avoir un équipement MyModbus de céer ! </div>';
     }
 	
 ?>
@@ -18,15 +18,35 @@ $deamonRunning = mymodbus::deamon_info();
   <legend><i class="fas fa-cog"></i>  {{Gestion}}</legend>
   <div class="eqLogicThumbnailContainer">
       <div class="cursor eqLogicAction logoPrimary" data-action="add">
-        <i class="fas fa-plus-circle"></i>
+        <i class="fas fa-plus-circle"style="font-size : 6em;color:#0F9DE8;"></i>
         <br>
         <span>{{Ajouter}}</span>
     </div>
       <div class="cursor eqLogicAction logoSecondary" data-action="gotoPluginConf">
-      <i class="fas fa-wrench"></i>
+      <i class="fas fa-wrench"style="font-size : 6em;color:#0F9DE8;"></i>
     <br>
     <span>{{Configuration}}</span>
   </div>
+  <div class="cursor eqLogicAction logoSecondary" data-action="bt_docSpecific" >
+		<i class="fas fa-book"style="font-size : 6em;color:#0F9DE8;"></i>
+ 		<br>
+		<span>{{Documentation}}</span>
+		</div>
+  <div class="cursor pluginAction" data-action="openLink" data-location="https://community.jeedom.com/t/plugin-<?=$plugin->getId()?>/9395" >
+         <i class="fas fa-comments" style="font-size : 6em;color:#0F9DE8;"></i>
+         <br>
+         <span>{{Commmunity}}</span>
+        </div>
+  <div class="cursor logoSecondary" id="bt_healthmymodbus">
+				<i class="fas fa-medkit"style="font-size : 6em;color:#0F9DE8;"></i>
+				<br/>
+				<span>{{Santé}}</span>
+			</div>
+	<div class="cursor logoSecondary" id="bt_templatesmymodbus">
+				<i class="fas fa-cubes"style="font-size : 6em;color:#0F9DE8;"></i>
+				<br/>
+				<span>{{Templates}}</span>
+			</div>
   </div>
   <legend><i class="fas fa-table"></i> {{Mes équipements}}</legend>
 	   <input class="form-control" placeholder="{{Rechercher}}" id="in_searchEqlogic" />
@@ -35,7 +55,12 @@ $deamonRunning = mymodbus::deamon_info();
 foreach ($eqLogics as $eqLogic) {
 	$opacity = ($eqLogic->getIsEnable()) ? '' : 'disableCard';
 	echo '<div class="eqLogicDisplayCard cursor '.$opacity.'" data-eqLogic_id="' . $eqLogic->getId() . '">';
+	$alternateImg = $eqLogic->getConfiguration('protocol');
+	if (file_exists(dirname(__FILE__) . '/../../desktop/images/' . $alternateImg .'_icon.png')) {
+		echo '<img class="lazy" src="plugins/mymodbus/desktop/images/' . $alternateImg .'_icon.png"/>';
+	} else {	
 	echo '<img src="' . $plugin->getPathImgIcon() . '"/>';
+	}
 	echo '<br>';
 	echo '<span class="name">' . $eqLogic->getHumanName(true, true) . '</span>';
 	echo '</div>';
@@ -47,7 +72,7 @@ foreach ($eqLogics as $eqLogic) {
 <div class="col-xs-12 eqLogic" style="display: none;">
 		<div class="input-group pull-right" style="display:inline-flex">
 			<span class="input-group-btn">
-				<a class="btn btn-default btn-sm eqLogicAction roundedLeft" data-action="configure"><i class="fa fa-cogs"></i> {{Configuration avancée}}</a><a class="btn btn-default btn-sm eqLogicAction" data-action="copy"><i class="fas fa-copy"></i> {{Dupliquer}}</a><a class="btn btn-sm btn-success eqLogicAction" data-action="save"><i class="fas fa-check-circle"></i> {{Sauvegarder}}</a><a class="btn btn-danger btn-sm eqLogicAction roundedRight" data-action="remove"><i class="fas fa-minus-circle"></i> {{Supprimer}}</a>
+				<a class="btn btn-primary btn-sm bt_showNoteManagement roundedLeft"><i class="fas fa-file"></i> {{Notes}}</a><a class="btn btn-primary btn-sm bt_showExpressionTest roundedLeft"><i class="fas fa-check"></i> {{Expression}}</a><a <a class="btn btn-default btn-sm eqLogicAction" data-action="configure"><i class="fas fa-cogs"></i> {{Configuration avancée}}</a><a class="btn btn-default btn-sm eqLogicAction" data-action="copy"><i class="fas fa-copy"></i> {{Dupliquer}}</a><a class="btn btn-sm btn-success eqLogicAction" data-action="save"><i class="fas fa-check-circle"></i> {{Sauvegarder}}</a><a class="btn btn-danger btn-sm eqLogicAction roundedRight" data-action="remove"><i class="fas fa-minus-circle"></i> {{Supprimer}}</a>
 			</span>
 		</div>
   <ul class="nav nav-tabs" role="tablist">
@@ -59,6 +84,7 @@ foreach ($eqLogics as $eqLogic) {
     <div role="tabpanel" class="tab-pane active" id="eqlogictab">
       <br/>
     <form class="form-horizontal">
+	<legend><i class="fa fa-wrench"></i> {{Equipement :}}</legend>
         <fieldset>
             <div class="form-group">
                 <label class="col-sm-3 control-label">{{Nom de l'équipement}}</label>
@@ -98,53 +124,35 @@ foreach (jeeObject::all() as $object) {
 			<label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isEnable" checked/>{{Activer}}</label>
 			<label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isVisible" checked/>{{Visible}}</label>
 		</div>
+		<legend><i class="fa fa-list-alt"></i> {{Configuration :}}</legend>
 		<!--   ***********************************  -->
 	</div>
-       <div class="form-group">
-        <label class="col-sm-3 control-label">{{Adresse IP}}</label>
-        <div class="col-sm-3">
-            <input type="text" id="addr" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="addr" placeholder="{{Adresse IP}}"/>
-        </div>
-    </div>
-       <div class="form-group">
-        <label class="col-sm-3 control-label">{{Port}}</label>
-        <div class="col-sm-3">
-            <input type="text" id="port" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="port" placeholder="{{502}}"/>
-        </div>
-    </div>
-	   <div class="form-group">
-        <label class="col-sm-3 control-label">{{Unit ID}}</label>
-        <div class="col-sm-3">
-            <input type="text" id="port" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="unit" placeholder="{{Unit ID}}"/>
-        </div>
-	</div>	
-       <div class="form-group">
-        <label class="col-sm-3 control-label">{{Polling en secondes}}</label>
-        <div class="col-sm-3">
-            <input type="text" id="addr" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="polling" placeholder="{{Polling en secondes}}"/>
-        </div>
-	</div>
-	     <div class="form-group">
+	<div class="form-group">
          <label class="col-sm-3 control-label">{{Mode de connection}}</label>
             <div class="col-sm-3">
-                <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="mode">
-					<option value="tcpip">{{TCP/IP}}</option>
-					<option value="rtuovertcp">{{RTU over TCP}}</option>
-					<option value="rtu">{{RTU}}</option>
+                <select id="mode" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="protocol">
+					<option disabled selected value>-- {{Choisir un mode de connection}} --</option>
+					<?php
+					foreach (mymodbus::supportedProtocol() as $protocol) {
+					echo '<option value="' . $protocol . '">' . $protocol . '</option>';
+					}
+					?>
 				</select>
             </div>
-	    </div>
-	    <div class="form-group">
-		<label class="col-sm-3 control-label">{{Garder la connexion ouverte}}</label>
-		<div class="col-sm-9">
-			<label class="checkbox-inline"><input type="checkbox" id="keepopen" class="eqLogicAttr" data-l1key="configuration" data-l2key="keepopen"checked/>{{Activer}}</label>
-	    </div>
-        </div>		
-</fieldset>
-</form>
+    </div>
+
+       </fieldset>
+<div>
+      
+        <fieldset>
+		<div id="div_protocolParameters"></div>
+        </fieldset>
+    </form>
+</div>
 </div>
       <div role="tabpanel" class="tab-pane" id="commandtab">
-<a class="btn btn-success btn-sm cmdAction pull-right" data-action="add" style="margin-top:5px;"><i class="fa fa-plus-circle"></i> {{Ajouter une E/S modbus}}</a><br/><br/>
+<a class="btn btn-default btn-sm pull-right" id="bt_add_Info" style="margin-top:5px;"><i class="fas fa-plus-circle"></i> {{Ajouter une info}}</a>
+<a class="btn btn-default btn-sm  pull-right" id="bt_add_Action" style="margin-top:5px;"><i class="fas fa-plus-circle"></i> {{Ajouter une action}}</a><br/><br/>
 <table id="table_cmd" class="table table-bordered table-condensed">
     <thead>
         <tr>
@@ -154,14 +162,14 @@ foreach (jeeObject::all() as $object) {
             <th style="width: 150px;">{{Type E/S}}</th>
             <th style="width: 100px;">{{Adresse}}</th>
             <th>{{Parametre(s)}}</th>
-            <th>{{Options}}</th>
+			<th style="width: 100px;">{{Options}}</th>
+			<th>{{Configuration}}</th>
         </tr>
     </thead>
     <tbody>
     </tbody>
 </table>
 
-</div>
 </div>
 
 </div>
