@@ -15,6 +15,7 @@ import os
 import globals
 import subprocess
 from threading import Thread, Lock
+from six import PY3 as six_PY3
 
 # Conversion
 from pymodbus.constants import Endian
@@ -23,17 +24,13 @@ from pymodbus.payload import BinaryPayloadBuilder
 from pymodbus.exceptions import ParameterException
 
 try:
-	from jeedom.jeedom import *
+    from jeedom.jeedom import *
 except ImportError:
-	print ("Error: importing module from jeedom folder")
-	sys.exit(1)
+    print ("Error: importing module from jeedom folder")
+    sys.exit(1)
 
 #Compatibility
-from pymodbus.compat import IS_PYTHON3, PYTHON_VERSION
-if IS_PYTHON3 and PYTHON_VERSION >= (3, 4):
-    print("Version de python ok")
-    
-else:
+if not (six_PY3 and sys.version_info >= (3, 4)):
     sys.stderr("merci d'installer Python 3 ou de relancer les dépendances Mymodbus")
     sys.exit(1)
 
@@ -57,7 +54,7 @@ parser.add_argument("--pid", help="Pid file", type=str)
 parser.add_argument("--baudrate", type=int ,help="vitesse de com en bauds")
 parser.add_argument("--stopbits", type=int ,help="bit de stop 1 ou 2")
 parser.add_argument("--parity", type=int ,help="parity oui ou non ")
-parser.add_argument("--bytesize", type=int ,help="Taile du mot 7 ou 8 ")
+parser.add_argument("--bytesize", type=int ,help="Taille de l'octet 7 ou 8 bit")
 #-----------Fonctions---------------------------------------------
 parser.add_argument("--coils", type=str ,help="Type Coils")
 parser.add_argument("--dis", type=str, help="discrete imput")
@@ -73,9 +70,9 @@ parser.add_argument("--sign", type=str ,help="valeurs signées")
 args = parser.parse_args()
 
 if args.loglevel:
-	globals.log_level = args.loglevel
+    globals.log_level = args.loglevel
 if args.pid:
-	globals.pidfile = args.pid
+    globals.pidfile = args.pid
 
 jeedom_utils.set_log_level(globals.log_level)
 globals.pidfile = globals.pidfile+"_"+globals.type+".pid"
