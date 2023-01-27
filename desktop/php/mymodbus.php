@@ -14,10 +14,10 @@ if ($deamonRunning['state'] != 'ok') {
 ?>
 
 <div class="row row-overflow">
-	<!-- Page d'accueil du plugin -->
+    <!-- Page d'accueil du plugin -->
     <div class="col-xs-12 eqLogicThumbnailDisplay">
         <legend><i class="fas fa-cog"></i>  {{Gestion}}</legend>
-		<!-- Boutons de gestion du plugin -->
+        <!-- Boutons de gestion du plugin -->
         <div class="eqLogicThumbnailContainer">
             <div class="cursor eqLogicAction logoPrimary" data-action="add">
                 <i class="fas fa-plus-circle"style="font-size : 6em;color:#0F9DE8;"></i>
@@ -51,21 +51,21 @@ if ($deamonRunning['state'] != 'ok') {
             </div>
         </div>
         <legend><i class="fas fa-table"></i> {{Mes équipements}}</legend>
-		<?php
-		if (count($eqLogics) == 0) {
-			echo '<br><div class="text-center" style="font-size:1.2em;font-weight:bold;">{{Aucun équipement MyModbus trouvé, cliquer sur "Ajouter" pour commencer}}</div>';
-		} else {
-			// Champ de recherche
-			echo '<div class="input-group" style="margin:5px;">';
-			echo '<input class="form-control roundedLeft" placeholder="{{Rechercher}}" id="in_searchEqlogic">';
-			echo '<div class="input-group-btn">';
-			echo '<a id="bt_resetSearch" class="btn" style="width:30px"><i class="fas fa-times"></i></a>';
-			echo '<a class="btn roundedRight hidden" id="bt_pluginDisplayAsTable" data-coreSupport="1" data-state="0"><i class="fas fa-grip-lines"></i></a>';
-			echo '</div>';
-			echo '</div>';
-			// Liste des équipements du plugin
-			echo '<div class="eqLogicThumbnailContainer">';
-			foreach ($eqLogics as $eqLogic) {
+        <?php
+        if (count($eqLogics) == 0) {
+            echo '<br><div class="text-center" style="font-size:1.2em;font-weight:bold;">{{Aucun équipement MyModbus trouvé, cliquer sur "Ajouter" pour commencer}}</div>';
+        } else {
+            // Champ de recherche
+            echo '<div class="input-group" style="margin:5px;">';
+            echo '<input class="form-control roundedLeft" placeholder="{{Rechercher}}" id="in_searchEqlogic">';
+            echo '<div class="input-group-btn">';
+            echo '<a id="bt_resetSearch" class="btn" style="width:30px"><i class="fas fa-times"></i></a>';
+            echo '<a class="btn roundedRight hidden" id="bt_pluginDisplayAsTable" data-coreSupport="1" data-state="0"><i class="fas fa-grip-lines"></i></a>';
+            echo '</div>';
+            echo '</div>';
+            // Liste des équipements du plugin
+            echo '<div class="eqLogicThumbnailContainer">';
+            foreach ($eqLogics as $eqLogic) {
                 $opacity = ($eqLogic->getIsEnable()) ? '' : 'disableCard';
                 echo '<div class="eqLogicDisplayCard cursor '.$opacity.'" data-eqLogic_id="' . $eqLogic->getId() . '">';
                 $alternateImg = $eqLogic->getConfiguration('protocol');
@@ -76,43 +76,43 @@ if ($deamonRunning['state'] != 'ok') {
                 }
                 echo '<br>';
                 echo '<span class="name">' . $eqLogic->getHumanName(true, true) . '</span>';
-				echo '<span class="hiddenAsCard displayTableRight hidden">';
-				echo ($eqLogic->getIsVisible() == 1) ? '<i class="fas fa-eye" title="{{Equipement visible}}"></i>' : '<i class="fas fa-eye-slash" title="{{Equipement non visible}}"></i>';
-				echo '</span>';
+                echo '<span class="hiddenAsCard displayTableRight hidden">';
+                echo ($eqLogic->getIsVisible() == 1) ? '<i class="fas fa-eye" title="{{Equipement visible}}"></i>' : '<i class="fas fa-eye-slash" title="{{Equipement non visible}}"></i>';
+                echo '</span>';
                 echo '</div>';
-			}
-			echo '</div>';
-		}
-		?>
+            }
+            echo '</div>';
+        }
+        ?>
     </div> <!-- /.eqLogicThumbnailDisplay -->
 
-	<!-- Page de présentation de l'équipement -->
+    <!-- Page de présentation de l'équipement -->
     <div class="col-xs-12 eqLogic" style="display: none;">
-		<div class="input-group pull-right" style="display:inline-flex">
-			<span class="input-group-btn">
-				<!-- Les balises <a></a> sont volontairement fermées à la ligne suivante pour éviter les espaces entre les boutons. Ne pas modifier -->
-				<a class="btn btn-primary btn-sm bt_showNoteManagement roundedLeft"><i class="fas fa-file"></i> {{Notes}}
+        <div class="input-group pull-right" style="display:inline-flex">
+            <span class="input-group-btn">
+                <!-- Les balises <a></a> sont volontairement fermées à la ligne suivante pour éviter les espaces entre les boutons. Ne pas modifier -->
+                <a class="btn btn-primary btn-sm bt_showNoteManagement roundedLeft"><i class="fas fa-file"></i> {{Notes}}
                 </a><a class="btn btn-primary btn-sm bt_showExpressionTest roundedLeft"><i class="fas fa-check"></i> {{Expression}}
                 </a><a <a class="btn btn-default btn-sm eqLogicAction" data-action="configure"><i class="fas fa-cogs"></i> {{Configuration avancée}}
                 </a><a class="btn btn-default btn-sm eqLogicAction" data-action="copy"><i class="fas fa-copy"></i> {{Dupliquer}}
                 </a><a class="btn btn-sm btn-success eqLogicAction" data-action="save"><i class="fas fa-check-circle"></i> {{Sauvegarder}}
                 </a><a class="btn btn-danger btn-sm eqLogicAction roundedRight" data-action="remove"><i class="fas fa-minus-circle"></i> {{Supprimer}}
                 </a>
-			</span>
-		</div>
-		<!-- Onglets -->
+            </span>
+        </div>
+        <!-- Onglets -->
         <ul class="nav nav-tabs" role="tablist">
             <li role="presentation"><a href="#" class="eqLogicAction" aria-controls="home" role="tab" data-toggle="tab" data-action="returnToThumbnailDisplay"><i class="fa fa-arrow-circle-left"></i></a></li>
             <li role="presentation" class="active"><a href="#eqlogictab" aria-controls="home" role="tab" data-toggle="tab"><i class="fas fa-tachometer-alt"></i> {{Equipement}}</a></li>
             <li role="presentation"><a href="#commandtab" aria-controls="profile" role="tab" data-toggle="tab"><i class="fa fa-list-alt"></i> {{Commandes}}</a></li>
         </ul>
         <div class="tab-content" style="height:calc(100% - 50px);overflow:auto;overflow-x: hidden;">
-			<!-- Onglet de configuration de l'équipement -->
+            <!-- Onglet de configuration de l'équipement -->
             <div role="tabpanel" class="tab-pane active" id="eqlogictab">
                 <form class="form-horizontal">
                     <fieldset>
                         <!-- Partie gauche de l'onglet "Equipement" -->
-						<div class="col-lg-6">
+                        <div class="col-lg-6">
                             <legend><i class="fa fa-wrench"></i> {{Equipement :}}</legend>
                             <div class="form-group">
                                 <label class="col-sm-4 control-label">{{Nom de l'équipement}}</label>
@@ -127,11 +127,11 @@ if ($deamonRunning['state'] != 'ok') {
                                     <select id="sel_object" class="eqLogicAttr form-control" data-l1key="object_id">
                                         <option value="">{{Aucun}}</option>
                                         <?php
-										$options = '';
-										foreach ((jeeObject::buildTree(null, false)) as $object) {
-											$options .= '<option value="' . $object->getId() . '">' . str_repeat('&nbsp;&nbsp;', $object->getConfiguration('parentNumber')) . $object->getName() . '</option>';
-										}
-										echo $options;
+                                        $options = '';
+                                        foreach ((jeeObject::buildTree(null, false)) as $object) {
+                                            $options .= '<option value="' . $object->getId() . '">' . str_repeat('&nbsp;&nbsp;', $object->getConfiguration('parentNumber')) . $object->getName() . '</option>';
+                                        }
+                                        echo $options;
                                         ?>
                                     </select>
                                 </div>
@@ -149,7 +149,7 @@ if ($deamonRunning['state'] != 'ok') {
                                </div>
                             </div>
                             <div class="form-group">
-								<label class="col-sm-4 control-label">{{Options}}</label>
+                                <label class="col-sm-4 control-label">{{Options}}</label>
                                 <div class="col-sm-6">
                                     <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isEnable" checked/>{{Activer}}</label>
                                     <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isVisible" checked/>{{Visible}}</label>
@@ -174,30 +174,30 @@ if ($deamonRunning['state'] != 'ok') {
                             <div id="div_protocolParameters"></div>
                         </div>
                         
-						<!-- Partie droite de l'onglet "Équipement" -->
-						<div class="col-lg-6">
-							<legend><i class="fas fa-info"></i> {{Informations}}</legend>
-							<div class="form-group">
-								<label class="col-sm-4 control-label">{{Description}}</label>
-								<div class="col-sm-6">
-									<textarea class="form-control eqLogicAttr autogrow" data-l1key="comment"></textarea>
-								</div>
-							</div>
-						</div>
+                        <!-- Partie droite de l'onglet "Équipement" -->
+                        <div class="col-lg-6">
+                            <legend><i class="fas fa-info"></i> {{Informations}}</legend>
+                            <div class="form-group">
+                                <label class="col-sm-4 control-label">{{Description}}</label>
+                                <div class="col-sm-6">
+                                    <textarea class="form-control eqLogicAttr autogrow" data-l1key="comment"></textarea>
+                                </div>
+                            </div>
+                        </div>
                     </fieldset>
                 </form>
             </div><!-- /.tabpanel #eqlogictab-->
             
-			<!-- Onglet des commandes de l'équipement -->
+            <!-- Onglet des commandes de l'équipement -->
             <div role="tabpanel" class="tab-pane" id="commandtab">
-				<div class="input-group pull-right" style="display:inline-flex;margin-top:5px;">
-					<span class="input-group-btn">
+                <div class="input-group pull-right" style="display:inline-flex;margin-top:5px;">
+                    <span class="input-group-btn">
                         <a class="btn btn-info btn-sm roundedLeft" id="bt_add_Info"><i class="fas fa-plus-circle"></i> {{Ajouter une info}} </a>
                         <a class="btn btn-warning btn-sm roundedRight" id="bt_add_Action"><i class="fas fa-plus-circle"></i> {{Ajouter une action}} </a>
-					</span>
-				</div>
+                    </span>
+                </div>
                 <br/><br/>
-				<div class="table-responsive">
+                <div class="table-responsive">
                     <table id="table_cmd" class="table table-bordered table-condensed">
                         <thead>
                             <tr>
@@ -214,10 +214,10 @@ if ($deamonRunning['state'] != 'ok') {
                         </tbody>
                     </table>
                 </div>
-			</div><!-- /.tabpanel #commandtab-->
+            </div><!-- /.tabpanel #commandtab-->
 
-		</div><!-- /.tab-content -->
-	</div><!-- /.eqLogic -->
+        </div><!-- /.tab-content -->
+    </div><!-- /.eqLogic -->
 </div><!-- /.row row-overflow -->
 
 <?php include_file('desktop', 'mymodbus', 'js', 'mymodbus');?>
