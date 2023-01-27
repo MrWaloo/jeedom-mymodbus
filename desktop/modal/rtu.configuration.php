@@ -20,24 +20,24 @@ if (!isConnect('admin')) {
 }
 ?>
 <div class="form-group">
-	<div class="col-sm-4 form-group">
-		<img class="img_device" src="plugins/mymodbus/desktop/images/rtu_icon.png" style="margin-left:20px;height : 100px;" />
-	</div>
+    <div class="col-sm-4 form-group">
+        <img class="img_device" src="plugins/mymodbus/desktop/images/rtu_icon.png" style="margin-left:20px;height : 100px;" />
+    </div>
 </div>
 
 <div class="form-group">
         <label class="col-sm-4 control-label">{{Port série}}</label>
         <div class="col-sm-6">
-			<select class="eqLogicAttr form-control"  data-l1key="configuration" data-l2key="port">
-				<option value="none">{{Aucun}}</option>
-				<optgroup label="Ports disponibles">
-					<?php
+            <select class="eqLogicAttr form-control"  data-l1key="configuration" data-l2key="port">
+                <option value="none">{{Aucun}}</option>
+                <optgroup label="Ports disponibles">
+                    <?php
                     foreach (jeedom::getUsbMapping('', true) as $name => $value){
-						echo '<option value="' . $value . '">' . $name . ' (' . $value . ')</option>';
+                        echo '<option value="' . $value . '">' . $name . ' (' . $value . ')</option>';
                     }
                     ?>
-				</optgroup>
-			</select>
+                </optgroup>
+            </select>
         </div>
     </div>
 <div class="form-group">
@@ -90,7 +90,7 @@ if (!isConnect('admin')) {
     <div class="col-sm-6">
         <input type="text" id="port" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="unit" placeholder="{{Unit ID}}"/>
     </div>
-</div>	
+</div>    
        
 <div class="form-group">
     <label class="col-sm-4 control-label">{{Polling en secondes}}</label>

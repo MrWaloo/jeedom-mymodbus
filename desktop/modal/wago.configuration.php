@@ -20,9 +20,9 @@ if (!isConnect('admin')) {
 }
 ?>
 <div class="form-group">
-	<div class="col-sm-4 form-group">
-		<img class="img_device" src="plugins/mymodbus/desktop/images/wago_icon.png" style="margin-left:20px;height : 100px;" />
-	</div>
+    <div class="col-sm-4 form-group">
+        <img class="img_device" src="plugins/mymodbus/desktop/images/wago_icon.png" style="margin-left:20px;height : 100px;" />
+    </div>
 </div>
 
 <div class="form-group">
@@ -41,13 +41,13 @@ if (!isConnect('admin')) {
 
 <div class="form-group">
     <label class="col-sm-4 control-label">{{Polling en secondes}}</label>
-	<div class="col-sm-6">
-			<input type="text" id="addr" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="polling" placeholder="{{Polling en secondes}}"/>
-	</div>
+    <div class="col-sm-6">
+            <input type="text" id="addr" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="polling" placeholder="{{Polling en secondes}}"/>
+    </div>
 </div>
 
 <div class="form-group">
-	<label class="col-sm-4 control-label">{{Garder la connexion active}}</label>
+    <label class="col-sm-4 control-label">{{Garder la connexion active}}</label>
     <div class="col-sm-6">
         <label class="checkbox-inline"><input type="checkbox" id="keepopen" class="eqLogicAttr" data-l1key="configuration" data-l2key="keepopen"/>{{Activer}}</label>
     </div>

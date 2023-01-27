@@ -20,9 +20,9 @@ if (!isConnect('admin')) {
 }
 ?>
 <div class="form-group">
-	<div class="col-sm-4 form-group">
-		<img class="img_device" src="plugins/mymodbus/desktop/images/crouzet_m3_icon.png" style="margin-left:20px;height : 100px;" />
-	</div>
+    <div class="col-sm-4 form-group">
+        <img class="img_device" src="plugins/mymodbus/desktop/images/crouzet_m3_icon.png" style="margin-left:20px;height : 100px;" />
+    </div>
 </div>
 
 
@@ -40,28 +40,28 @@ if (!isConnect('admin')) {
 </div>
 <div class="form-group">
     <label class="col-sm-4 control-label">{{Polling en secondes}}</label>
-	<div class="col-sm-6">
-			<input type="text" id="addr" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="polling" placeholder="{{Polling en secondes}}"/>
-	</div>
+    <div class="col-sm-6">
+            <input type="text" id="addr" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="polling" placeholder="{{Polling en secondes}}"/>
+    </div>
 </div>
 <div class="form-group">
-	<label class="col-sm-4 control-label">{{Mise à l'heure auto}}</label>
+    <label class="col-sm-4 control-label">{{Mise à l'heure auto}}</label>
     <div class="col-sm-6">
         <label class="checkbox-inline"><input type="checkbox" id="mheure" class="eqLogicAttr" data-l1key="configuration" data-l2key="mheure"/>{{Activer}}</label>
     </div>
 </div>
 <div class="form-group">
-	<label class="col-sm-4 control-label">{{Création auto des commandes}}</label>
+    <label class="col-sm-4 control-label">{{Création auto des commandes}}</label>
     <div class="col-sm-6">
         <label class="checkbox-inline"><input type="checkbox" id="mheure" class="eqLogicAttr" data-l1key="configuration" data-l2key="auto_cmd"/>{{Activer}}</label>
     </div>
 </div>
 <div class="form-group">
-	<label class="col-sm-4 control-label">{{Garder la connexion active}}</label>
+    <label class="col-sm-4 control-label">{{Garder la connexion active}}</label>
     <div class="col-sm-6">
         <label class="checkbox-inline"><input type="checkbox" id="keepopen" class="eqLogicAttr" data-l1key="configuration" data-l2key="keepopen"/>{{Activer}}</label>
     </div>
 </div>
 <div class="alert alert-info">{{Information concernant la mise à l'heure auto :<br>
-					- La mise à l'heure se fait par un cron journalier à 00:30 <br>}}
+                    - La mise à l'heure se fait par un cron journalier à 00:30 <br>}}
 </div>
