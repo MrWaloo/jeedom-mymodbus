@@ -95,14 +95,19 @@ class mymodbus extends eqLogic {
             }
         }
     }
-
+    
+    // TODO: à adapter en fonction des paramètres nécessaires au démon (ressources/mymodbusd/mymodbusd.py)
+    // log avec mymodbusd
     public static function deamon_start() {
+		// Always stop first.
+		self::deamon_stop();
+        
         $deamon_info = self::deamon_info();
         if ($deamon_info['launchable'] != 'ok') {
             throw new Exception(__('Veuillez vérifier la configuration du demon', __FILE__));
         }
-
-        foreach (self::byType('mymodbus') as $mymodbus) {
+        
+        foreach (self::byType('mymodbus') as $mymodbus) { // boucle sur les équipements
             if ($mymodbus->getIsEnable() == 1) {
                 $mymodbus_ip = $mymodbus->getConfiguration('addr');
                 $mymodbus_id = $mymodbus->getId(); // récupére l'id
@@ -114,7 +119,7 @@ class mymodbus extends eqLogic {
                 // Equipement commun tcpip
                 if ($mymodbus_protocol== "wago" || $mymodbus_protocol== "crouzet_m3" || $mymodbus_protocol== "adam" || $mymodbus_protocol== "logo"  ) {
                     $mymodbus_protocold="tcpip";
-                      if ($mymodbus_ip == "") {
+                    if ($mymodbus_ip == "") {
                         throw new Exception(__('La requete adresse ip ne peut etre vide',__FILE__).$mymodbus_ip);
                     }
                 } else {
@@ -139,7 +144,6 @@ class mymodbus extends eqLogic {
                 } else {
                     $request='--host='.$mymodbus_ip.' --port='.$mymodbus_port.' --unid='.$mymodbus_unit.' --polling='.$mymodbus_polling.' --keepopen='.$mymodbus_keepopen.' --protocol='.$mymodbus_protocold.' --eqid='.$mymodbus_id ;
                 }
-                $mymodbus_path = realpath(dirname(__FILE__) . '/../../ressources');
                 foreach ($mymodbus->getCmd('info') as $cmd) {
                     if ($cmd->getConfiguration('type')=='coils') {
                         $coils[]=$cmd->getConfiguration('location');
@@ -189,9 +193,10 @@ class mymodbus extends eqLogic {
                 if ($swapi32) {
                     $request.=' --swapi32='.implode(',',$swapi32);
                 }
-                $cmd = 'nice -n 19 /usr/bin/python3 ' . $mymodbus_path . '/mymodbus_demond.py ' . $request;
+                $mymodbus_path = realpath(dirname(__FILE__) . '/../../ressources/mymodbusd');
+                $cmd = 'nice -n 19 /usr/bin/python3 ' . $mymodbus_path . '/mymodbusd.py ' . $request;
                 log::add('mymodbus', 'info', 'Lancement du démon mymodbus : ' . $cmd);                
-                $result = exec('nohup ' . $cmd . ' >> ' . log::getPathToLog('mymodbus') . ' 2>&1 &');
+                $result = exec($cmd . ' >> ' . log::getPathToLog('mymodbus') . ' 2>&1 &');
                 if (strpos(strtolower($result), 'error') !== false || strpos(strtolower($result), 'traceback') !== false) {
                     log::add('mymodbus', 'error', $result);
                     return false;
@@ -201,7 +206,7 @@ class mymodbus extends eqLogic {
                 $coils = array();
                 $discrete_inputs = array();
                 $input_registers = array();
-                  $sign = array();
+                $sign = array();
                 $virg = array();
                 $swapi32 = array();
                 
@@ -231,81 +236,97 @@ class mymodbus extends eqLogic {
             // vérifie si l'eq à un démon qui tourne 
             $result = exec("ps -eo pid,command | grep 'eqid={$eqLogic->getId()}' | grep -v grep | awk '{print $1}' | wc -l");
             if ($result == 0) {
-                $return['state'] = 'nok';
                 $return['state'] = false;
                 $return['result'] = 'NOK';
                 $return['advice'] = __('Au moins un démon ne tourne pas ! Voir la page santé dans la configuration de MyModbus.', __FILE__);    
                 break;
 
             } else {
-                $return['state'] = 'ok';
+                $return['state'] = true;
             }
         }
         return array($return);
     }
-    
 
-    public static function ntp_crouzet_m3() {
-
-    }
-
+    // Michel: OK
     public static function deamon_info() {
         $return = array();
         $return['state'] = 'nok';
         $return['launchable'] = 'ok';
-        $result = exec("ps -eo pid,command | grep 'mymodbus_demond.py' | grep -v grep | awk '{print $1}'");
+        $result = exec("ps -eo pid,command | grep 'mymodbusd.py' | grep -v grep | awk '{print $1}'");
         if ($result == 0) {
             $return['state'] = 'nok';
         } else {
             $return['state'] = 'ok';
         }
         return $return;
+    }
+    
+    // Michel: OK
+    public static function deamon_stop() {
+        log::add('mymodbusd', 'info', 'Arrêt des démons');
+        $pid = exec("ps -eo pid,command | grep 'mymodbusd.py' | grep -v grep | awk '{print $1}'| wc -l");
+        While ($pid > 0) {
+            $pid = exec("ps -eo pid,command | grep 'mymodbusd.py' | grep -v grep | awk '{print $1}'| wc -l");
+            system::kill($pid);
+        }
+        system::kill('mymodbusd.py');
+        sleep(1);
+        log::add('mymodbusd', 'info', 'Démons arrêtés');
+    }
+    
+    // Michel: OK
+    public static function sendToDaemon($params) {
+        $deamon_info = self::deamon_info();
+        if ($deamon_info['state'] != 'ok') {
+            throw new Exception("Le démon n'est pas démarré");
+        }
+        $params['apikey'] = jeedom::getApiKey(__CLASS__);
+        $payLoad = json_encode($params);
+        $socket = socket_create(AF_INET, SOCK_STREAM, 0);
+        socket_connect($socket, '127.0.0.1', config::byKey('socketport', __CLASS__, '55502'));
+        socket_write($socket, $payLoad, strlen($payLoad));
+        socket_close($socket);
+    }
 
+    public static function ntp_crouzet_m3() {
+        
     }
     
     public static function supportedProtocol() {
         $return = array();
         foreach (ls(dirname(__FILE__) . '/../../desktop/modal/') as $file) {
             $protocol = explode('.', $file);
-              if ($protocol[1]=="configuration") {
+            if ($protocol[1]=="configuration") {
                 $return[] = $protocol[0];
             }
         }
         return $return;
     }
-    
-    public static function deamon_stop() {
-        $nbpid = exec("ps -eo pid,command | grep 'mymodbus_demond.py' | grep -v grep | awk '{print $1}'| wc -l");
-        While ($nbpid > 0) {
-            $nbpid = exec("ps -eo pid,command | grep 'mymodbus_demond.py' | grep -v grep | awk '{print $1}'| wc -l");
-            self::Kill_Process();
-        }
-        log::add('mymodbus', 'info', 'Arret des daemons');
-    }
 
+    // Michel: OK
     public static function dependancy_info() {
         $return = array();
-        $return['progress_file'] = jeedom::getTmpFolder('mymodbus') . '/dependance';
-        $return['state'] = 'ok';
-        if (exec(system::getCmdSudo() . 'pip3 freeze | grep -E "pymodbus==2.5.3" | wc -l') == 0) $return['state'] = 'nok';
-        //if (exec(system::getCmdSudo() . 'pip3 list | grep -E "pymodbus" | wc -l') == 0) $return['state'] = 'nok';
-        if (exec(system::getCmdSudo() . 'pip3 list | grep -E "six" | wc -l') == 0) $return['state'] = 'nok';
-        if (exec(system::getCmdSudo() . 'pip3 list | grep -E "pyserial" | wc -l') == 0) $return['state'] = 'nok';
-        if ($return['state'] == 'nok') message::add('mymodbus_dep', __('Si les dépendances restent NOK, veuillez me contacter sur https://community.jeedom.com/ ', __FILE__));
+        $return['log'] = log::getPathToLog(__CLASS__ . '_update');
+        $return['progress_file'] = jeedom::getTmpFolder(__CLASS__) . '/dependency';
+        if (file_exists(jeedom::getTmpFolder(__CLASS__) . '/dependency')) {
+            $return['state'] = 'in_progress';
+        } else {
+            if (exec(system::getCmdSudo() . system::get('cmd_check') . '-Ec "python3\-pip"') < 1) {
+                $return['state'] = 'nok';
+            } elseif (exec(system::getCmdSudo() . 'pip3 list | grep -Ewc "pymodbus|pyserial|six"') < 3) {
+                $return['state'] = 'nok';
+            } else {
+                $return['state'] = 'ok';
+            }
+        }
         return $return;
     }
 
+    // Michel: OK
     public static function dependancy_install() {
         log::remove(__CLASS__ . '_update');
         return array('script' => dirname(__FILE__) . '/../../ressources/install_#stype#.sh ' . jeedom::getTmpFolder('mymodbus') . '/dependance', 'log' => log::getPathToLog(__CLASS__ . '_update'));
-    }
-
-    public static function Kill_Process() {
-        $pid = exec("ps -eo pid,command | grep 'mymodbus_demond.py' | grep -v grep | awk '{print $1}'");
-        //exec('kill ' . $pid);
-        exec(' sudo kill ' . $pid . ' 2>&1 &');
-        $check = self::deamon_info();
-        $retry = 0;
     }
 
     /*     * *********************Méthodes d'instance************************* */
@@ -326,7 +347,7 @@ class mymodbus extends eqLogic {
 
     // Fonction exécutée automatiquement après la sauvegarde (création ou mise à jour) de l'équipement
     public function postSave() {
-        foreach (self::byType('mymodbus') as $mymodbus) {
+        foreach (self::byType('mymodbus') as $mymodbus) { // boucle sur les équipements
             $mymodbus_mheure = $mymodbus->getConfiguration('mheure');
             $mymodbus_auto_cmd = $mymodbus->getConfiguration('auto_cmd');
 
@@ -397,7 +418,8 @@ class mymodbusCmd extends cmd {
       }
      */
 
-    public function execute($_options = null) {
+    // TODO: à adapter en fonction des paramètres nécessaires à la commande
+    public function execute($_options = array()) {
         $mymodbus = $this->getEqLogic();
         $mymodbus_ip = $mymodbus->getConfiguration('addr');
         $mymodbus_port = $mymodbus->getConfiguration('port');
@@ -414,7 +436,7 @@ class mymodbusCmd extends cmd {
             $value="";
             
             if ($mymodbus_protocol!= "rtu") {
-                $mymodbus_baudrate=0;
+                $mymodbus_baudrate=0; // Michel: ça n'a aucun sens...
             }
             
             if ($mymodbus_protocol== "wago" || $mymodbus_protocol== "crouzet_m3" || $mymodbus_protocol== "adam" || $mymodbus_protocol== "logo"  ) {
@@ -475,7 +497,6 @@ class mymodbusCmd extends cmd {
         } else {
             return $this->getValue();
         }
-
     }
 
     public function postInsert() {
