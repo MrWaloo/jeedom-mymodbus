@@ -11,52 +11,22 @@ fi
 touch ${PROGRESS_FILE}
 echo 0 > ${PROGRESS_FILE}
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-echo "MyModbus - Debut de l'installation des dependances ..."
+echo "MyModbus - Debut de l'installation des dependances..."
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "-"
 sudo date
-echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-echo "Mises a jour du systeme en cours ..."
-echo "/!\ Peut etre long suivant l'anciennete de votre systeme."
-echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-#sudo apt-get update  -y -q
 echo "-"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "Installation dependance  python-pip"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-#sudo apt-get -y install python-pip
 sudo apt-get -y install python3-pip python3-setuptools
-
-echo 40 > ${PROGRESS_FILE}
+echo 60 > ${PROGRESS_FILE}
 echo "-"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-echo "Installation dependance  pypModbus"
+echo "Installation des dependances: pyModbus et ses dependances"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-sudo pip3 install pyModbus==2.5.3
-#sudo pip3 install pyModbus==2.4.0
-#sudo pip3 install pyserial==3.3
-echo 70 > ${PROGRESS_FILE}
-echo "-"
-#echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-#echo "Installation dependance  python-serial"
-#echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-#sudo apt-get -y install python-serial
-#sudo pip3 uninstall serial
-#sudo pip3 install pyserial
-
-echo 80 > ${PROGRESS_FILE}
-echo "-"
-echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-echo "Installation dependance git"
-echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-
-sudo apt-get -y install git
-
-echo 90 > ${PROGRESS_FILE}
-echo "-"
-echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-echo "Clonage de rien"
-echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+sudo python3 -m pip install install pyModbus>=3.1.1
+echo 95 > ${PROGRESS_FILE}
 echo "-"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "Controle version..."
