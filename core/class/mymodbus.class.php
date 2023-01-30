@@ -99,8 +99,8 @@ class mymodbus extends eqLogic {
     // TODO: à adapter en fonction des paramètres nécessaires au démon (ressources/mymodbusd/mymodbusd.py)
     // log avec mymodbusd
     public static function deamon_start() {
-		// Always stop first.
-		self::deamon_stop();
+        // Always stop first.
+        self::deamon_stop();
         
         $deamon_info = self::deamon_info();
         if ($deamon_info['launchable'] != 'ok') {
@@ -314,7 +314,7 @@ class mymodbus extends eqLogic {
         } else {
             if (exec(system::getCmdSudo() . system::get('cmd_check') . '-Ec "python3\-pip"') < 1) {
                 $return['state'] = 'nok';
-            } elseif (exec(system::getCmdSudo() . 'pip3 list | grep -Ewc "pymodbus|pyserial|six"') < 3) {
+            } elseif (exec(system::getCmdSudo() . 'python3 -m pip list | grep -Ewc "pymodbus|pyserial|six"') < 3) {
                 $return['state'] = 'nok';
             } else {
                 $return['state'] = 'ok';

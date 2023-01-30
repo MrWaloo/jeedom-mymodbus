@@ -156,12 +156,13 @@ try:
     # jeedom_socket : communication php --> daemon
 	jeedom_socket = jeedom_socket(port=_socket_port,address=_socket_host)
 	listen()
+    
 except Exception as e:
 	logging.error('Fatal error : '+str(e))
 	logging.info(traceback.format_exc())
 	shutdown()
 
-#TODO: déplacer n maximum de code après ce 'if' et éventuellement définir une classe Main() comme dans jMQTT
+#TODO: déplacer un maximum de code après ce 'if' et éventuellement définir une classe Main() comme dans jMQTT
 #if __name__ == '__main__':
     
     

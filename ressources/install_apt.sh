@@ -25,7 +25,7 @@ echo "-"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "Installation des dependances: pyModbus et ses dependances"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-sudo python3 -m pip install install pyModbus>=3.1.1
+sudo python3 -m pip install pyModbus>=3.1.1
 echo 95 > ${PROGRESS_FILE}
 echo "-"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
