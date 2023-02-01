@@ -297,7 +297,7 @@ class mymodbus extends eqLogic {
         $return = array();
         foreach (ls(dirname(__FILE__) . '/../../desktop/modal/') as $file) {
             $protocol = explode('.', $file);
-            if ($protocol[1]=="configuration") {
+            if ($protocol[1]=="configuration" and $protocol[2]=="php") {
                 $return[] = $protocol[0];
             }
         }
@@ -314,7 +314,7 @@ class mymodbus extends eqLogic {
         } else {
             if (exec(system::getCmdSudo() . system::get('cmd_check') . '-Ec "python3\-pip"') < 1) {
                 $return['state'] = 'nok';
-            } elseif (exec(system::getCmdSudo() . 'python3 -m pip list | grep -Ewc "pymodbus|pyserial|six"') < 3) {
+            } elseif (exec(system::getCmdSudo() . 'python3 -m pip list | grep -Ewc "pymodbus|pyserial|six|serial|pyudev"') < 5) {
                 $return['state'] = 'nok';
             } else {
                 $return['state'] = 'ok';
