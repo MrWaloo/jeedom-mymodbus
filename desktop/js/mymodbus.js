@@ -46,38 +46,39 @@ $('.bt_showNoteManagement').off('click').on('click', function () {
     $('#md_modal').dialog({title: "{{Notes}}"});
     $("#md_modal").load('index.php?v=d&modal=note.manager').dialog('open');
 });
-$('#bt_templatesmymodbus').on('click', function () {
-    $('#md_modal').dialog({title: "{{Gestion des templates d'équipements mymobus}}"});
-    $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=templates').dialog('open');
-});
+//$('#bt_templatesmymodbus').on('click', function () {
+//    $('#md_modal').dialog({title: "{{Gestion des templates d'équipements mymobus}}"});
+//    $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=templates').dialog('open');
+//});
 
- function prePrintEqLogic() {
-    $('.eqLogicAttr[data-l1key=configuration][data-l2key=protocol]').off();
+function prePrintEqLogic() {
+    // unlink the event from the protocol dropdown list
+    $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqProtocol]').off();
 }
 
-function  printEqLogic(_eqLogic) {
+function printEqLogic(_eqLogic) {
     $.showLoading();
-    $('.eqLogicAttr[data-l1key=configuration][data-l2key=protocol]').off();
-    if (isset(_eqLogic.configuration) && isset(_eqLogic.configuration.protocol)) {
-        $('#div_protocolParameters').load('index.php?v=d&plugin=mymodbus&modal=' + _eqLogic.configuration.protocol + '.configuration', function () {
+    // unlink the event from the protocol dropdown list
+    $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqProtocol]').off();
+    if (isset(_eqLogic.configuration) && isset(_eqLogic.configuration.eqProtocol)) {
+        // load the form from the corresponding modal php file
+        $('#div_protocolParameters').load('index.php?v=d&plugin=mymodbus&modal=configuration.' + _eqLogic.configuration.eqProtocol, function () {
+            // load values
             $('body').setValues(_eqLogic, '.eqLogicAttr');
-            //initCheckBox();
-            $('.eqLogicAttr[data-l1key=configuration][data-l2key=protocol]').off().on('change', function () {
-                $('#div_protocolParameters').load('index.php?v=d&plugin=mymodbus&modal=' + $(this).val() + '.configuration',function () {
-                    //initCheckBox();
-                });
+            // unlink and bind the event on change: load form from the corresponding modal php file
+            $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqProtocol]').off().on('change', function () {
+                $('#div_protocolParameters').load('index.php?v=d&plugin=mymodbus&modal=configuration.' + $(this).val());
             });
             modifyWithoutSave = false;
-            $.hideLoading();
         });
     } else {
-        $('.eqLogicAttr[data-l1key=configuration][data-l2key=protocol]').on('change', function () {
-            $('#div_protocolParameters').load('index.php?v=d&plugin=mymodbus&modal=' + $(this).val() + '.configuration',function () {
-                //initCheckBox();
-            });
+        $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqProtocol]').on('change', function () {
+            $('#div_protocolParameters').load('index.php?v=d&plugin=mymodbus&modal=configuration.' + $(this).val());
         });
-        $.hideLoading();
     }
+    //console.log('*-*-*-*-*-*-*-*- _eqLogic', _eqLogic);
+    //console.log('*-*-*-*-*-*-*-*- _eqLogic.configuration', _eqLogic.configuration);
+    $.hideLoading();
 }
 
 //$("#table_cmd").delegate(".listEquipementInfo", 'click', function() {
@@ -339,13 +340,23 @@ $("#table_cmd").delegate(".listEquipementInfo2", 'click', function () {
     });
 });
 
-$("#bt_add_Action").on('click', function (event) {
-    addCmdToTable({type: 'action'});
+$("#bt_add_ActionBin").on('click', function (event) {
+    addCmdToTable({type: 'action', mymodbusType: 'bin'});
     modifyWithoutSave = true;
 });
 
-$("#bt_add_Info").on('click', function (event) {
-    addCmdToTable({type: 'info'});
+$("#bt_add_ActionNum").on('click', function (event) {
+    addCmdToTable({type: 'action', mymodbusType: 'num'});
+    modifyWithoutSave = true;
+});
+
+$("#bt_add_InfoBin").on('click', function (event) {
+    addCmdToTable({type: 'info', mymodbusType: 'bin'});
+    modifyWithoutSave = true;
+});
+
+$("#bt_add_InfoNum").on('click', function (event) {
+    addCmdToTable({type: 'info', mymodbusType: 'num'});
     modifyWithoutSave = true;
 });
 
@@ -353,47 +364,85 @@ function addCmdToTable(_cmd) {
     if (!isset(_cmd)) {
         var _cmd = {configuration: {}};
     }
-
+    
+    console.log('init(_cmd.subType): ', init(_cmd.subType));
+    
+    // Commande info
     if (init(_cmd.type) == 'info') {
         var tr = '<tr class="cmd" data-cmd_id="' + init(_cmd.id) + '">';
+        // Nom
         tr += ' <td class="name">';
-        tr += '     <input class="cmdAttr form-control input-sm" data-l1key="id" style="display : none;">';
-        tr += '     <input class="cmdAttr form-control input-sm" data-l1key="name"></td>';
-        //tr += '<td class="type" type="' + init(_cmd.type) + '">' + jeedom.cmd.availableType();
-        tr += ' <td>';
-        tr += ' <input class="cmdAttr form-control type input-sm" data-l1key="type" value="info" disabled style="margin-bottom : 5px;" />';
-        tr += ' <span class="subType" subType="' + init(_cmd.subType) + '"></span>';
+        tr += '     <input class="cmdAttr form-control input-sm" data-l1key="id" style="display:none;">';
+        tr += '     <input class="cmdAttr form-control input-sm" data-l1key="name">';
         tr += ' </td>';
+        // Type
         tr += ' <td>';
-        tr += '     <div class="input-group" style="margin-bottom : 5px;">';
-        tr += '         <select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="type">';
-        tr += '             <option value="coils">Coil</option>';
-        tr += '             <option value="discrete_inputs">Discrete Input</option>';
-        tr += '             <option value="holding_registers">Holding Register</option>';
-        tr += '             <option value="input_registers">Input Register</option>';
-        tr += '             <option value="sign">Register Int</option>';
-        tr += '             <option value="virg">Register Float</option>';
-        tr += '             <option value="swapi32">Eastron Imput</option>';
-        tr += '         </select>';
+        tr += '     <input class="cmdAttr form-control type input-sm" data-l1key="type" value="info" disabled style="margin-bottom:5px;" />';
+        tr += '     <span class="subType" subType="' + init(_cmd.subType) + '"></span>';
+        tr += ' </td>';
+        // Fonction modbus / format de donnée
+        tr += ' <td>';
+        tr += '     <div class="input-group" style="margin-bottom:5px;">';
+        tr += '         <div class="col-sm-12">';
+        tr += '             <select class="cmdAttr form-control input-sm" style="width:400px;" data-l1key="configuration" data-l2key="infFctModbus">';
+        if (init(_cmd.mymodbusType) == 'bin') {
+            tr += '                 <option value="1">[0x01] Read coils ({{Binaire}} / bit)</option>';
+            tr += '                 <option value="2">[0x02] Read discrete inputs ({{Binaire}} / bit)</option>';
+        } else {
+            tr += '                 <option value="3">[0x03] Read holding registers ({{Numérique}})</option>';
+            tr += '                 <option value="4">[0x04] Read input registers ({{Numérique}})</option>';
+        }
+        tr += '             </select>';
+        tr += '         </div>';
         tr += '     </div>';
         tr += '     <div class="input-group">';
-        tr += '         <select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="datatype"><option value="bitsize_16">16 bits</option><option value="bitsize_32">32 bits</option></select>';
+        tr += '         <div class="col-sm-12">';
+        tr += '             <select class="cmdAttr form-control input-sm" style="width:400px;" data-l1key="configuration" data-l2key="infFormat">';
+        if (init(_cmd.mymodbusType) == 'bin') {
+            tr += '                 <option value="bit">bit (0 .. 1)</option>';
+        } else {
+            tr += '                 <optgroup label="8 bits">';
+            tr += '                     <option value="int8">int8 (-128 ... 127)</option>';
+            tr += '                     <option value="uint8">uint8 (0 ... 255)</option>';
+            tr += '                 </optgroup>';
+            tr += '                 <optgroup label="16 bits">';
+            tr += '                     <option value="int16">int16 (-32 768 ... 32 768)</option>';
+            tr += '                     <option value="uint16">uint16 (0 ... 65 535)</option>';
+            tr += '                     <option value="float16">float16 (Real 16bit)</option>';
+            tr += '                 </optgroup>';
+            tr += '                 <optgroup label="32 bits">';
+            tr += '                     <option value="int32">int32 (-2 147 483 648 ... 2 147 483 647)</option>';
+            tr += '                     <option value="uint32">uint32 (0 ... 4 294 967 296)</option>';
+            tr += '                     <option value="float32">float32 (Real 32bit)</option>';
+            tr += '                 </optgroup>';
+            tr += '                 <optgroup label="64 bits">';
+            tr += '                     <option value="int64">int64 (-9e18 ... 9e18)</option>';
+            tr += '                     <option value="uint64">uint64 (0 ... 18e18)</option>';
+            tr += '                     <option value="float64">float64 (Real 64bit)</option>';
+            tr += '                 </optgroup>';
+        }
+        tr += '             </select>';
+        tr += '         </div>';
         tr += '     </div>';
         tr += ' </td>';
-        tr += ' <td><input class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="location"></td>';
+        // Adresse
+        tr += ' <td><input class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="infAdress"></td>';
+        // Paramètre
         tr += ' <td>';
         tr += '     <div class="input-group" style="margin-bottom : 5px;">';
         tr += '         <input class="cmdAttr form-control input-sm roundedLeft" data-l1key="configuration" data-l2key="request" placeholder="{{Option}}" />';
         tr += '         <span class="input-group-btn">';
-        tr += '             <a class="btn btn-default btn-sm cursor listEquipementInfo2 roundedRight" data-input="configuration"><i class="fa fa-list-alt "></i></a>';
+        tr += '             <a class="btn btn-default btn-sm cursor listEquipementInfo2 roundedRight" data-input="configuration"><i class="fa fa-list-alt"></i></a>';
         tr += '         </span>';
         tr += '     </div>';
         tr += ' </td>';  
+        // Options
         tr += ' <td>';
-        tr += '     <input class="cmdAttr form-control tooltips input-sm" data-l1key="unite" style="width : 100px;" placeholder="Unité" title="{{Unité}}">';
-        tr += '     <input class="cmdAttr form-control tooltips input-sm expertModeVisible" data-l1key="configuration" data-l2key="minValue" placeholder="{{Min}}" title="{{Min}}" style="margin-top : 5px;">';
-        tr += '     <input class="cmdAttr form-control tooltips input-sm expertModeVisible" data-l1key="configuration" data-l2key="maxValue" placeholder="{{Max}}" title="{{Max}}" style="margin-top : 5px;">';
+        tr += '     <input class="cmdAttr form-control tooltips input-sm" data-l1key="unite" style="width:100px;" placeholder="Unité" title="{{Unité}}">';
+        tr += '     <input class="cmdAttr form-control tooltips input-sm expertModeVisible" data-l1key="configuration" data-l2key="minValue" placeholder="{{Min}}" title="{{Min}}" style="margin-top:5px;">';
+        tr += '     <input class="cmdAttr form-control tooltips input-sm expertModeVisible" data-l1key="configuration" data-l2key="maxValue" placeholder="{{Max}}" title="{{Max}}" style="margin-top:5px;">';
         tr += ' </td>';
+        // Configuration commande
         tr += ' <td>';
         if (is_numeric(_cmd.id)) {
             tr += '     <a class="btn btn-default btn-xs cmdAction" data-action="configure" title="{{Configuration de la commande}}""><i class="fas fa-cogs"></i></a>';
@@ -403,7 +452,7 @@ function addCmdToTable(_cmd) {
         tr += '     <span><label class="checkbox-inline"><input type="checkbox" class="cmdAttr" data-l1key="isHistorized" data-size="mini"/>{{Historiser}}</label></span>';
         tr += '     <span><label class="checkbox-inline"><input type="checkbox" class="cmdAttr checkbox-inline" data-l1key="isVisible" checked/>{{Afficher}}</label></span>';
         tr += '     <span><label class="checkbox-inline"><input type="checkbox" class="cmdAttr" data-l1key="display" data-l2key="invertBinary"/>{{Inverser}}</label></span>';
-        tr += '     <i class="fas fa-minus-circle pull-right cmdAction cursor" data-action="remove"title="Supprimer"></i>';
+        tr += '     <i class="fas fa-minus-circle pull-right cmdAction cursor" data-action="remove" title="{{Supprimer}}"></i>';
         tr += ' </td>';
         tr += '</tr>';
         $('#table_cmd tbody').append(tr);
@@ -422,30 +471,70 @@ function addCmdToTable(_cmd) {
             }
         });
     }
+    
+    // Commande action
     if (init(_cmd.type) == 'action') {
         var tr = '<tr class="cmd" data-cmd_id="' + init(_cmd.id) + '">';
+        // Nom
         tr += ' <td class="name">';
-        tr += '     <input class="cmdAttr form-control input-sm" data-l1key="id" style="display : none;">';
+        tr += '     <input class="cmdAttr form-control input-sm" data-l1key="id" style="display:none;">';
         tr += '     <input class="cmdAttr form-control input-sm" data-l1key="name">';
         tr += ' </td>';
-        //tr += ' <td class="type" type="' + init(_cmd.type) + '">' + jeedom.cmd.availableType();
-        //tr += ' <span class="subType" subType="' + init(_cmd.subType) + '"></span></td>';
+        // Type
         tr += ' <td>';
-        tr += '     <input class="cmdAttr form-control type input-sm" data-l1key="type" value="action" disabled style="margin-bottom : 5px;" />';
+        tr += '     <input class="cmdAttr form-control type input-sm" data-l1key="type" value="action" disabled style="margin-bottom:5px;" />';
         tr += '     <span class="subType" subType="' + init(_cmd.subType) + '"></span>';
         tr += ' </td>';
+        // Fonction modbus / format de donnée
         tr += ' <td>';
-        tr += '     <select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="type">';
-        tr += '         <option value="coils">Coil</option>';
-        tr += '         <option value="discrete_inputs">Discrete Input</option>';
-        tr += '         <option value="holding_registers">Holding Register</option>';
-        tr += '         <option value="Write_Multiple_Holding">Write Multiple Holding</option>';
-        tr += '         <option value="input_registers">Input Register</option>';
-        tr += '     </select>';
+        tr += '     <div class="input-group" style="margin-bottom:5px;">';
+        tr += '         <div class="col-sm-12">';
+        tr += '             <select class="cmdAttr form-control input-sm" style="width:400px;" data-l1key="configuration" data-l2key="actFctModbus">';
+        if (init(_cmd.mymodbusType) == 'bin') {
+            tr += '                 <option value="5">[0x05] Write single coil ({{Binaire}} / bit)</option>';
+            tr += '                 <option value="15">[0x0F] Write coils ({{Binaire}} / bit)</option>';
+        } else {
+            tr += '                 <option value="3">[0x06] Write register ({{Numérique}})</option>';
+            tr += '                 <option value="16">[0x10] Write registers ({{Numérique}})</option>';
+        }
+        tr += '             </select>';
+        tr += '         </div>';
+        tr += '     </div>';
+        tr += '     <div class="input-group">';
+        tr += '         <div class="col-sm-12">';
+        tr += '             <select class="cmdAttr form-control input-sm" style="width:400px;" data-l1key="configuration" data-l2key="actFormat">';
+        if (init(_cmd.mymodbusType) == 'bin') {
+            tr += '                 <option value="bit">bit (0 .. 1)</option>';
+        } else {
+            tr += '                 <optgroup label="8 bits">';
+            tr += '                     <option value="int8">int8 (-128 ... 127)</option>';
+            tr += '                     <option value="uint8">uint8 (0 ... 255)</option>';
+            tr += '                 </optgroup>';
+            tr += '                 <optgroup label="16 bits">';
+            tr += '                     <option value="int16">int16 (-32 768 ... 32 768)</option>';
+            tr += '                     <option value="uint16">uint16 (0 ... 65 535)</option>';
+            tr += '                     <option value="float16">float16 (Real 16bit)</option>';
+            tr += '                 </optgroup>';
+            tr += '                 <optgroup label="32 bits">';
+            tr += '                     <option value="int32">int32 (-2 147 483 648 ... 2 147 483 647)</option>';
+            tr += '                     <option value="uint32">uint32 (0 ... 4 294 967 296)</option>';
+            tr += '                     <option value="float32">float32 (Real 32bit)</option>';
+            tr += '                 </optgroup>';
+            tr += '                 <optgroup label="64 bits">';
+            tr += '                     <option value="int64">int64 (-9e18 ... 9e18)</option>';
+            tr += '                     <option value="uint64">uint64 (0 ... 18e18)</option>';
+            tr += '                     <option value="float64">float64 (Real 64bit)</option>';
+            tr += '                 </optgroup>';
+        }
+        tr += '             </select>';
+        tr += '         </div>';
+        tr += '     </div>';
         tr += ' </td>';
-        tr += ' <td><input class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="location"></td>';
+        // Adresse
+        tr += ' <td><input class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="actAdress"></td>';
+        // Paramètre
         tr += ' <td>';
-        tr += '     <div class="input-group" style="margin-bottom : 5px;">';
+        tr += '     <div class="input-group" style="margin-bottom:5px;">';
         tr += '         <input class="cmdAttr form-control input-sm roundedLeft" data-l1key="configuration" data-l2key="request" placeholder="{{Valeur}}"/>';
         tr += '         <span class="input-group-btn">';
         tr += '             <a class="btn btn-default btn-sm cursor listEquipementInfo roundedRight" data-input="configuration"><i class="fa fa-list-alt "></i></a>';
@@ -458,11 +547,13 @@ function addCmdToTable(_cmd) {
         tr += '         </span>';
         tr += '     </div>';
         tr += ' </td>';  
+        // Options
         tr += ' <td>';
-        tr += '     <input class="cmdAttr form-control tooltips input-sm" data-l1key="unite"  style="width : 100px;" placeholder="Unité" title="{{Unité}}">';
-        tr += '     <input class="cmdAttr form-control tooltips input-sm expertModeVisible" data-l1key="configuration" data-l2key="minValue" placeholder="{{Min}}" title="{{Min}}" style="margin-top : 5px;">';
-        tr += '     <input class="cmdAttr form-control tooltips input-sm expertModeVisible" data-l1key="configuration" data-l2key="maxValue" placeholder="{{Max}}" title="{{Max}}" style="margin-top : 5px;">';
+        tr += '     <input class="cmdAttr form-control tooltips input-sm" data-l1key="unite" style="width:100px;" placeholder="Unité" title="{{Unité}}">';
+        tr += '     <input class="cmdAttr form-control tooltips input-sm expertModeVisible" data-l1key="configuration" data-l2key="minValue" placeholder="{{Min}}" title="{{Min}}" style="margin-top:5px;">';
+        tr += '     <input class="cmdAttr form-control tooltips input-sm expertModeVisible" data-l1key="configuration" data-l2key="maxValue" placeholder="{{Max}}" title="{{Max}}" style="margin-top:5px;">';
         tr += ' </td>';
+        // Configuration
         tr += ' <td>';
         if (is_numeric(_cmd.id)) {
             tr += ' <a class="btn btn-default btn-xs cmdAction" data-action="configure" title="{{Configuration de la commande}}""><i class="fas fa-cogs"></i></a>';
@@ -472,7 +563,7 @@ function addCmdToTable(_cmd) {
         tr += '     <span><label class="checkbox-inline"><input type="checkbox" class="cmdAttr " data-l1key="isHistorized" data-size="mini" />{{Historiser}}</label></span>';
         tr += '     <span><label class="checkbox-inline"><input type="checkbox" class="cmdAttr checkbox-inline" data-l1key="isVisible" checked/>{{Afficher}}</label></span>';
         tr += '     <span><label class="checkbox-inline"><input type="checkbox" class="cmdAttr" data-l1key="display" data-l2key="invertBinary"/>{{Inverser}}</label></span>';
-        tr += '     <i class="fas fa-minus-circle pull-right cmdAction cursor" data-action="remove"title="Supprimer"></i>';
+        tr += '     <i class="fas fa-minus-circle pull-right cmdAction cursor" data-action="remove" title="{{Supprimer}}></i>';
         tr += ' </td>';
         tr += '</tr>';
         $('#table_cmd tbody').append(tr);

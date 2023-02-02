@@ -8,7 +8,7 @@ $eqLogics = eqLogic::byType($plugin->getId());
 
 $deamonRunning = mymodbus::deamon_info();
 if ($deamonRunning['state'] != 'ok') {
-    echo '<div class="alert alert-danger">ATTENTION LE DEMON MYMODBUS N\'EST PAS DÉMARRÉ. Pour qu\'il démarre il faut créer un équipement MyModbus ! </div>';
+    echo '<div class="alert alert-danger">ATTENTION LE DEMON MYMODBUS N\'EST PAS DÉMARRÉ. Pour qu\'il démarre il faut créer et activer un équipement MyModbus et configurer au moins une commande&nbsp;!</div>';
 }
 
 ?>
@@ -20,35 +20,37 @@ if ($deamonRunning['state'] != 'ok') {
         <!-- Boutons de gestion du plugin -->
         <div class="eqLogicThumbnailContainer">
             <div class="cursor eqLogicAction logoPrimary" data-action="add">
-                <i class="fas fa-plus-circle"style="font-size : 6em;color:#0F9DE8;"></i>
+                <i class="fas fa-plus-circle"style="font-size:6em;color:#0F9DE8;"></i>
                 <br>
                 <span>{{Ajouter}}</span>
             </div>
             <div class="cursor eqLogicAction logoSecondary" data-action="gotoPluginConf">
-                <i class="fas fa-wrench"style="font-size : 6em;color:#0F9DE8;"></i>
+                <i class="fas fa-wrench"style="font-size:6em;color:#0F9DE8;"></i>
                 <br>
                 <span>{{Configuration}}</span>
             </div>
             <div class="cursor eqLogicAction logoSecondary" data-action="bt_docSpecific" >
-                <i class="fas fa-book"style="font-size : 6em;color:#0F9DE8;"></i>
+                <i class="fas fa-book"style="font-size:6em;color:#0F9DE8;"></i>
                 <br>
                 <span>{{Documentation}}</span>
             </div>
             <div class="cursor pluginAction" data-action="openLink" data-location="https://community.jeedom.com/t/plugin-<?=$plugin->getId()?>/9395" >
-                <i class="fas fa-comments" style="font-size : 6em;color:#0F9DE8;"></i>
+                <i class="fas fa-comments" style="font-size:6em;color:#0F9DE8;"></i>
                 <br>
                 <span>{{Commmunity}}</span>
             </div>
             <div class="cursor logoSecondary" id="bt_healthmymodbus">
-                <i class="fas fa-medkit"style="font-size : 6em;color:#0F9DE8;"></i>
+                <i class="fas fa-medkit"style="font-size:6em;color:#0F9DE8;"></i>
                 <br/>
                 <span>{{Santé}}</span>
             </div>
+            <!--
             <div class="cursor logoSecondary" id="bt_templatesmymodbus">
-                <i class="fas fa-cubes"style="font-size : 6em;color:#0F9DE8;"></i>
+                <i class="fas fa-cubes"style="font-size:6em;color:#0F9DE8;"></i>
                 <br/>
                 <span>{{Templates}}</span>
             </div>
+            -->
         </div>
         <legend><i class="fas fa-table"></i> {{Mes équipements}}</legend>
         <?php
@@ -68,7 +70,7 @@ if ($deamonRunning['state'] != 'ok') {
             foreach ($eqLogics as $eqLogic) {
                 $opacity = ($eqLogic->getIsEnable()) ? '' : 'disableCard';
                 echo '<div class="eqLogicDisplayCard cursor '.$opacity.'" data-eqLogic_id="' . $eqLogic->getId() . '">';
-                $alternateImg = $eqLogic->getConfiguration('protocol');
+                $alternateImg = $eqLogic->getConfiguration('eqProtocol');
                 if (file_exists(dirname(__FILE__) . '/../../desktop/images/' . $alternateImg .'_icon.png')) {
                     echo '<img class="lazy" src="plugins/mymodbus/desktop/images/' . $alternateImg .'_icon.png"/>';
                 } else {	
@@ -87,7 +89,7 @@ if ($deamonRunning['state'] != 'ok') {
     </div> <!-- /.eqLogicThumbnailDisplay -->
 
     <!-- Page de présentation de l'équipement -->
-    <div class="col-xs-12 eqLogic" style="display: none;">
+    <div class="col-xs-12 eqLogic" style="display:none;">
         <div class="input-group pull-right" style="display:inline-flex">
             <span class="input-group-btn">
                 <!-- Les balises <a></a> sont volontairement fermées à la ligne suivante pour éviter les espaces entre les boutons. Ne pas modifier -->
@@ -106,7 +108,7 @@ if ($deamonRunning['state'] != 'ok') {
             <li role="presentation" class="active"><a href="#eqlogictab" aria-controls="home" role="tab" data-toggle="tab"><i class="fas fa-tachometer-alt"></i> {{Equipement}}</a></li>
             <li role="presentation"><a href="#commandtab" aria-controls="profile" role="tab" data-toggle="tab"><i class="fa fa-list-alt"></i> {{Commandes}}</a></li>
         </ul>
-        <div class="tab-content" style="height:calc(100% - 50px);overflow:auto;overflow-x: hidden;">
+        <div class="tab-content" style="height:calc(100% - 50px);overflow:auto;overflow-x:hidden;">
             <!-- Onglet de configuration de l'équipement -->
             <div role="tabpanel" class="tab-pane active" id="eqlogictab">
                 <form class="form-horizontal">
@@ -117,7 +119,7 @@ if ($deamonRunning['state'] != 'ok') {
                             <div class="form-group">
                                 <label class="col-sm-4 control-label">{{Nom de l'équipement}}</label>
                                 <div class="col-sm-6">
-                                    <input type="text" class="eqLogicAttr form-control" data-l1key="id" style="display : none;" />
+                                    <input type="text" class="eqLogicAttr form-control" data-l1key="id" style="display:none;" />
                                     <input type="text" class="eqLogicAttr form-control" data-l1key="name" placeholder="{{Nom de l'équipement}}"/>
                                 </div>
                             </div>
@@ -159,10 +161,10 @@ if ($deamonRunning['state'] != 'ok') {
                             <!--   ***********************************  -->
                             <legend><i class="fa fa-list-alt"></i> {{Configuration :}}</legend>
                             <div class="form-group">
-                                 <label class="col-sm-4 control-label">{{Mode de connection}}</label>
+                                <label class="col-sm-4 control-label">{{Protocol de connexion}}</label>
                                 <div class="col-sm-6">
-                                    <select id="mode" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="protocol">
-                                        <option disabled selected value>-- {{Choisir un mode de connection}} --</option>
+                                    <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqProtocol">
+                                        <option disabled selected value>-- {{Choisir un protocol de connexion}} --</option>
                                         <?php
                                         foreach (mymodbus::supportedProtocol() as $protocol) {
                                             echo '<option value="' . $protocol . '">' . $protocol . '</option>';
@@ -171,15 +173,48 @@ if ($deamonRunning['state'] != 'ok') {
                                     </select>
                                 </div>
                             </div>
+                            <div class="form-group">
+                                <label class="col-sm-4 control-label">{{Garder la connexion ouverte}}</label>
+                                <div class="col-sm-6">
+                                    <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="configuration" data-l2key="eqKeepopen"/>{{Activer}}</label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-sm-4 control-label">{{Polling en secondes}}</label>
+                                <div class="col-sm-6">
+                                    <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqPolling" placeholder="{{60}}"/>
+                                </div>
+                            </div>
+                            
+                            <!-- Paramètres propres au protocol "desktop/modal/configuration.*.php" -->
                             <div id="div_protocolParameters"></div>
+                            
+                            <div class="form-group">
+                                <label class="col-sm-4 control-label">{{Ordre des BYTE dans les WORD}}</label>
+                                <div class="col-sm-6">
+                                    <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqWordEndianess">
+                                        <option value=">">{{Big Endian}}</option>
+                                        <option value="<">{{Little Endian}}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-sm-4 control-label">{{Ordre des WORD dans les DWORD}}</label>
+                                <div class="col-sm-6">
+                                    <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqDWordEndianess">
+                                        <option value=">">{{Big Endian}}</option>
+                                        <option value="<">{{Little Endian}}</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                         
                         <!-- Partie droite de l'onglet "Équipement" -->
                         <div class="col-lg-6">
-                            <legend><i class="fas fa-info"></i> {{Informations}}</legend>
+                            <legend><i class="fas fa-info"></i>{{Informations}}</legend>
                             <div class="form-group">
-                                <label class="col-sm-4 control-label">{{Description}}</label>
-                                <div class="col-sm-6">
+                                <label class="col-sm-2 control-label">{{Notes}}</label>
+                                <div class="col-sm-8">
                                     <textarea class="form-control eqLogicAttr autogrow" data-l1key="comment"></textarea>
                                 </div>
                             </div>
@@ -192,8 +227,10 @@ if ($deamonRunning['state'] != 'ok') {
             <div role="tabpanel" class="tab-pane" id="commandtab">
                 <div class="input-group pull-right" style="display:inline-flex;margin-top:5px;">
                     <span class="input-group-btn">
-                        <a class="btn btn-info btn-sm roundedLeft" id="bt_add_Info"><i class="fas fa-plus-circle"></i> {{Ajouter une info}} </a>
-                        <a class="btn btn-warning btn-sm roundedRight" id="bt_add_Action"><i class="fas fa-plus-circle"></i> {{Ajouter une action}} </a>
+                        <a class="btn btn-info btn-sm roundedLeft" id="bt_add_InfoBin" style="margin-right:5px;"><i class="fas fa-plus-circle"></i> {{Ajouter une info binaire}} </a>
+                        <a class="btn btn-info btn-sm roundedLeft" id="bt_add_InfoNum" style="margin-right:5px;"><i class="fas fa-plus-circle"></i> {{Ajouter une info numérique}} </a>
+                        <a class="btn btn-warning btn-sm roundedRight" id="bt_add_ActionBin" style="margin-right:5px;"><i class="fas fa-plus-circle"></i> {{Ajouter une action binaire}} </a>
+                        <a class="btn btn-warning btn-sm roundedRight" id="bt_add_ActionNum"><i class="fas fa-plus-circle"></i> {{Ajouter une action numérique}} </a>
                     </span>
                 </div>
                 <br/><br/>
@@ -201,12 +238,12 @@ if ($deamonRunning['state'] != 'ok') {
                     <table id="table_cmd" class="table table-bordered table-condensed">
                         <thead>
                             <tr>
-                                <th style="width: 200px;">{{Nom}}</th>
-                                <th style="width: 100px;">{{Type}}</th>
-                                <th style="width: 150px;">{{Type E/S}}</th>
-                                <th style="width: 100px;">{{Adresse}}</th>
-                                <th>{{Parametre(s)}}</th>
-                                <th style="width: 100px;">{{Options}}</th>
+                                <th style="width:300px;">{{Nom}}</th>
+                                <th style="width:100px;">{{Type}}</th>
+                                <th style="width:400px;">{{Fonction Modbus}}</th>
+                                <th style="width:100px;">{{Adresse}}</th>
+                                <th>{{Paramètre(s)}}</th>
+                                <th style="width:100px;">{{Options}}</th>
                                 <th>{{Configuration}}</th>
                             </tr>
                         </thead>
@@ -220,5 +257,7 @@ if ($deamonRunning['state'] != 'ok') {
     </div><!-- /.eqLogic -->
 </div><!-- /.row row-overflow -->
 
-<?php include_file('desktop', 'mymodbus', 'js', 'mymodbus');?>
-<?php include_file('core', 'plugin.template', 'js');?>
+<?php
+include_file('desktop', 'mymodbus', 'js', 'mymodbus');
+include_file('core', 'plugin.template', 'js');
+?>

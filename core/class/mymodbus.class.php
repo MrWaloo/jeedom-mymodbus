@@ -248,7 +248,7 @@ class mymodbus extends eqLogic {
         return array($return);
     }
 
-    // Michel: OK
+    // TODO
     public static function deamon_info() {
         $return = array();
         $return['state'] = 'nok';
@@ -262,7 +262,7 @@ class mymodbus extends eqLogic {
         return $return;
     }
     
-    // Michel: OK
+    // TODO
     public static function deamon_stop() {
         log::add('mymodbusd', 'info', 'Arrêt des démons');
         $pid = exec("ps -eo pid,command | grep 'mymodbusd.py' | grep -v grep | awk '{print $1}'| wc -l");
@@ -272,10 +272,10 @@ class mymodbus extends eqLogic {
         }
         system::kill('mymodbusd.py');
         sleep(1);
-        log::add('mymodbusd', 'info', 'Démons arrêtés');
+        log::add('mymodbus', 'info', 'Démons arrêtés');
     }
     
-    // Michel: OK
+    // TODO
     public static function sendToDaemon($params) {
         $deamon_info = self::deamon_info();
         if ($deamon_info['state'] != 'ok') {
@@ -293,13 +293,12 @@ class mymodbus extends eqLogic {
         
     }
     
+    // Michel: OK
+    // Supported protocols are in desktop/modal/configuration.[protocol].php
     public static function supportedProtocol() {
         $return = array();
-        foreach (ls(dirname(__FILE__) . '/../../desktop/modal/') as $file) {
-            $protocol = explode('.', $file);
-            if ($protocol[1]=="configuration" and $protocol[2]=="php") {
-                $return[] = $protocol[0];
-            }
+        foreach (glob(dirname(__FILE__) . '/../../desktop/modal/configuration.*.php') as $file) {
+            $return[] = substr(basename($file), strlen('configuration.'), strlen('.php') * -1);
         }
         return $return;
     }
