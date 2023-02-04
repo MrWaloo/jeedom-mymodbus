@@ -124,7 +124,7 @@ if ($deamonRunning['state'] != 'ok') {
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label class="col-sm-4 control-label" >{{Objet parent}}</label>
+                                <label class="col-sm-4 control-label">{{Objet parent}}</label>
                                 <div class="col-sm-6">
                                     <select id="sel_object" class="eqLogicAttr form-control" data-l1key="object_id">
                                         <option value="">{{Aucun}}</option>
@@ -166,7 +166,7 @@ if ($deamonRunning['state'] != 'ok') {
                                     <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqProtocol">
                                         <option disabled selected value>-- {{Choisir un protocol de connexion}} --</option>
                                         <?php
-                                        foreach (mymodbus::supportedProtocol() as $protocol) {
+                                        foreach (mymodbus::supportedProtocols() as $protocol) {
                                             echo '<option value="' . $protocol . '">' . $protocol . '</option>';
                                         }
                                         ?>
@@ -240,7 +240,7 @@ if ($deamonRunning['state'] != 'ok') {
                             <tr>
                                 <th style="width:300px;">{{Nom}}</th>
                                 <th style="width:100px;">{{Type}}</th>
-                                <th style="width:400px;">{{Fonction Modbus}}</th>
+                                <th style="width:300px;">{{Fonction Modbus}}</th>
                                 <th style="width:100px;">{{Adresse}}</th>
                                 <th>{{Paramètre(s)}}</th>
                                 <th style="width:100px;">{{Options}}</th>
