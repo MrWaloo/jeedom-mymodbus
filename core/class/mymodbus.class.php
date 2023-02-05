@@ -127,118 +127,15 @@ class mymodbus extends eqLogic {
         $request = ' --loglevel ' . $daemonLoglevel . ' --apikey ' . $daemonApikey . ' --callback ' . $daemonCallback . ' --config ' . $daemonConfig;
         
         $mymodbus_path = realpath(dirname(__FILE__) . '/../../ressources/mymodbusd');
-        $cmd = 'nice -n 19 /usr/bin/python3 ' . $mymodbus_path . '/mymodbusd.py' . $request;
-        log::add('mymodbus', 'info', 'Lancement du démon mymodbus : ' . $cmd);                
-//        $result = exec($cmd . ' >> ' . log::getPathToLog('mymodbus') . ' 2>&1 &');
-//        if (strpos(strtolower($result), 'error') !== false || strpos(strtolower($result), 'traceback') !== false) {
-//            log::add('mymodbus', 'error', $result);
-//            return false;
-//        }
+        $cmd = 'nice -n 19 /usr/bin/python3 ' . $mymodbus_path . '/mymodbusd.py' . $request; // FIXME: clarifier si `nice` est utile
+        log::add('mymodbus', 'info', 'Lancement du démon mymodbus : ' . $cmd);       
+        
+        $result = exec($cmd . ' >> ' . log::getPathToLog('mymodbus') . ' 2>&1 &');
+        if (strpos(strtolower($result), 'error') !== false || strpos(strtolower($result), 'traceback') !== false) {
+            log::add('mymodbus', 'error', $result);
+            return false;
+        }
 
-
-//        foreach (self::byType('mymodbus') as $mymodbus) { // boucle sur les équipements
-//            if ($mymodbus->getIsEnable()) {
-//                $mymodbus_ip = $mymodbus->getConfiguration('addr');
-//                $mymodbus_id = $mymodbus->getId(); // récupére l'id
-//                $mymodbus_port = $mymodbus->getConfiguration('port');
-//                $mymodbus_unit = $mymodbus->getConfiguration('unit');
-//                $mymodbus_protocol = $mymodbus->getConfiguration('protocol');
-//                $mymodbus_keepopen = $mymodbus->getConfiguration('keepopen');
-//                $mymodbus_baudrate = $mymodbus->getConfiguration('baudrate');
-//                // Equipement commun tcpip
-//                if ($mymodbus_protocol== "wago" || $mymodbus_protocol== "crouzet_m3" || $mymodbus_protocol== "adam" || $mymodbus_protocol== "logo"  ) {
-//                    $mymodbus_protocold="tcpip";
-//                    if ($mymodbus_ip == "") {
-//                        throw new Exception(__('La requete adresse ip ne peut etre vide',__FILE__).$mymodbus_ip);
-//                    }
-//                } else {
-//                    $mymodbus_protocold = $mymodbus_protocol;
-//                }
-//                if ($mymodbus_port=="") {
-//                    throw new Exception(__('La requetes port ne peut etre vide',__FILE__));
-//                }
-//                if ($mymodbus_unit=="") {
-//                    $mymodbus_unit=1;
-//                }
-//                if ($mymodbus_keepopen=="") {
-//                    $mymodbus_keepopen=0;
-//                }
-//                $mymodbus_polling = $mymodbus->getConfiguration('polling');
-//                if ($mymodbus_polling == ""  ) {
-//                    throw new Exception(__('La requetes polling ne peut etre vide',__FILE__));
-//                }
-//                //explod
-//                if ($mymodbus_protocold== "rtu" ) {
-//                    $request='--host='.$mymodbus_ip.' --port='.$mymodbus_port.' --unid='.$mymodbus_unit.' --polling='.$mymodbus_polling.' --protocol='.$mymodbus_protocold.' --eqid='.$mymodbus_id.' --baudrate='.$mymodbus_baudrate ;
-//                } else {
-//                    $request='--host='.$mymodbus_ip.' --port='.$mymodbus_port.' --unid='.$mymodbus_unit.' --polling='.$mymodbus_polling.' --keepopen='.$mymodbus_keepopen.' --protocol='.$mymodbus_protocold.' --eqid='.$mymodbus_id ;
-//                }
-//                foreach ($mymodbus->getCmd('info') as $cmd) {
-//                    if ($cmd->getConfiguration('type')=='coils') {
-//                        $coils[]=$cmd->getConfiguration('location');
-//                        log::add('mymodbus', 'info', 'coils trouvées :'.$cmd->getConfiguration('location'));
-//                    }
-//                    if ($cmd->getConfiguration('type')=='discrete_inputs') {
-//                        $discrete_inputs[]=$cmd->getConfiguration('location');
-//                    }
-//                    if ($cmd->getConfiguration('type')=='holding_registers') {
-//                        $holding_registers[] =$cmd->getConfiguration('location');
-//                        log::add('mymodbus', 'info', 'holding_registers trouvées :'.$cmd->getConfiguration('location'));
-//                    }
-//                    if ($cmd->getConfiguration('type')=='input_registers') {
-//                        $input_registers[]=$cmd->getConfiguration('location');
-//                    }
-//                    if ($cmd->getConfiguration('type')=='sign') {
-//                        $sign[]=$cmd->getConfiguration('location');
-//                        log::add('mymodbus', 'info', 'holding_Signed trouvées :'.$cmd->getConfiguration('location'));
-//                    }
-//                    if ($cmd->getConfiguration('type')=='virg') {
-//                        $virg[]=$cmd->getConfiguration('location');
-//                        log::add('mymodbus', 'info', 'holding_float trouvées :'.$cmd->getConfiguration('location'));
-//                    }
-//                    if ($cmd->getConfiguration('type')=='swapi32') {
-//                        $swapi32[]=$cmd->getConfiguration('location');
-//                        log::add('mymodbus', 'info', 'imput_register_swap_32 trouvées :'.$cmd->getConfiguration('location'));
-//                    }
-//                }
-//                if ($coils) {
-//                    $request.=' --coils='.implode(',',$coils);
-//                }
-//                if ($discrete_inputs) {
-//                    $request.=' --dis='.implode(',',$discrete_inputs);
-//                }
-//                if ($holding_registers) {
-//                    $request.=' --hrs='.implode(',',$holding_registers);
-//                }
-//                if ($input_registers) {
-//                    $request.=' --irs='.implode(',',$input_registers);
-//                }
-//                if ($sign) {
-//                    $request.=' --sign='.implode(',',$sign);
-//                }
-//                if ($virg) {
-//                    $request.=' --virg='.implode(',',$virg);
-//                }
-//                if ($swapi32) {
-//                    $request.=' --swapi32='.implode(',',$swapi32);
-//                }
-//                $mymodbus_path = realpath(dirname(__FILE__) . '/../../ressources/mymodbusd');
-//                $cmd = 'nice -n 19 /usr/bin/python3 ' . $mymodbus_path . '/mymodbusd.py ' . $request;
-//                log::add('mymodbus', 'info', 'Lancement du démon mymodbus : ' . $cmd);                
-//                $result = exec($cmd . ' >> ' . log::getPathToLog('mymodbus') . ' 2>&1 &');
-//                if (strpos(strtolower($result), 'error') !== false || strpos(strtolower($result), 'traceback') !== false) {
-//                    log::add('mymodbus', 'error', $result);
-//                    return false;
-//                }
-//
-//                $holding_registers = array();
-//                $coils = array();
-//                $discrete_inputs = array();
-//                $input_registers = array();
-//                $sign = array();
-//                $virg = array();
-//                $swapi32 = array();
-//                
 //                sleep(2);
 //                if (!self::deamon_info()) {
 //                    sleep(10);
@@ -249,7 +146,7 @@ class mymodbus extends eqLogic {
 //                }
 //                message::removeAll('mymodbus', 'unableStartDeamon');
 //            }
-//        }
+
     }
 
     public static function health() {
@@ -302,13 +199,16 @@ class mymodbus extends eqLogic {
     
     // TODO
     public static function deamon_stop() {
-        log::add('mymodbusd', 'info', 'Arrêt des démons');
-        $pid = exec("ps -eo pid,command | grep 'mymodbusd.py' | grep -v grep | awk '{print $1}'| wc -l");
-        While ($pid > 0) {
-            $pid = exec("ps -eo pid,command | grep 'mymodbusd.py' | grep -v grep | awk '{print $1}'| wc -l");
-            system::kill($pid);
+        log::add('mymodbusd', 'info', 'Arrêt du démon');
+        $daemon_running = exec("ps -eo pid,command | grep 'mymodbusd.py' | grep -v grep | awk '{print $1}'| wc -l");
+        //$pid = file_get_content('/tmp/mymodbusd.pid');
+        While ($daemon_running > 0) {
+            $pid = exec("ps -eo pid,command | grep 'mymodbusd.py' | grep -v grep | awk '{print $1}'");
+            //system::kill($pid);
+            posix_kill($cpid, SIGTERM);  // Signal 15
+            sleep(5);
+            $daemon_running = exec("ps -eo pid,command | grep 'mymodbusd.py' | grep -v grep | awk '{print $1}'| wc -l");
         }
-        system::kill('mymodbusd.py');
         sleep(1);
         log::add('mymodbus', 'info', 'Démons arrêtés');
     }
