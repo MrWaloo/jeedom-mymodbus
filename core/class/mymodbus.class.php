@@ -87,7 +87,7 @@ class mymodbus extends eqLogic {
     //Fonction exécutée automatiquement tous les jours par Jeedom
     public static function cronDaily() {
 //        foreach (self::byType('mymodbus') as $mymodbus) {//parcours tous les équipements du plugin mymodbus
-//            if ($mymodbus->getIsEnable() == 1) {//vérifie que l'équipement est actif
+//            if ($mymodbus->getIsEnable()) {//vérifie que l'équipement est actif
 //                $cmd = $mymodbus->getCmd(null, 'ntp');//retourne la commande 'ntp' si elle existe
 //                if (!is_object($cmd)) {//Si la commande n'existe pas
 //                    continue; //continue la boucle
@@ -104,11 +104,13 @@ class mymodbus extends eqLogic {
         // Always stop first.
         self::deamon_stop();
         
+        if (!plugin::byId('mymodbus')->isActive())
+            throw new Exception(__('{{Le plugin Mymodbus n\'est pas actif.', __FILE__));
+        
         // Pas de démarrage si aucune commande n'est configurée
         $deamon_info = self::deamon_info();
-        if ($deamon_info['launchable'] != 'ok') {
-            throw new Exception(__('Veuillez vérifier la configuration du demon', __FILE__));
-        }
+        if ($deamon_info['launchable'] != 'ok')
+            throw new Exception(__('{{Veuillez vérifier la configuration du demon}}', __FILE__));
         
         $completeConfig = self::getCompleteConfiguration();
         
@@ -135,7 +137,7 @@ class mymodbus extends eqLogic {
 
 
 //        foreach (self::byType('mymodbus') as $mymodbus) { // boucle sur les équipements
-//            if ($mymodbus->getIsEnable() == 1) {
+//            if ($mymodbus->getIsEnable()) {
 //                $mymodbus_ip = $mymodbus->getConfiguration('addr');
 //                $mymodbus_id = $mymodbus->getId(); // récupére l'id
 //                $mymodbus_port = $mymodbus->getConfiguration('port');
@@ -258,7 +260,7 @@ class mymodbus extends eqLogic {
         $return['state'] = true;
 
         foreach (self::byType('mymodbus') as $eqLogic) {
-            if ($eqLogic->getIsEnable() == 0) continue;
+            if (!$eqLogic->getIsEnable()) continue;
             // vérifie si l'eq à un démon qui tourne 
             $result = exec("ps -eo pid,command | grep 'eqid={$eqLogic->getId()}' | grep -v grep | awk '{print $1}' | wc -l");
             if ($result == 0) {
@@ -266,7 +268,6 @@ class mymodbus extends eqLogic {
                 $return['result'] = 'NOK';
                 $return['advice'] = __('Au moins un démon ne tourne pas ! Voir la page santé dans la configuration de MyModbus.', __FILE__);    
                 break;
-
             } else {
                 $return['state'] = true;
             }
@@ -286,7 +287,7 @@ class mymodbus extends eqLogic {
         
         // Launchable
         foreach (self::byType('mymodbus') as $mymodbus) { // boucle sur les équipements
-            if ($mymodbus->getIsEnable() == 1) {
+            if ($mymodbus->getIsEnable()) {
                 foreach ($mymodbus->getCmd('info') as $cmd) {
                     // Au moins une commande enregistrée, donc la configuration est validée par preSave()
                     $return['launchable'] = 'ok';
@@ -527,6 +528,9 @@ class mymodbus extends eqLogic {
     public static function getCompleteConfiguration() {
         $completeConfig = array();
         foreach (self::byType('mymodbus') as $eqMymodbus) { // boucle sur les équipements
+            // ne pas exporter la configuration si l'équipement n'est pas activé
+            if (!$eqMymodbus->getIsEnable())
+                continue;
             $eqConfig = array();
             $eqConfig['id'] = $eqMymodbus->getId();
             foreach ($eqMymodbus->getConfiguration() as $key => $value) {
