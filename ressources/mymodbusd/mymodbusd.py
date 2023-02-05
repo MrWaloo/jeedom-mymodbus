@@ -181,14 +181,12 @@ class Main():
         self.should_stop.set()
         self.has_stopped.wait(timeout=4)
         
-        for thread in threading.enumerate():
-            logging.debug("Stopping thread: " + thread.name)
-            if thread.is_alive():
-                logging.debug(thread.name + " is alive")
-            if thread.daemon:
-                logging.debug(thread.name + " is daemon")
-            
-            
+#        for thread in threading.enumerate():
+#            logging.debug("Stopping thread: " + thread.name)
+#            if thread.is_alive():
+#                logging.debug(thread.name + " is alive")
+#            if thread.daemon:
+#                logging.debug(thread.name + " is daemon")
         
         try:
             self.jsock.close()
