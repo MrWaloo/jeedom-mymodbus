@@ -34,7 +34,7 @@ except ImportError:
     sys.exit(1)
 
 # mymodbus specific imports
-#import threading ##### peut-être...
+import threading
 from pymodbus.client import ModbusTcpClient
 from pymodbus.payload import BinaryPayloadBuilder, BinaryPayloadDecoder
 from pymodbus.constants import Endian
@@ -48,7 +48,7 @@ class Main():
         self.read_args()
         
         jeedom_utils.set_log_level(self._log_level)
-
+        
         logging.info( 'Start daemon mymodbusd')
         logging.info( 'Log level:     ' + self._log_level)
         logging.debug('API key:       ' + self._api_key)
@@ -65,7 +65,6 @@ class Main():
     def read_args(self):
         ''' Reads arguments from the command line and set self.param
         '''
-#TODO: adapter la fonction "deamon_start()" dans core/class/mymodbus.class.php
         # Initialisation with hard coded parameters
         self._socket_host = 'localhost'
         self._socket_port =  55502
@@ -106,7 +105,7 @@ class Main():
         if self._api_key is None:
             logginglog.critical('Missing API key')
             sys.exit(2)
-
+        
         # Check the pid file
         if os.path.isfile(self._pidfile):
             logging.debug('pid File "%s" already exists.', self._pidfile)
@@ -131,16 +130,17 @@ class Main():
         '''Returns True when the communication to jeedom core is opened
         '''
         # jeedom_com : communication daemon --> php
-        self.jcom = jeedom_com(apikey=self._api_key, url=self._callback, cycle=self._cycle) # création de l'objet jeedom_com
+        self.jcom = jeedom_com(apikey=self._api_key, url=self._callback, cycle=0) # création de l'objet jeedom_com
         try:
             if not self.jcom.test(): #premier test pour vérifier que l'url de callback est correcte
                 logging.error('Network communication issues. Please fixe your Jeedom network configuration.')
                 return False
+                
 # Commande à utiliser pour envoyer un json au php
 #self.jcom.send_change_immediate({'key1': 'value1', 'key2': 'value2'})
-
-            # jeedom_socket : communication php --> daemon
-            self.jsock = jeedom_socket(address=self._socket_host, port=self._socket_port)
+            
+            # myModbusSocket : communication php --> daemon
+            self.jsock = myModbusSocket(address=self._socket_host, port=self._socket_port)
             #self.listen()
             
         except Exception as e:
@@ -150,7 +150,7 @@ class Main():
         
         return True
         
-    def read_socket():
+    def read_socket(self):
         global JEEDOM_SOCKET_MESSAGE
         if not JEEDOM_SOCKET_MESSAGE.empty():
             logging.debug("Message received in socket JEEDOM_SOCKET_MESSAGE")
@@ -164,35 +164,42 @@ class Main():
             except Exception as e:
                 logging.error('Send command to daemon error: ' + str(e))
     
-    def run():
+    def run(self):
+        self.has_stopped.clear()
         self.jsock.open()
-        try:
-            while True:
-                time.sleep(self._cycle)
-                self.read_socket()
-        except KeyboardInterrupt:
-            logging.debug("KeyboardInterrupt raised")
-            self.has_stopped.set()
-            self.shutdown()
+#       try:
+        while not self.should_stop.is_set():
+            time.sleep(self._cycle)
+            self.read_socket()
+#        except KeyboardInterrupt:
+#            logging.debug("KeyboardInterrupt raised")
+            
+        self.has_stopped.set()
         
     def shutdown(self):
         logging.debug("Shutdown Mymodbus python daemon")
         self.should_stop.set()
         self.has_stopped.wait(timeout=4)
         
+        for thread in threading.enumerate():
+            logging.debug("Stopping thread: " + thread.name)
+            if thread.is_alive():
+                logging.debug(thread.name + " is alive")
+            if thread.daemon:
+                logging.debug(thread.name + " is daemon")
+            
+            
+        
+        try:
+            self.jsock.close()
+        except:
+            pass
         logging.debug("Removing PID file " + self._pidfile)
         try:
             os.remove(self._pidfile)
         except:
             pass
-        try:
-            self.jsock.close()
-        except:
-            pass
-        # Always exit well
-        logging.debug("Exit 0")
-        sys.stdout.flush()
-        sys.exit(0)
+        logging.debug("Shutdown")
 
 # -----------------------------------------------------------------------------
 
@@ -206,18 +213,18 @@ if __name__ == '__main__':
     def signal_handler(signum=None, frame=None):
         logging.debug("Signal %d caught, exiting...", signum)
         should_stop.set()
-
+    
     # Connect the signals to the handler
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
-
+    
     # Ready ? Let's do something now
     m.prepare()
     if m.open_comm():
         m.run()
     m.shutdown()
-
+    
     # Always exit well
-    logger.debug("Exit 0")
+    logging.debug("Exit 0")
     sys.stdout.flush()
     sys.exit(0)
