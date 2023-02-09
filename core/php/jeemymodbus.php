@@ -17,30 +17,27 @@
 
 require_once __DIR__  . '/../../../../core/php/core.inc.php';
 
-try {
-    if (!jeedom::apiAccess(init('apikey'), 'mymodbus')) {
-        echo __('Vous n\'etes pas autorisé à effectuer cette action', __FILE__);
-        die();
-    }
-    if (init('test') != '') {
-        log::add('mymodbus', 'debug', 'Premier message de test reçu');
-        echo 'OK'; // Michel: ligne obligatoire pour que le test du démon soit OK ?
-        die();
-    }
-    $result = json_decode(file_get_contents("php://input"), true);
-    if (!is_array($result)) {
-        die();
-    }
+if (!jeedom::apiAccess(init('apikey'), 'mymodbus')) {
+    echo __('Vous n\'êtes pas autorisé à effectuer cette action', __FILE__);
+    die();
+}
+if (init('test') != '') {
+    log::add('mymodbus', 'debug', 'Premier message de test reçu');
+    echo 'OK'; // Michel: ligne obligatoire pour que le test du démon soit OK ?
+    die();
+}
+$result = json_decode(file_get_contents("php://input"), true);
+log::add('mymodbus', 'debug', '**** jeemymodbus.php **** vivant *' . $result . '*');
+if (!is_array($result)) {
+    die();
+}
+log::add('mymodbus', 'debug', '**** jeemymodbus.php **** vivant 3');
 
-    // TODO: 
-    if (isset($result['key1'])) {
-        // TODO ...
-    } elseif (isset($result['key2'])) {
-        // TODO ...
-    } else {
-        log::add('mymodbus', 'error', 'unknown message received from daemon');
-    }
-    
-} catch (Exception $e) {
-    log::add('mymodbus', 'error', displayException($e));
+// TODO: 
+if (isset($result['state'])) {
+    log::add('mymodbus', 'debug', '**** jeemymodbus.php **** state: *' . $result['state'] . '*');
+} elseif (isset($result['key2'])) {
+    // TODO ...
+} else {
+    log::add('mymodbus', 'error', 'unknown message received from daemon');
 }

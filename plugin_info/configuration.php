@@ -24,13 +24,14 @@ if (!isConnect()) {
 ?>
 <form class="form-horizontal">
     <fieldset>
-        <legend><i class="icon loisir-darth"></i> {{Gestion des démons}}</legend>
+        <legend><i class="icon loisir-darth"></i>{{Gestion du démon}}</legend>
         <div class="form-group expertModeVisible">
-            <label class="col-lg-4 control-label">{{Port socket interne (doit être identique sur l esclaves)}}</label>
+            <label class="col-lg-4 control-label">{{Port du socket interne :}}</label>
             <div class="col-lg-2">
-                <input class="configKey form-control" data-l1key="socketport" placeholder="{{Futur Beta Mymodbus}}"/>
+                <input class="configKey form-control" data-l1key="socketport" placeholder="55502"/>
             </div>
         </div>
+        <!--
         <div class="form-group" >
             <label class="col-lg-4 control-label">{{Activer les logs séparés des démons locaux}} <i class="fas fa-question-circle tooltips" title="{{Nécéssite un redémarrage des démons}}"></i></label>
             <div class="col-lg-3">
@@ -43,5 +44,6 @@ if (!isConnect()) {
                 <input type="checkbox" class="configKey " data-l1key="ActiveRestart" />
             </div>
         </div>
+        -->
     </fieldset>
 </form>

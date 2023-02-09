@@ -303,75 +303,45 @@ class jeedom_serial():
         return buf
 
 # ------------------------------------------------------------------------------
-
-JEEDOM_SOCKET_MESSAGE = Queue()
-
-class jeedom_socket_handler(socketserver.StreamRequestHandler):
-    def handle(self):
-        global JEEDOM_SOCKET_MESSAGE
-        logging.info("Client connected to [%s:%d]" % self.client_address)
-        lg = self.rfile.readline()
-        JEEDOM_SOCKET_MESSAGE.put(lg)
-        logging.info("Message read from socket: " + str(lg.strip()))
-        self.netAdapterClientConnected = False
-        logging.info("Client disconnected from [%s:%d]" % self.client_address)
-
-class jeedom_socket():
-    def __init__(self,address='localhost', port=55000):
-        self.address = address
-        self.port = port
-        socketserver.TCPServer.allow_reuse_address = True
-
-    def open(self):
-        self.netAdapter = socketserver.TCPServer((self.address, self.port), jeedom_socket_handler)
-        if self.netAdapter:
-            logging.info("Socket interface started")
-            threading.Thread(target=self.loopNetServer, args=()).start()
-        else:
-            logging.info("Cannot start socket interface")
-
-    def loopNetServer(self):
-        logging.info("LoopNetServer Thread started")
-        logging.info("Listening on: [%s:%d]" % (self.address, self.port))
-        self.netAdapter.serve_forever()
-        logging.info("LoopNetServer Thread stopped")
-
-    def close(self):
-        self.netAdapter.shutdown()
-
-    def getMessage(self):
-        return self.message
-
-# ------------------------------------------------------------------------------
-# ADDED for mymodbus
-# source: https://docs.python.org/3.9/library/socketserver.html#asynchronous-mixins
-# ------------------------------------------------------------------------------
-
-class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
-    pass
-
-class myModbusSocket():
-    def __init__(self, address='localhost', port=55502):
-        self.address = address
-        self.port = port
-        self.server = None
-        self.server_thread = None
-        socketserver.TCPServer.allow_reuse_address = True
-    
-    def open(self):
-        self.server = ThreadedTCPServer((self.address, self.port), jeedom_socket_handler)
-        with self.server:
-            logging.info("Socket interface started")
-            self.server_thread = threading.Thread(target=self.server.serve_forever)
-            self.server_thread.daemon = True
-            self.server_thread.start()
-            logging.info("Server loop running in thread: " + self.server_thread.name)
-    
-    def close(self):
-        self.server.shutdown()
-    
-
-
+#
+#JEEDOM_SOCKET_MESSAGE = Queue()
+#
+#class jeedom_socket_handler(socketserver.StreamRequestHandler):
+#    def handle(self):
+#        global JEEDOM_SOCKET_MESSAGE
+#        logging.info("Client connected to [%s:%d]" % self.client_address)
+#        lg = self.rfile.readline()
+#        JEEDOM_SOCKET_MESSAGE.put(lg)
+#        logging.info("Message read from socket: " + str(lg.strip()))
+#        self.netAdapterClientConnected = False
+#        logging.info("Client disconnected from [%s:%d]" % self.client_address)
+#
+#class jeedom_socket():
+#    def __init__(self,address='localhost', port=55000):
+#        self.address = address
+#        self.port = port
+#        socketserver.TCPServer.allow_reuse_address = True
+#
+#    def open(self):
+#        self.netAdapter = socketserver.TCPServer((self.address, self.port), jeedom_socket_handler)
+#        if self.netAdapter:
+#            logging.info("Socket interface started")
+#            threading.Thread(target=self.loopNetServer, args=()).start()
+#        else:
+#            logging.info("Cannot start socket interface")
+#
+#    def loopNetServer(self):
+#        logging.info("LoopNetServer Thread started")
+#        logging.info("Listening on: [%s:%d]" % (self.address, self.port))
+#        self.netAdapter.serve_forever()
+#        logging.info("LoopNetServer Thread stopped")
+#
+#    def close(self):
+#        self.netAdapter.shutdown()
+#
+#    def getMessage(self):
+#        return self.message
+#
 # ------------------------------------------------------------------------------
 # END
 # ------------------------------------------------------------------------------

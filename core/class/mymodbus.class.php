@@ -36,7 +36,7 @@ class mymodbus extends eqLogic {
 
     public static $_version = '2.0';
     
-    public static $SOCKET_PORT = '55502';
+    public static $DEFAULT_SOCKET_PORT = 55502;
 
     /*     * ***********************Methode static*************************** */
   
@@ -44,19 +44,18 @@ class mymodbus extends eqLogic {
     // TODO
     public static function cron() {
         //SI Restart des Démons
-        if (config::byKey('ActiveRestart', 'mymodbus', true)) {
-            $deamonInfo = self::deamon_info();
-            $deamonsRunning = self::health();
-            $deamonsRunning = $deamonsRunning[0];  // peut importe l'index  0 
-            
-            // Si Healt Nok et que le demon principal est OK alors Restart 
-            if (($deamonsRunning['result'] == 'NOK') and ($deamonInfo['state'] == 'ok')) {
-                log::add('mymodbus', 'info', 'restart by Health');
-                self::deamon_stop();
-                sleep(2);
-                self::deamon_start();
-            }
-        }
+//        if (config::byKey('ActiveRestart', 'mymodbus', true)) {
+//            $deamonsRunning = self::health();
+//            $deamonsRunning = $deamonsRunning[0];  // peut importe l'index  0 
+//            
+//            // Si Healt Nok et que le demon principal est OK alors Restart 
+//            if (($deamonsRunning['result'] == 'NOK') and (self::getDeamonState() == 'ok')) {
+//                log::add('mymodbus', 'info', 'restart by Health');
+//                self::deamon_stop();
+//                sleep(2);
+//                self::deamon_start();
+//            }
+//        }
     }
 
   /*
@@ -108,23 +107,23 @@ class mymodbus extends eqLogic {
             throw new Exception(__('{{Le plugin Mymodbus n\'est pas actif.', __FILE__));
         
         // Pas de démarrage si aucune commande n'est configurée
-        $deamon_info = self::deamon_info();
-        if ($deamon_info['launchable'] != 'ok')
-            throw new Exception(__('{{Veuillez vérifier la configuration du demon}}', __FILE__));
+        if (self::getDeamonLaunchable() != 'ok')
+            throw new Exception(__('{{Veuillez vérifier la configuration du démon}}', __FILE__));
         
-        $completeConfig = self::getCompleteConfiguration();
+        $jsonData = self::getCompleteConfiguration();
         
-        $daemonLoglevel = escapeshellarg('debug'); // DEBUG 'info'
+        $socketPort = is_numeric(config::byKey('socketport', __CLASS__, self::$DEFAULT_SOCKET_PORT, True)) ? config::byKey('socketport', __CLASS__, self::$DEFAULT_SOCKET_PORT) : self::$DEFAULT_SOCKET_PORT;
+        $daemonLoglevel = escapeshellarg('debug'); // DEBUG 'error'
         $daemonApikey = escapeshellarg(jeedom::getApiKey(__CLASS__));
         $daemonCallback = escapeshellarg(self::getCallbackUrl());
-        $daemonConfig = escapeshellarg(json_encode($completeConfig));
+        $daemonJson = escapeshellarg(json_encode($jsonData));
         
-        //log::add('mymodbus', 'debug', 'deamon_start socketport *' . json_encode(self::$SOCKET_PORT) . '*');
+        log::add('mymodbus', 'debug', 'deamon_start socketport *' . $socketPort . '*');
         log::add('mymodbus', 'debug', 'deamon_start API-key *' . $daemonApikey . '*');
         log::add('mymodbus', 'debug', 'deamon_start callbackURL *' . $daemonCallback . '*');
-        log::add('mymodbus', 'debug', 'deamon_start config *' . $daemonConfig . '*');
+        log::add('mymodbus', 'debug', 'deamon_start config *' . $daemonJson . '*');
         
-        $request = ' --loglevel ' . $daemonLoglevel . ' --apikey ' . $daemonApikey . ' --callback ' . $daemonCallback . ' --config ' . $daemonConfig;
+        $request = ' --socketport ' . $socketPort . ' --loglevel ' . $daemonLoglevel . ' --apikey ' . $daemonApikey . ' --callback ' . $daemonCallback . ' --json ' . $daemonJson;
         
         $mymodbus_path = realpath(dirname(__FILE__) . '/../../ressources/mymodbusd');
         $cmd = 'nice -n 19 /usr/bin/python3 ' . $mymodbus_path . '/mymodbusd.py' . $request; // FIXME: clarifier si `nice` est utile
@@ -135,20 +134,9 @@ class mymodbus extends eqLogic {
             log::add('mymodbus', 'error', $result);
             return false;
         }
-
-//                sleep(2);
-//                if (!self::deamon_info()) {
-//                    sleep(10);
-//                    if (!self::deamon_info()) {
-//                        log::add('mymodbus', 'error', 'Impossible de lancer le démon Modbus', 'unableStartDeamon');
-//                        return false;
-//                    }
-//                }
-//                message::removeAll('mymodbus', 'unableStartDeamon');
-//            }
-
     }
-
+    
+    // TODO
     public static function health() {
         $return = array();
         $return['test'] = __('Etat(s) démon(s)', __FILE__);
@@ -163,10 +151,8 @@ class mymodbus extends eqLogic {
             if ($result == 0) {
                 $return['state'] = false;
                 $return['result'] = 'NOK';
-                $return['advice'] = __('Au moins un démon ne tourne pas ! Voir la page santé dans la configuration de MyModbus.', __FILE__);    
+                $return['advice'] = __('Le démon ne tourne pas ! Voir la page santé dans la configuration de MyModbus.', __FILE__);    
                 break;
-            } else {
-                $return['state'] = true;
             }
         }
         return array($return);
@@ -175,60 +161,50 @@ class mymodbus extends eqLogic {
     // Information du démon
     public static function deamon_info() {
         $return = array();
-        $return['state'] = 'nok';
-        $return['launchable'] = 'nok';
+        $return['state'] = self::getDeamonState();
+        $return['launchable'] = self::getDeamonLaunchable();
         
-        // State
-        $result = exec("ps -eo pid,command | grep 'mymodbusd.py' | grep -v grep | awk '{print $1}'"); // TODO
-        $return['state'] = ($result == 0)? 'nok': 'ok';
-        
-        // Launchable
-        foreach (self::byType('mymodbus') as $mymodbus) { // boucle sur les équipements
-            if ($mymodbus->getIsEnable()) {
-                foreach ($mymodbus->getCmd('info') as $cmd) {
-                    // Au moins une commande enregistrée, donc la configuration est validée par preSave()
-                    $return['launchable'] = 'ok';
-                    break 2;
-                }
-            }
-        }
-        
-        log::add('mymodbus', 'debug', 'deamon_info *' . $mymodbus->getName() . '* = ' . json_encode($return));
+        log::add('mymodbus', 'debug', 'deamon_info = ' . json_encode($return));
         return $return;
     }
     
     // TODO
     public static function deamon_stop() {
-        log::add('mymodbusd', 'info', 'Arrêt du démon');
+        log::add('mymodbus', 'info', 'deamon_stop: Arrêt du démon');
+        
+        $deamon_state = self::getDeamonState();
         $daemon_running = exec("ps -eo pid,command | grep 'mymodbusd.py' | grep -v grep | awk '{print $1}'| wc -l");
-        //$pid = file_get_content('/tmp/mymodbusd.pid');
-        While ($daemon_running > 0) {
-            $pid = exec("ps -eo pid,command | grep 'mymodbusd.py' | grep -v grep | awk '{print $1}'");
-            //system::kill($pid);
-            posix_kill($cpid, SIGTERM);  // Signal 15
-            sleep(5);
-            $daemon_running = exec("ps -eo pid,command | grep 'mymodbusd.py' | grep -v grep | awk '{print $1}'| wc -l");
-        }
-        sleep(1);
-        log::add('mymodbus', 'info', 'Démons arrêtés');
+        log::add('mymodbus', 'debug', 'deamon_stop $daemon_running *' . $daemon_running . '*');
+        log::add('mymodbus', 'debug', 'deamon_stop $deamon_state ' . $deamon_state);
+        if ($deamon_state == 'nok' and $daemon_running == 0)
+            return True;
+        
+        log::add('mymodbus', 'info', 'deamon_stop: Arrêt du démon...');
+        $cmd = array();
+        $cmd['CMD'] = 'quit';
+        self::sendToDaemon($cmd);
+        sleep(3);
+        
+        log::add('mymodbus', 'info', 'deamon_stop: Démon arrêté');
     }
     
     // TODO
     public static function sendToDaemon($params) {
-        $deamon_info = self::deamon_info();
-        if ($deamon_info['state'] != 'ok') {
+        if (self::getDeamonState() != 'ok') {
             throw new Exception("Le démon n'est pas démarré");
         }
         $params['apikey'] = jeedom::getApiKey(__CLASS__);
+        $params['dt'] = date(DATE_ATOM);
         $payLoad = json_encode($params);
         $socket = socket_create(AF_INET, SOCK_STREAM, 0);
-        socket_connect($socket, '127.0.0.1', config::byKey('socketport', __CLASS__, '55502'));
-        socket_write($socket, $payLoad, strlen($payLoad));
+        $socket_port = is_numeric(config::byKey('socketport', __CLASS__, self::$DEFAULT_SOCKET_PORT, True)) ? config::byKey('socketport', __CLASS__, self::$DEFAULT_SOCKET_PORT) : self::$DEFAULT_SOCKET_PORT;
+        socket_connect($socket, '127.0.0.1', config::byKey('socketport', __CLASS__, $socket_port));
+        $socket_ok = socket_write($socket, $payLoad, strlen($payLoad));
+        if (!$socket_ok) {
+            $err = socket_last_error($socket);
+            log::add('mymodbus', 'error', 'sendToDaemon: socket_write ERROR: ' . socket_strerror($err));
+        }
         socket_close($socket);
-    }
-
-    public static function ntp_crouzet_m3() {
-        
     }
     
     // Michel: OK
@@ -276,8 +252,7 @@ class mymodbus extends eqLogic {
     // Fonction exécutée automatiquement après la suppression de l'équipement
     public function postRemove() {
         sleep(2);
-        $deamonRunning = self::deamon_info();
-        if ($deamonRunning['state'] != 'ok') {
+        if (self::getDeamonState() != 'ok') {
             self::deamon_start();
         }
     }
@@ -451,6 +426,25 @@ class mymodbus extends eqLogic {
         return $completeConfig;
     }
     
+    public static function getDeamonState() {
+        $running_pid = exec("ps -eo pid,command | grep 'mymodbusd.py' | grep -v grep | awk '{print $1}'");
+        $pid = file_get_contents('/tmp/mymodbusd.pid');
+        return (($running_pid != 0) and (intval($running_pid) == intval($pid)))? 'ok': 'nok';
+    }
+    
+    public static function getDeamonLaunchable() {
+        foreach (self::byType('mymodbus') as $mymodbus) { // boucle sur les équipements
+            if ($mymodbus->getIsEnable()) {
+                foreach ($mymodbus->getCmd('info') as $cmd) {
+                    // Au moins une commande enregistrée, donc la configuration est validée par preSave()
+                    return 'ok';
+                }
+            }
+        }
+        
+        return 'nok';
+    }
+    
     public static function getCallbackUrl() {
         $prot = config::byKey('internalProtocol', 'core', 'http://');
         $port = config::byKey('internalPort', 'core', 80);
@@ -569,9 +563,8 @@ class mymodbusCmd extends cmd {
     public function preSave() {
         $prefix = substr($this->type, 0, 3);
         $Address = $this->getConfiguration($prefix . 'Addr');
-        if (!is_numeric($Address)) {
+        if (!is_numeric($Address))
             throw new Exception(__('L\'adresse doit être un nombre.', __FILE__));
-        }
         //log::add('mymodbus', 'debug', 'Validation de la configuration pour la commande *' . $this->getName() . '* : OK');
     }
 

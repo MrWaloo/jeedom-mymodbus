@@ -1,0 +1,49 @@
+# This file is part of Jeedom.
+#
+# Jeedom is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# Jeedom is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with Jeedom. If not, see <http://www.gnu.org/licenses/>.
+
+import logging
+import string
+import sys
+import os
+import time
+import datetime
+import re
+import json
+import threading
+from pymodbus.client import ModbusTcpClient
+from pymodbus.payload import BinaryPayloadBuilder, BinaryPayloadDecoder
+from pymodbus.constants import Endian
+from pymodbus.exceptions import *
+
+try:
+    from jeedom.jeedom import jeedom_utils, jeedom_com
+except ImportError:
+    print("Error: importing module jeedom.jeedom")
+    sys.exit(1)
+
+# -----------------------------------------------------------------------------
+
+class MyModbus():
+    def __init__(self, config):
+        ''' Main class for mymodbus
+        '''
+        self.config = json.loads(config)
+    
+
+# -----------------------------------------------------------------------------
+
+class MyModbusTcp(MyModbus):
+    pass
+    
