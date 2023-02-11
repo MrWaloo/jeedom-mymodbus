@@ -25,7 +25,7 @@ import json
 import argparse
 import threading
 import socket
-from mymodbus import MyModbusTcp
+from mymodbus import PyModbusClient
 
 try:
     from jeedom.jeedom import jeedom_utils, jeedom_com
@@ -44,18 +44,22 @@ class Main():
         
         logging.info( 'Start daemon mymodbusd')
         logging.info( 'Log level:     ' + self._log_level)
-        logging.debug('API key:       ' + self._api_key)
+        logging.debug('API key:       ' + self._apikey)
         logging.debug('Callback:      ' + self._callback)
         logging.debug('Configuration: ' + str(self._json))
         
         # Handle Run & Shutdown
         self.should_stop = should_stop
-        self.has_stopped = threading.Event()
-        self.has_stopped.set()
+        self.clear_to_leave = threading.Event()
+        self.clear_to_leave.set()
         
         # Input socket (php -> daemon)
         self.jsock = socket.socket()
         
+        # Communication to php
+        self.jcom = None
+        
+        self.config = None
         self.modbus_clients = {}
         
     def read_args(self):
@@ -64,18 +68,18 @@ class Main():
         # Initialisation with hard coded parameters
         self._socket_host = 'localhost'
         self._pidfile     =  '/tmp/mymodbusd.pid'
-        self._cycle       =  1.0
+        self._cycle       =  0.3
         # These parameters can be passed as arguments:
         self._socket_port =  55502
         self._log_level   =  "error"
-        self._api_key     =  ''
+        self._apikey     =  ''
         self._callback    =  ''
         self._json      =  {}
         
         # Parameters passed as command line arguments
         parser = argparse.ArgumentParser(description='Mymodbus parameters')
         
-        parser.add_argument("--socketport", help="Communication socket to Jeedom",  type=str)
+        parser.add_argument("--socketport", help="Communication socket to Jeedom",  type=int)
         parser.add_argument("--loglevel",   help="Log Level for the daemon",        type=str)
         parser.add_argument("--apikey",     help="Apikey from Jeedom",              type=str)
         parser.add_argument("--callback",   help="Callback url",                    type=str)
@@ -83,11 +87,14 @@ class Main():
         args = parser.parse_args()
         
         if args.socketport:
-            self._socket_port = int(args.socketport)
+            try:
+                self._socket_port = int(args.socketport)
+            except:
+                pass
         if args.loglevel:
             self._log_level = args.loglevel
         if args.apikey:
-            self._api_key = args.apikey
+            self._apikey = args.apikey
         if args.callback:
             self._callback = args.callback
         if args.json:
@@ -101,7 +108,7 @@ class Main():
             logging.critical('Missing callback url')
             sys.exit(2)
         # API key is mandatory
-        if self._api_key is None:
+        if self._apikey is None:
             logginglog.critical('Missing API key')
             sys.exit(2)
         # Json data is mandatory
@@ -134,7 +141,7 @@ class Main():
         '''Returns True when the communication to jeedom core is opened
         '''
         # jeedom_com: communication daemon --> php
-        self.jcom = jeedom_com(apikey=self._api_key, url=self._callback, cycle=0) # création de l'objet jeedom_com
+        self.jcom = jeedom_com(apikey=self._apikey, url=self._callback, cycle=0) # création de l'objet jeedom_com
         try:
             if not self.jcom.test(): #premier test pour vérifier que l'url de callback est correcte
                 logging.error('Network communication issues. Please fixe your Jeedom network configuration.')
@@ -162,7 +169,7 @@ class Main():
         if 'apikey' not in message:
             logging.error("Received data without API key: " + str(message))
             return
-        if message['apikey'] != self._api_key:
+        if message['apikey'] != self._apikey:
             logging.error("Invalid apikey from socket: " + str(message))
             return
         # Checking if it is a command
@@ -172,11 +179,15 @@ class Main():
                 self.should_stop.set()
                 return
         
-    
+        
     def run(self):
-        self.has_stopped.clear()
+        self.clear_to_leave.clear()
+        
+        self.launch_clients()
+        
+        # Incoming communication from php
         self.jsock.listen()
-        self.jsock.settimeout(1.0)
+        self.jsock.settimeout(self._cycle)
         while not self.should_stop.is_set():
             try:
                 conn, addr = self.jsock.accept()
@@ -187,7 +198,17 @@ class Main():
             except socket.timeout:
                 pass
             
-        self.has_stopped.set()
+        # FIXME: arrêter tous les threads de communication
+        
+        self.clear_to_leave.set()
+        
+    def launch_clients(sel):
+        self.config = json.loads(self._json)
+        
+        for eqConfig in self.config:
+            modbus_client = PyModbusClient(eqConfig)
+            self.modbus_clients[eqConfig['id']] = modbus_client
+            theading.Thread(modbus_client.run).start()
         
     def shutdown(self):
         logging.debug("Shutdown Mymodbus python daemon")
@@ -196,7 +217,7 @@ class Main():
             self.jsock.close()
         except:
             pass
-        self.has_stopped.wait(timeout=4)
+        self.clear_to_leave.wait(timeout=4)
         logging.debug("Removing PID file " + self._pidfile)
         try:
             os.remove(self._pidfile)

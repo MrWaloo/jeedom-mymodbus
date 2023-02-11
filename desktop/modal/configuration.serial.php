@@ -28,9 +28,22 @@ if (!isConnect('admin')) {
 -->
 
 <div class="form-group">
-    <label class="col-sm-4 control-label">{{Adresse}}</label>
+    <label class="col-sm-4 control-label">{{Interface}}</label>
     <div class="col-sm-6">
-        <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqSerialAddr" placeholder="{{Adresse modbus}}"/>
+        <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqSerialInterface">
+            <?php
+            foreach (mymodbus::getTtyInterfaces() as $key => $value) {
+                echo '<option value="' . $value . '">' . $key . '</option>';
+            }
+            ?><option value="rtu">{{RTU}}</option>
+        </select>
+    </div>
+</div>
+
+<div class="form-group">
+    <label class="col-sm-4 control-label">{{Adresse de l'esclave}}</label>
+    <div class="col-sm-6">
+        <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqSerialSlave" placeholder="{{Adresse modbus}}"/>
     </div>
 </div>
 

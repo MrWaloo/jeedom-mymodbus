@@ -138,34 +138,34 @@ class mymodbus extends eqLogic {
     
     // TODO
     public static function health() {
-        $return = array();
-        $return['test'] = __('Etat(s) démon(s)', __FILE__);
-        $return['result'] ='OK';
-        $return['advice'] = '';
-        $return['state'] = true;
+        $health_arr = array();
+        $health_arr['test'] = __('Etat(s) démon(s)', __FILE__);
+        $health_arr['result'] ='OK';
+        $health_arr['advice'] = '';
+        $health_arr['state'] = true;
 
         foreach (self::byType('mymodbus') as $eqLogic) {
             if (!$eqLogic->getIsEnable()) continue;
             // vérifie si l'eq à un démon qui tourne 
-            $result = exec("ps -eo pid,command | grep 'eqid={$eqLogic->getId()}' | grep -v grep | awk '{print $1}' | wc -l");
-            if ($result == 0) {
-                $return['state'] = false;
-                $return['result'] = 'NOK';
-                $return['advice'] = __('Le démon ne tourne pas ! Voir la page santé dans la configuration de MyModbus.', __FILE__);    
+            $health_arr = exec("ps -eo pid,command | grep 'eqid={$eqLogic->getId()}' | grep -v grep | awk '{print $1}' | wc -l");
+            if ($health_arr == 0) {
+                $health_arr['state'] = false;
+                $health_arr['result'] = 'NOK';
+                $health_arr['advice'] = __('Le démon ne tourne pas ! Voir la page santé dans la configuration de MyModbus.', __FILE__);    
                 break;
             }
         }
-        return array($return);
+        return array($health_arr);
     }
 
     // Information du démon
     public static function deamon_info() {
-        $return = array();
-        $return['state'] = self::getDeamonState();
-        $return['launchable'] = self::getDeamonLaunchable();
+        $daemon_info = array();
+        $daemon_info['state'] = self::getDeamonState();
+        $daemon_info['launchable'] = self::getDeamonLaunchable();
         
-        log::add('mymodbus', 'debug', 'deamon_info = ' . json_encode($return));
-        return $return;
+        log::add('mymodbus', 'debug', 'deamon_info = ' . json_encode($daemon_info));
+        return $daemon_info;
     }
     
     // TODO
@@ -210,30 +210,42 @@ class mymodbus extends eqLogic {
     // Michel: OK
     // Supported protocols are in desktop/modal/configuration.[protocol].php
     public static function supportedProtocols() {
-        $return = array();
+        $protocols = array();
         foreach (glob(dirname(__FILE__) . '/../../desktop/modal/configuration.*.php') as $file) {
-            $return[] = substr(basename($file), strlen('configuration.'), strlen('.php') * -1);
+            $protocols[] = substr(basename($file), strlen('configuration.'), strlen('.php') * -1);
         }
-        return $return;
+        return $protocols;
+    }
+    
+    // TODO
+    // tty interfaces
+    public static function getTtyInterfaces() {
+        $interfaces = jeedom::getUsbMapping('', True);
+        $interfaces['/dev/tty'] = '/dev/tty';
+        for ($i = 0; $i<10; $i++) {
+            $tty = '/dev/tty' . strval($i);
+            $interfaces[$tty] = $tty;
+        }
+        return $interfaces;
     }
 
     // Michel: OK
     public static function dependancy_info() {
-        $return = array();
-        $return['log'] = log::getPathToLog(__CLASS__ . '_update');
-        $return['progress_file'] = jeedom::getTmpFolder(__CLASS__) . '/dependency';
+        $dep_info = array();
+        $dep_info['log'] = log::getPathToLog(__CLASS__ . '_update');
+        $dep_info['progress_file'] = jeedom::getTmpFolder(__CLASS__) . '/dependency';
         if (file_exists(jeedom::getTmpFolder(__CLASS__) . '/dependency')) {
-            $return['state'] = 'in_progress';
+            $dep_info['state'] = 'in_progress';
         } else {
             if (exec(system::getCmdSudo() . system::get('cmd_check') . '-Ec "python3\-pip"') < 1) {
-                $return['state'] = 'nok';
+                $dep_info['state'] = 'nok';
             } elseif (exec(system::getCmdSudo() . 'python3 -m pip list | grep -Ewc "pymodbus|pyserial|six|serial|pyudev"') < 5) {
-                $return['state'] = 'nok';
+                $dep_info['state'] = 'nok';
             } else {
-                $return['state'] = 'ok';
+                $dep_info['state'] = 'ok';
             }
         }
-        return $return;
+        return $dep_info;
     }
 
     // Michel: OK
@@ -308,20 +320,39 @@ class mymodbus extends eqLogic {
                 throw new Exception(__('Le port doit être un nombre.', __FILE__));
             }
             
+        } elseif ($eqProtocol == 'udp') {
+            // Vérification du paramétrage d'une connexion TCP
+            if (!in_array('eqUdpAddr', $configKeys) and !in_array('eqUdpPort', $configKeys) and
+                    !in_array('eqUdpRtu', $configKeys)) {
+                throw new Exception(__('Veuillez définir la configuration UDP de l\'équipement', __FILE__));
+            }
+            $eqUdpAddr = $this->getConfiguration('eqUdpAddr');
+            $eqUdpPort = $this->getConfiguration('eqUdpPort');
+            if (!filter_var($eqUdpAddr, FILTER_VALIDATE_IP)) {
+                throw new Exception(__('L\'adresse IP n\'est pas valide', __FILE__));
+            }
+            if (!is_numeric($eqUdpPort)) {
+                throw new Exception(__('Le port doit être un nombre.', __FILE__));
+            }
+            
         } elseif ($eqProtocol == 'serial') {
             // Vérification du paramétrage d'une connexion série
-            if (!in_array('eqSerialAddr', $configKeys) and !in_array('eqSerialMethod', $configKeys) and
-                    !in_array('eqSerialBaudrate', $configKeys) and !in_array('eqSerialBytesize', $configKeys) and
-                    !in_array('eqSerialParity', $configKeys) and !in_array('eqSerialStopbits', $configKeys)) {
+            if (!in_array('eqSerialInterface', $configKeys) or !in_array('eqSerialSlave', $configKeys) ok !in_array('eqSerialMethod', $configKeys) or
+                    !in_array('eqSerialBaudrate', $configKeys) or !in_array('eqSerialBytesize', $configKeys) or
+                    !in_array('eqSerialParity', $configKeys) or !in_array('eqSerialStopbits', $configKeys)) {
                 throw new Exception(__('Veuillez définir la configuration série de l\'équipement', __FILE__));
             }
-            $eqSerialAddr = $this->getConfiguration('eqSerialAddr');
+            $eqSerialInterface = $this->getConfiguration('eqSerialInterface');
+            $eqSerialSlave = $this->getConfiguration('eqSerialSlave');
             $eqSerialMethod = $this->getConfiguration('eqSerialMethod');
             $eqSerialBaudrate = $this->getConfiguration('eqSerialBaudrate');
             $eqSerialBytesize = $this->getConfiguration('eqSerialBytesize');
             $eqSerialParity = $this->getConfiguration('eqSerialParity');
             $eqSerialStopbits = $this->getConfiguration('eqSerialStopbits');
-            if (!is_numeric($eqSerialAddr)) {
+            if ($eqSerialInterface == '') {
+                throw new Exception(__('L\'interface doit être définie correctement.', __FILE__));
+            }
+            if (!is_numeric($eqSerialSlave)) {
                 throw new Exception(__('L\'adresse modbus doit être un nombre.', __FILE__));
             }
             if (!in_array($eqSerialMethod, array('rtu', 'ascii'))) {
@@ -441,16 +472,15 @@ class mymodbus extends eqLogic {
                 }
             }
         }
-        
         return 'nok';
     }
     
     public static function getCallbackUrl() {
-        $prot = config::byKey('internalProtocol', 'core', 'http://');
-        $port = config::byKey('internalPort', 'core', 80);
+        $protocol = config::byKey('internalProtocol', 'core', 'http://');
+        $protocol = config::byKey('internalPort', 'core', 80);
         $comp = trim(config::byKey('internalComplement', 'core', ''), '/');
         if ($comp !== '') $comp .= '/';
-        $callback = $prot.'localhost:'.$port.'/'.$comp.'plugins/mymodbus/core/php/jeemymodbus.php';
+        $callback = $prot.'localhost:' . $protocol . '/' . $comp . 'plugins/mymodbus/core/php/jeemymodbus.php';
         if ((file_exists('/.dockerenv') || config::byKey('forceDocker', __CLASS__, '0')) && config::byKey('urlOverrideEnable', __CLASS__, '0') == '1')
 			$callback = config::byKey('urlOverrideValue', __CLASS__, $callback);
         return $callback;
