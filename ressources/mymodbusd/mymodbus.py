@@ -13,14 +13,12 @@
 # You should have received a copy of the GNU General Public License
 # along with Jeedom. If not, see <http://www.gnu.org/licenses/>.
 
-#import sys
-#import os
+import json
 import logging
 import threading
 import asyncio
-import json
 
-from pymodbus.payload import BinaryPayloadBuilder, BinaryPayloadDecoder
+from pymodbus.payload import BinaryPayloadDecoder # BinaryPayloadBuilder
 #from pymodbus.constants import Endian
 #from pymodbus.exceptions import *
 
@@ -38,13 +36,38 @@ True
 >>> client.close()
 
 -----------------------------------------------------------------------------
-asyncio
+asyncio + concurrent.futures
 -----------------------------------------------------------------------------
-async def run(self):
+import asyncio
+import concurrent.futures
 
-await AsyncModbus*Client.connect()
-await AsyncModbus*Client.read/write_*()
-await AsyncModbus*Client.close()
+def long_running_operation(arg1, arg2):
+    # opération de longue durée
+    result = do_something(arg1, arg2)
+    return result
+
+async def async_long_running_operation(arg1, arg2):
+    result = await asyncio.get_event_loop().run_in_executor(None, long_running_operation, arg1, arg2)
+    return result
+
+async def repeat_long_operation():
+    while True:
+        result = await async_long_running_operation(arg1, arg2)
+        # utilisez result comme nécessaire
+        await asyncio.sleep(5)
+
+async def main():
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        # lancez 5 instances de repeat_long_operation en parallèle
+        futures = [executor.submit(asyncio.run, repeat_long_operation()) for _ in range(5)]
+        for future in concurrent.futures.as_completed(futures):
+            result = future.result()
+
+async def other_main(): # test... source: https://docs.python.org/3.9/library/asyncio-eventloop.html#asyncio.loop.run_in_executor
+    with concurrent.futures.ThreadPoolExecutor() as pool:
+        result = await loop.run_in_executor(pool, repeat_long_operation)
+
+asyncio.run(main())
 
 -----------------------------------------------------------------------------
 Test
@@ -52,7 +75,7 @@ Test
 from mymodbus import PyModbusClient
 import json
 config = json.loads('[{"id":"34","createtime":"2023-02-04 03:13:17","eqProtocol":"tcp","eqKeepopen":"0","eqPolling":"20","eqTcpAddr":"192.168.25.25","eqTcpPort":"502","eqTcpRtu":"0","eqWordEndianess":">","eqDWordEndianess":">","updatetime":"2023-02-07 16:58:18","eqSerialInterface":"/dev/tty0","eqSerialSlave":"20","eqSerialMethod":"rtu","eqSerialBaudrate":"19200","eqSerialBytesize":"8","eqSerialParity":"E","eqSerialStopbits":"1","refreshes":[],"cmds":[{"id":"117","infFctModbus":"1","infFormat":"bit","infAddr":"25","request":"","minValue":"","maxValue":""},{"id":"118","infFctModbus":"3","infFormat":"int16","infAddr":"74","request":"","minValue":"","maxValue":""}]}]')
-t1 = PyModbusClient(config[0])
+foo = PyModbusClient(config[0])
 
 
 -----------------------------------------------------------------------------
@@ -78,7 +101,6 @@ class PyModbusClient():
         self.should_stop = threading.Event()
         self.should_stop.clear()
         
-        # FIXME: utile ????
         self.jcom = jcom
         
         # Jeedom equipment id
@@ -88,19 +110,19 @@ class PyModbusClient():
         # To configure the payload decoder
         self.byteorder = config['eqWordEndianess']
         self.wordorder = config['eqDWordEndianess']
-        self.keepopen = config['eqKeepopen']
+        self.keepopen = config['eqKeepopen'] == '1'
         self.pooling = float(config['eqPolling'])
         
         if self.protocol == 'tcp':
             # To determine the framer
-            self.rtu = config['eqTcpRtu']
+            self.rtu = config['eqTcpRtu'] == '1'
             # To determine the client
             self.address = config['eqTcpAddr']
             self.port = int(config['eqTcpPort'])
             
         elif self.protocol == 'udp':
             # To determine the framer
-            self.rtu = config['eqUdpRtu']
+            self.rtu = config['eqUdpRtu'] == '1'
             # To determine the client
             self.address = config['eqUdpAddr']
             self.port = config['eqUdpPort']
@@ -117,6 +139,7 @@ class PyModbusClient():
             # To configure the request
             self.slave = int(config['eqSerialSlave'])
         
+        self.sleep_task = None
         self.framer = self.get_framer()
         self.client = self.get_client()
         
@@ -124,13 +147,13 @@ class PyModbusClient():
         
     def get_framer(self):
         if self.protocol in ('tcp', 'udp'):
-            if self.rtu == '0':
-                from pymodbus.framer.socket_framer import ModbusSocketFramer
-                return ModbusSocketFramer
-                
-            elif self.rtu == '1':
+            if self.rtu:
                 from pymodbus.framer.rtu_framer import ModbusRtuFramer
                 return ModbusRtuFramer
+                
+            else:
+                from pymodbus.framer.socket_framer import ModbusSocketFramer
+                return ModbusSocketFramer
                 
         elif self.protocol == 'serial':
             if self.method == 'rtu':
@@ -178,13 +201,15 @@ class PyModbusClient():
             requests[req_config['id']] = request
         return requests
         
-    async def read_coils(self, **kwargs):
-        return self.client.read_coils(kwargs)
+    async def sleep(self, preset):
+        ''' asyncio sleep task that can be cancelled to break the polling loop waiting time
+        '''
+        try:
+            await asyncio.sleep(preset)
+        except asyncio.CancelledError:
+            pass
         
-    def run(self):
-        asyncio.run(self.run_loop())
-        
-    async def run_loop(self):
+    async def run(self):
         # Don't do anything if there is no info command (read)
         for cmd_id, request in self.requests.items():
             if request['type'] == 'r':
@@ -206,26 +231,28 @@ class PyModbusClient():
                 
                 # Read coils (code 0x01) || Read discrete inputs (code 0x02)
                 if request['fct_modbus'] in ('1', '2'):
+                    count = 1
                     if request['fct_modbus'] == '1':
-                        await response = self.read_coils(address=request['addr'], count=1, slave=request['slave'])
+                        response = await self.client.read_coils(request['addr'], count, request['slave'])
                     elif request['fct_modbus'] == '2':
-                        await response = self.client.read_discrete_inputs(address=request['addr'], count=1, slave=request['slave'])
+                        response = await self.client.read_discrete_inputs(request['addr'], count, request['slave'])
                     
                     value = response.bits[0]
                     if request['data_type'] == 'bin-inv':
                         value = not value
                 
                 # Read holding registers (code 0x03) || Read input registers (code 0x04)
-                if request['fct_modbus'] in ('3', '4'):count = 1 # valide for 8bit and 16bit
+                if request['fct_modbus'] in ('3', '4'):
+                    count = 1 # valide for 8bit and 16bit
                     if request['data_type'].endswith('32'):
                         count = 2
                     elif request['data_type'].endswith('64'):
                         count = 4
                     
                     if request['fct_modbus'] == '3':
-                        await response = self.client.read_holding_registers(address=request['addr'], count=count, slave=request['slave'])
+                        response = await self.client.read_holding_registers(address=request['addr'], count=count, slave=request['slave'])
                     elif request['fct_modbus'] == '4':
-                        await response = self.client.read_input_registers(address=request['addr'], count=count, slave=request['slave'])
+                        response = await self.client.read_input_registers(request['addr'], count, request['slave'])
                     
                     decoder = BinaryPayloadDecoder.fromRegisters(response.registers, self.byteorder, self.wordorder)
                     
@@ -239,48 +266,58 @@ class PyModbusClient():
                         elif request['data_type'].startswith('uint8'):
                             value = decoder.decode_8bit_uint()
                         
-                    # Typ: Word
-                    elif request['data_type'].endswith('int16'):
+                    # Typ: Word (16bit)
+                    elif request['data_type'] == 'int16':
                         value = decoder.decode_16bit_int()
-                    elif request['data_type'].endswith('uint16'):
+                    elif request['data_type'] == 'uint16':
                         value = decoder.decode_16bit_uint()
-                    elif request['data_type'].endswith('float16'):
+                    elif request['data_type'] == 'float16':
                         value = decoder.decode_16bit_float()
                     
-                    # Typ: Double word (DWord)
-                    elif request['data_type'].endswith('int32'):
+                    # Typ: Dword (32bit)
+                    elif request['data_type'] == 'int32':
                         value = decoder.decode_32bit_int()
-                    elif request['data_type'].endswith('uint32'):
+                    elif request['data_type'] == 'uint32':
                         value = decoder.decode_32bit_uint()
-                    elif request['data_type'].endswith('float32'):
+                    elif request['data_type'] == 'float32':
                         value = decoder.decode_32bit_float()
                     
-                    # Typ: Double Dword
-                    elif request['data_type'].endswith('int64'):
+                    # Typ: Double Dword (64bit)
+                    elif request['data_type'] == 'int64':
                         value = decoder.decode_64bit_int()
-                    elif request['data_type'].endswith('uint64'):
+                    elif request['data_type'] == 'uint64':
                         value = decoder.decode_64bit_uint()
-                    elif request['data_type'].endswith('float64'):
+                    elif request['data_type'] == 'float64':
                         value = decoder.decode_64bit_float()
                     
                 # Save the result of this request
                 read_results[cmd_id] = value
             
+            # After all the requests
             # Keep the connection open or not...
             if not self.keepopen:
                 await self.client.close()
             
-            # After all the requests
+            # Send results to jeedom
             if self.jcom is not None:
                 self.jcom.send_change_immediate(json.dumps(read_results))
+            # Or show them in the console
+            else:
+                print('read_results:', read_results)
             
-            # Pool time
-            asyncio.sleep(self.pooling)
+            # Pool time as an asyncio task (that can be cancelled)
+            self.sleep_task = asyncio.create_task(self.sleep(self.pooling))
+            await self.sleep_task
             
-        
+        # The loop has exited
+        try:
+            await self.client.close()
+        except:
+            pass
+    
     def shutdown(self):
-        self.should_stop.set()
-        self.client.close()
+        self.should_stop.set()     # stop looping (must be done before sleep_task.cancel())
+        self.sleep_task.cancel()   # cancel poll timer
 
 # -----------------------------------------------------------------------------
     

@@ -337,7 +337,7 @@ class mymodbus extends eqLogic {
             
         } elseif ($eqProtocol == 'serial') {
             // Vérification du paramétrage d'une connexion série
-            if (!in_array('eqSerialInterface', $configKeys) or !in_array('eqSerialSlave', $configKeys) ok !in_array('eqSerialMethod', $configKeys) or
+            if (!in_array('eqSerialInterface', $configKeys) or !in_array('eqSerialSlave', $configKeys) or !in_array('eqSerialMethod', $configKeys) or
                     !in_array('eqSerialBaudrate', $configKeys) or !in_array('eqSerialBytesize', $configKeys) or
                     !in_array('eqSerialParity', $configKeys) or !in_array('eqSerialStopbits', $configKeys)) {
                 throw new Exception(__('Veuillez définir la configuration série de l\'équipement', __FILE__));

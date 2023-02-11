@@ -20,17 +20,25 @@ import os
 import traceback
 import signal
 from optparse import OptionParser
-from os.path import join
 import json
 import argparse
 import threading
 import socket
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from mymodbus import PyModbusClient
 
 try:
     from jeedom.jeedom import jeedom_utils, jeedom_com
 except ImportError:
     print("Error: importing module jeedom.jeedom")
+    sys.exit(1)
+
+# -----------------------------------------------------------------------------
+
+# Compatibility (asyncio.create_task was implemented with python3.7)
+if (sys.version_info < (3, 7)):
+    sys.stderr("Please install python V3.7 or newer and check the MyModbus dependencies")
     sys.exit(1)
 
 # -----------------------------------------------------------------------------
@@ -42,11 +50,11 @@ class Main():
         
         jeedom_utils.set_log_level(self._log_level)
         
-        logging.info( 'Start daemon mymodbusd')
-        logging.info( 'Log level:     ' + self._log_level)
-        logging.debug('API key:       ' + self._apikey)
-        logging.debug('Callback:      ' + self._callback)
-        logging.debug('Configuration: ' + str(self._json))
+        logging.info( 'mymodbusd: Start daemon mymodbusd')
+        logging.info( 'mymodbusd: Log level:     ' + self._log_level)
+        logging.debug('mymodbusd: API key:       ' + self._apikey)
+        logging.debug('mymodbusd: Callback:      ' + self._callback)
+        logging.debug('mymodbusd: Configuration: ' + str(self._json))
         
         # Handle Run & Shutdown
         self.should_stop = should_stop
@@ -66,15 +74,15 @@ class Main():
         ''' Reads arguments from the command line and set self.param
         '''
         # Initialisation with hard coded parameters
-        self._socket_host = 'localhost'
-        self._pidfile     =  '/tmp/mymodbusd.pid'
-        self._cycle       =  0.3
+        self._socket_host   = 'localhost'
+        self._pidfile       =  '/tmp/mymodbusd.pid'
+        self._cycle         =  0.3
         # These parameters can be passed as arguments:
-        self._socket_port =  55502
-        self._log_level   =  "error"
-        self._apikey     =  ''
-        self._callback    =  ''
-        self._json      =  {}
+        self._socket_port   =  55502
+        self._log_level     =  "error"
+        self._apikey        =  ''
+        self._callback      =  ''
+        self._json          =  {}
         
         # Parameters passed as command line arguments
         parser = argparse.ArgumentParser(description='Mymodbus parameters')
@@ -105,20 +113,20 @@ class Main():
         '''
         # Callback url is mandatory
         if self._callback is None:
-            logging.critical('Missing callback url')
+            logging.critical('mymodbusd: Missing callback url')
             sys.exit(2)
         # API key is mandatory
         if self._apikey is None:
-            logginglog.critical('Missing API key')
+            logginglog.critical('mymodbusd: Missing API key')
             sys.exit(2)
         # Json data is mandatory
         if self._json is None:
-            logginglog.critical('Missing json data')
+            logginglog.critical('mymodbusd: Missing json data')
             sys.exit(2)
         
         # Check the pid file
         if os.path.isfile(self._pidfile):
-            logging.debug('pid File "%s" already exists.', self._pidfile)
+            logging.debug('mymodbusd: pid File "%s" already exists.', self._pidfile)
             with open(self._pidfile, "r") as f:
                 f.seek(0)
                 pid = int(f.readline())
@@ -128,10 +136,10 @@ class Main():
             except OSError: # pid does not run we can continue
                 pass
             except: # just in case
-                logging.exception("Unexpected error when checking pid")
+                logging.exception("mymodbusd: Unexpected error when checking pid")
                 sys.exit(3)
             else: # pid is alive -> we die
-                logging.error('This daemon already runs! Exit 0')
+                logging.error('mymodbusd: This daemon already runs! Exit 0')
                 sys.exit(0)
         
         # Write pid file
@@ -141,10 +149,10 @@ class Main():
         '''Returns True when the communication to jeedom core is opened
         '''
         # jeedom_com: communication daemon --> php
-        self.jcom = jeedom_com(apikey=self._apikey, url=self._callback, cycle=0) # création de l'objet jeedom_com
+        self.jcom = jeedom_com(apikey=self._apikey, url='http://' + self._callback, cycle=0) # création de l'objet jeedom_com
         try:
             if not self.jcom.test(): #premier test pour vérifier que l'url de callback est correcte
-                logging.error('Network communication issues. Please fixe your Jeedom network configuration.')
+                logging.error('mymodbusd: Network communication issues. Please fixe your Jeedom network configuration.')
                 return False
                 
 # Commande à utiliser pour envoyer un json au php
@@ -154,7 +162,7 @@ class Main():
             self.jsock.bind((self._socket_host, self._socket_port))
             
         except Exception as e:
-            logging.error('Fatal error: ' + str(e))
+            logging.error('mymodbusd: Fatal error: ' + str(e))
             logging.info(traceback.format_exc())
             return False
         
@@ -164,18 +172,18 @@ class Main():
         '''Interprets the json received from the php
         '''
         message = json.loads(data)
-        logging.debug("Received message: " + repr(message))
+        logging.debug("mymodbusd: Received message: " + repr(message))
         # Checking the API key existance and value
         if 'apikey' not in message:
-            logging.error("Received data without API key: " + str(message))
+            logging.error("mymodbusd: Received data without API key: " + str(message))
             return
         if message['apikey'] != self._apikey:
-            logging.error("Invalid apikey from socket: " + str(message))
+            logging.error("mymodbusd: Invalid apikey from socket: " + str(message))
             return
         # Checking if it is a command
         if 'CMD' in message:
             if message['CMD'] == 'quit':
-                logging.info("Command 'quit' received from jeedom: exiting")
+                logging.info("mymodbusd: Command 'quit' received from jeedom: exiting")
                 self.should_stop.set()
                 return
         
@@ -183,7 +191,7 @@ class Main():
     def run(self):
         self.clear_to_leave.clear()
         
-        self.launch_clients()
+        asyncio.run(self.launch_clients())
         
         # Incoming communication from php
         self.jsock.listen()
@@ -198,32 +206,39 @@ class Main():
             except socket.timeout:
                 pass
             
-        # FIXME: arrêter tous les threads de communication
+        # Stop all communication threads
+        for eqId, modbus_client in self.modbus_clients.items():
+            modbus_client.shutdown()
         
         self.clear_to_leave.set()
         
-    def launch_clients(sel):
+    async def launch_clients(self): # FIXME: async obligatoire ?
         self.config = json.loads(self._json)
+        
+        loop = asyncio.get_event_loop()
         
         for eqConfig in self.config:
             modbus_client = PyModbusClient(eqConfig)
             self.modbus_clients[eqConfig['id']] = modbus_client
-            theading.Thread(modbus_client.run).start()
+            #with ThreadPoolExecutor() as executor:
+            #    await loop.run_in_executor(executor, modbus_client.run)
+            await loop.run_in_executor(None, modbus_client.run)
+            
         
     def shutdown(self):
-        logging.debug("Shutdown Mymodbus python daemon")
-        self.should_stop.set()
+        logging.debug("mymodbusd: Shutdown Mymodbus python daemon")
+        self.should_stop.set() # stops the loop for incoming messages from php
         try:
             self.jsock.close()
         except:
             pass
         self.clear_to_leave.wait(timeout=4)
-        logging.debug("Removing PID file " + self._pidfile)
+        logging.debug("mymodbusd: Removing PID file " + self._pidfile)
         try:
             os.remove(self._pidfile)
         except:
             pass
-        logging.debug("Shutdown")
+        logging.debug("mymodbusd: Shutdown")
 
 # -----------------------------------------------------------------------------
 
@@ -235,7 +250,7 @@ if __name__ == '__main__':
     
     # Interrupt handler
     def signal_handler(signum=None, frame=None):
-        logging.debug("Signal %d caught, exiting...", signum)
+        logging.debug("mymodbusd: Signal %d caught, exiting...", signum)
         should_stop.set()
     
     # Connect the signals to the handler
@@ -249,6 +264,6 @@ if __name__ == '__main__':
     m.shutdown()
     
     # Always exit well
-    logging.debug("Exit 0")
+    logging.debug("mymodbusd: Exit 0")
     sys.stdout.flush()
     sys.exit(0)

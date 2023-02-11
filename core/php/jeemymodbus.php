@@ -22,22 +22,22 @@ if (!jeedom::apiAccess(init('apikey'), 'mymodbus')) {
     die();
 }
 if (init('test') != '') {
-    log::add('mymodbus', 'debug', 'Premier message de test reçu');
+    log::add('mymodbus', 'debug', 'jeemymodbus.php: Premier message de test reçu');
     echo 'OK'; // Michel: ligne obligatoire pour que le test du démon soit OK ?
     die();
 }
 $result = json_decode(file_get_contents("php://input"), true);
-log::add('mymodbus', 'debug', '**** jeemymodbus.php **** vivant *' . $result . '*');
-if (!is_array($result)) {
+log::add('mymodbus', 'debug', 'jeemymodbus.php: **** jeemymodbus.php **** vivant *' . json_encode($result) . '*');
+if (!is_array($result))
     die();
-}
-log::add('mymodbus', 'debug', '**** jeemymodbus.php **** vivant 3');
+
+log::add('mymodbus', 'debug', 'jeemymodbus.php: **** jeemymodbus.php **** vivant 2');
 
 // TODO: 
 if (isset($result['state'])) {
-    log::add('mymodbus', 'debug', '**** jeemymodbus.php **** state: *' . $result['state'] . '*');
-} elseif (isset($result['key2'])) {
+    log::add('mymodbus', 'debug', 'jeemymodbus.php: **** jeemymodbus.php **** state: *' . $result['state'] . '*');
+} elseif (isset($result['key...'])) {
     // TODO ...
 } else {
-    log::add('mymodbus', 'error', 'unknown message received from daemon');
+    log::add('mymodbus', 'error', 'jeemodbus.php: unknown message received from daemon');
 }
