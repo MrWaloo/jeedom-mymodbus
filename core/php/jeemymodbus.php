@@ -27,17 +27,32 @@ if (init('test') != '') {
     die();
 }
 $result = json_decode(file_get_contents("php://input"), true);
-log::add('mymodbus', 'debug', 'jeemymodbus.php: **** jeemymodbus.php **** vivant *' . json_encode($result) . '*');
+log::add('mymodbus', 'debug', 'jeemymodbus.php: vivant *' . json_encode($result) . '* type: ' . gettype($result));
 if (!is_array($result))
     die();
 
-log::add('mymodbus', 'debug', 'jeemymodbus.php: **** jeemymodbus.php **** vivant 2');
-
 // TODO: 
 if (isset($result['state'])) {
-    log::add('mymodbus', 'debug', 'jeemymodbus.php: **** jeemymodbus.php **** state: *' . $result['state'] . '*');
-} elseif (isset($result['key...'])) {
-    // TODO ...
+    //log::add('mymodbus', 'debug', 'jeemymodbus.php: state: *' . $result['state'] . '*');
+    
+} elseif (isset($result['values'])) {
+    //log::add('mymodbus', 'debug', 'jeemymodbus.php: values: *' . $result['values'] . '*');
+    foreach ($result['values'] as $cmd_id => $new_value) {
+        $cmd = cmd::byid($cmd_id);
+        $old_value = $cmd->getValue();
+        $cache_value = $cmd->getCache();
+        $Options = $cmd->getConfiguration('request');
+        if (is_numeric($new_value)) {  // evite le calcul sur un none
+            $new_value = $new_value.$Options;
+            $new_value=jeedom::evaluateExpression($new_value);
+        }
+        if(($old_value<=>$new_value)|| empty($cache_value)){
+            log::add('mymodbus', 'info', 'jeemymodbus.php: Mise à jour cmd [id] = ' . $cmd_id . ' -> old value:' . $old_value . ' new value:' . $new_value, 'config');
+            $cmd->event($new_value);
+            $cmd->setValue($new_value);
+            $cmd->save();
+        }
+    }
 } else {
     log::add('mymodbus', 'error', 'jeemodbus.php: unknown message received from daemon');
 }

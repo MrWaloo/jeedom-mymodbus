@@ -457,9 +457,13 @@ class mymodbus extends eqLogic {
         return $completeConfig;
     }
     
+    // FIXME
     public static function getDeamonState() {
-        $running_pid = exec("ps -eo pid,command | grep 'mymodbusd.py' | grep -v grep | awk '{print $1}'");
         $pid = file_get_contents('/tmp/mymodbusd.pid');
+        log::add('mymodbus', 'debug', 'getDeamonState $pid: ' . strval($pid));
+        $running_pid = exec("ps -eo pid,command | grep `cat /tmp/mymodbusd.pid` | grep -v grep | awk '{print $1}'");
+        log::add('mymodbus', 'debug', 'getDeamonState $running_pid: ' . strval($running_pid));
+        //return (($running_pid != 0) and (intval($running_pid) == intval($pid)))? 'ok': 'nok';
         return (($running_pid != 0) and (intval($running_pid) == intval($pid)))? 'ok': 'nok';
     }
     

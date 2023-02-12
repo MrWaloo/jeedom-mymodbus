@@ -23,9 +23,9 @@ from optparse import OptionParser
 import json
 import argparse
 import threading
+import multiprocessing
 import socket
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
 from mymodbus import PyModbusClient
 
 try:
@@ -36,8 +36,8 @@ except ImportError:
 
 # -----------------------------------------------------------------------------
 
-# Compatibility (asyncio.create_task was implemented with python3.7)
-if (sys.version_info < (3, 7)):
+# Compatibility (pymodbus requires python >= 3.8)
+if (sys.version_info < (3, 8)):
     sys.stderr("Please install python V3.7 or newer and check the MyModbus dependencies")
     sys.exit(1)
 
@@ -68,7 +68,7 @@ class Main():
         self.jcom = None
         
         self.config = None
-        self.modbus_clients = {}
+        self.pymodbus_clients = {}
         
     def read_args(self):
         ''' Reads arguments from the command line and set self.param
@@ -155,9 +155,6 @@ class Main():
                 logging.error('mymodbusd: Network communication issues. Please fixe your Jeedom network configuration.')
                 return False
                 
-# Commande à utiliser pour envoyer un json au php
-#self.jcom.send_change_immediate({'key1': 'value1', 'key2': 'value2'})
-            
             # Connection from php
             self.jsock.bind((self._socket_host, self._socket_port))
             
@@ -187,11 +184,12 @@ class Main():
                 self.should_stop.set()
                 return
         
-        
     def run(self):
         self.clear_to_leave.clear()
         
-        asyncio.run(self.launch_clients())
+        self.config = json.loads(self._json)
+        for eqConfig in self.config:
+            multiprocessing.Process(target=self.create_instance, name=eqConfig['id'], args=(eqConfig,), daemon=True).start()
         
         # Incoming communication from php
         self.jsock.listen()
@@ -206,24 +204,19 @@ class Main():
             except socket.timeout:
                 pass
             
-        # Stop all communication threads
-        for eqId, modbus_client in self.modbus_clients.items():
-            modbus_client.shutdown()
+        # Stop all communication threads properly
+        for eqId, pymodbus_client in self.pymodbus_clients.items():
+            pymodbus_client.shutdown()
         
         self.clear_to_leave.set()
         
-    async def launch_clients(self): # FIXME: async obligatoire ?
-        self.config = json.loads(self._json)
-        
-        loop = asyncio.get_event_loop()
-        
-        for eqConfig in self.config:
-            modbus_client = PyModbusClient(eqConfig)
-            self.modbus_clients[eqConfig['id']] = modbus_client
-            #with ThreadPoolExecutor() as executor:
-            #    await loop.run_in_executor(executor, modbus_client.run)
-            await loop.run_in_executor(None, modbus_client.run)
-            
+    def create_instance(self, eqConfig):
+        pymodbus_client = PyModbusClient(eqConfig, self.jcom)
+        self.pymodbus_clients[eqConfig['id']] = pymodbus_client
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(pymodbus_client.run())
+        #asyncio.run(pymodbus_client.run())
         
     def shutdown(self):
         logging.debug("mymodbusd: Shutdown Mymodbus python daemon")
@@ -233,6 +226,14 @@ class Main():
         except:
             pass
         self.clear_to_leave.wait(timeout=4)
+        
+        # Stop all communication threads forced (kill)
+        for process in multiprocessing.active_children():
+            logging.debug("mymodbusd: Process: " + process.name)
+            if process.is_alive():
+                logging.debug("mymodbusd: Process: " + process.name + ' is killed')
+                process.kill()
+        
         logging.debug("mymodbusd: Removing PID file " + self._pidfile)
         try:
             os.remove(self._pidfile)
