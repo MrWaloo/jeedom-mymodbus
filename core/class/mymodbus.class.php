@@ -85,7 +85,7 @@ class mymodbus extends eqLogic {
 
     //Fonction exécutée automatiquement tous les jours par Jeedom
     public static function cronDaily() {
-//        foreach (self::byType('mymodbus') as $eqMymodbus) {//parcours tous les équipements du plugin mymodbus
+//        foreach (self::byType('mymodbus') as $eqMymodbus) {//parcourt tous les équipements du plugin mymodbus
 //            if ($eqMymodbus->getIsEnable()) {//vérifie que l'équipement est actif
 //                $cmd = $eqMymodbus->getCmd(null, 'ntp');//retourne la commande 'ntp' si elle existe
 //                if (!is_object($cmd)) {//Si la commande n'existe pas
