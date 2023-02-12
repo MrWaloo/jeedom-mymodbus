@@ -35,7 +35,7 @@ if (!isConnect('admin')) {
             foreach (mymodbus::getTtyInterfaces() as $key => $value) {
                 echo '<option value="' . $value . '">' . $key . '</option>';
             }
-            ?><option value="rtu">{{RTU}}</option>
+            ?>
         </select>
     </div>
 </div>

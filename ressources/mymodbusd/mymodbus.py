@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Jeedom. If not, see <http://www.gnu.org/licenses/>.
 
+import signal
 import json
 import logging
 import threading
@@ -21,10 +22,12 @@ import asyncio
 from pymodbus.payload import BinaryPayloadDecoder # BinaryPayloadBuilder
 #from pymodbus.constants import Endian
 from pymodbus.exceptions import *
+from pymodbus.pdu import ExceptionResponse
 
 """
 -----------------------------------------------------------------------------
-example: [{"id":"34","createtime":"2023-02-04 03:13:17","eqProtocol":"tcp","eqKeepopen":"0","eqPolling":"20","eqTcpAddr":"192.168.25.25","eqTcpPort":"502","eqTcpRtu":"0","eqWordEndianess":">","eqDWordEndianess":">","updatetime":"2023-02-07 16:58:18","eqSerialInterface":"/dev/tty0","eqSerialSlave":"20","eqSerialMethod":"rtu","eqSerialBaudrate":"19200","eqSerialBytesize":"8","eqSerialParity":"E","eqSerialStopbits":"1","refreshes":[],"cmds":[{"id":"117","infFctModbus":"1","infFormat":"bit","infAddr":"25","request":"","minValue":"","maxValue":""},{"id":"118","infFctModbus":"3","infFormat":"int16","infAddr":"74","request":"","minValue":"","maxValue":""}]}]
+example: [{"id":"34","createtime":"2023-02-04 03:13:17","eqProtocol":"tcp","eqKeepopen":"1","eqPolling":"10","eqTcpAddr":"192.168.1.20","eqTcpPort":"502","eqTcpRtu":"0","eqWordEndianess":">","eqDWordEndianess":"<","updatetime":"2023-02-12 14:19:48","eqSerialAddr":"20","eqSerialMethod":"rtu","eqSerialBaudrate":"19200","eqSerialBytesize":"8","eqSerialParity":"E","eqSerialStopbits":"1","refreshes":[],"eqUnitId":"1","cmds":[{"id":"118","infFctModbus":"3","infFormat":"int16","infAddr":"12308","request":"","minValue":"","maxValue":""},{"id":"121","infFctModbus":"3","infFormat":"int16","infAddr":"12309","request":"","minValue":"","maxValue":""},{"id":"122","infFctModbus":"3","infFormat":"int16","infAddr":"12310","request":"","minValue":"","maxValue":""},{"id":"123","infFctModbus":"3","infFormat":"int16","infAddr":"12311","request":"","minValue":"","maxValue":""},{"id":"124","infFctModbus":"3","infFormat":"int16","infAddr":"12312","request":"","minValue":"","maxValue":""},{"id":"125","infFctModbus":"3","infFormat":"int16","infAddr":"12313","request":"","minValue":"","maxValue":""},{"id":"126","infFctModbus":"3","infFormat":"float32","infAddr":"12352","request":"","minValue":"","maxValue":""}]}]
+0487|[2023-02-12 14:19:54]INFO : Writing PID 1495991 to /tm
 -----------------------------------------------------------------------------
 from pymodbus.client import ModbusTcpClient
 client = ModbusTcpClient(host='192.168.1.20',port='502')
@@ -40,7 +43,7 @@ Test
 -----------------------------------------------------------------------------
 from mymodbus import PyModbusClient
 import json
-config = json.loads('[{"id":"34","createtime":"2023-02-04 03:13:17","eqProtocol":"tcp","eqKeepopen":"0","eqPolling":"20","eqTcpAddr":"192.168.25.25","eqTcpPort":"502","eqTcpRtu":"0","eqWordEndianess":">","eqDWordEndianess":">","updatetime":"2023-02-07 16:58:18","eqSerialInterface":"/dev/tty0","eqSerialSlave":"20","eqSerialMethod":"rtu","eqSerialBaudrate":"19200","eqSerialBytesize":"8","eqSerialParity":"E","eqSerialStopbits":"1","refreshes":[],"cmds":[{"id":"117","infFctModbus":"1","infFormat":"bit","infAddr":"25","request":"","minValue":"","maxValue":""},{"id":"118","infFctModbus":"3","infFormat":"int16","infAddr":"74","request":"","minValue":"","maxValue":""}]}]')
+config = json.loads('[{"id":"34","createtime":"2023-02-04 03:13:17","eqProtocol":"tcp","eqKeepopen":"1","eqPolling":"10","eqTcpAddr":"192.168.1.20","eqTcpPort":"502","eqTcpRtu":"0","eqWordEndianess":">","eqDWordEndianess":"<","updatetime":"2023-02-12 14:19:48","eqSerialAddr":"20","eqSerialMethod":"rtu","eqSerialBaudrate":"19200","eqSerialBytesize":"8","eqSerialParity":"E","eqSerialStopbits":"1","refreshes":[],"eqUnitId":"1","cmds":[{"id":"118","infFctModbus":"3","infFormat":"int16","infAddr":"12308","request":"","minValue":"","maxValue":""},{"id":"121","infFctModbus":"3","infFormat":"int16","infAddr":"12309","request":"","minValue":"","maxValue":""},{"id":"122","infFctModbus":"3","infFormat":"int16","infAddr":"12310","request":"","minValue":"","maxValue":""},{"id":"123","infFctModbus":"3","infFormat":"int16","infAddr":"12311","request":"","minValue":"","maxValue":""},{"id":"124","infFctModbus":"3","infFormat":"int16","infAddr":"12312","request":"","minValue":"","maxValue":""},{"id":"125","infFctModbus":"3","infFormat":"int16","infAddr":"12313","request":"","minValue":"","maxValue":""},{"id":"126","infFctModbus":"3","infFormat":"float32","infAddr":"12352","request":"","minValue":"","maxValue":""}]}]')
 foo = PyModbusClient(config[0])
 
 
@@ -69,6 +72,7 @@ class PyModbusClient():
         self.byteorder = config['eqWordEndianess']
         self.wordorder = config['eqDWordEndianess']
         self.keepopen = config['eqKeepopen'] == '1'
+        self.unit = float(config['eqUnitId']) # FIXME
         self.pooling = float(config['eqPolling'])
         
         if self.protocol == 'tcp':
@@ -151,6 +155,8 @@ class PyModbusClient():
             if hasattr(self, 'slave'):
                 request['slave'] = self.slave
                 
+            request['unit'] = self.unit # FIXME
+            
             request['fct_modbus'] = req_config[prefix + 'FctModbus']
             request['addr'] = int(req_config[prefix + 'Addr'])
             request['data_type'] = req_config[prefix + 'Format']
@@ -159,6 +165,19 @@ class PyModbusClient():
             requests[req_config['id']] = request
         logging.debug('PyModbusClient: requests:' + json.dumps(requests))
         return requests
+        
+    def check_response(self, response):
+        if response.isError():
+            logging.debug('PyModbusClient: pymodbus returned an error!')
+            return False
+        if isinstance(response, ExceptionResponse):
+            logging.debug('PyModbusClient: received exception from device')
+            return False
+        return True
+        
+    def signal_handler(self, signum=None, frame=None):
+        self.loop.stop()
+        self.shutdown()
         
     async def run(self):
         # Don't do anything if there is no info command (read)
@@ -169,16 +188,31 @@ class PyModbusClient():
             logging.debug('PyModbusClient: run: nothing to do... exit')
             return
         
-        await self.client.connect()
-        await asyncio.sleep(2)
+        # SIGTERM catcher # FIXME
+        self.loop = asyncio.get_event_loop()
+        self.loop.add_signal_handler(signal.SIGTERM, self.signal_handler)
         
         # Polling loop
         while not self.should_stop.is_set():
-            # connect()
+            # connect() # FIXME
+            reconnect = True
+            # first method to determine if a reconnection is needed
             try:
-                await self.client.connect()
+                reconnect = not self.client.is_socket_open()
             except:
-                pass
+                reconnect = True
+            # second method to determine if a reconnection is needed
+            if reconnect:
+                try:
+                    reconnect = not self.connected
+                except:
+                    reconnect = True
+            
+            if reconnect:
+                try:
+                    await self.client.connect()
+                except:
+                    logging.error('PyModbusClient: Something went wront while connecting equipment id ' + self.id)
             
             read_results = {}
             for cmd_id, request in self.requests.items():
@@ -194,16 +228,18 @@ class PyModbusClient():
                     
                     try:
                         if request['fct_modbus'] == '1':
-                            response = await self.client.read_coils(request['addr'], count, request['slave'])
+                            response = await self.client.read_coils(address=request['addr'], count=count, salve=request['slave']) # FIXME unit=request['unit']
                         elif request['fct_modbus'] == '2':
-                            response = await self.client.read_discrete_inputs(request['addr'], count, request['slave'])
+                            response = await self.client.read_discrete_inputs(address=request['addr'], count=count, salve=request['slave']) # FIXME unit=request['unit']
                         
-                        value = response.bits[0]
-                        if request['data_type'] == 'bin-inv':
-                            value = not value
+                        request_ok = self.check_response(response)
+                        if request_ok:
+                            value = response.bits[0]
+                            if request['data_type'] == 'bin-inv':
+                                value = not value
                     
                     except ModbusException as exc:
-                        request_ok = False # FIXME / TODO
+                        request_ok = False
                         
                 # Read holding registers (code 0x03) || Read input registers (code 0x04)
                 if request['fct_modbus'] in ('3', '4'):
@@ -215,67 +251,73 @@ class PyModbusClient():
                     
                     try:
                         if request['fct_modbus'] == '3':
-                            response = await self.client.read_holding_registers(address=request['addr'], count=count, slave=request['slave'])
+                            response = await self.client.read_holding_registers(address=request['addr'], count=count, salve=request['slave']) # FIXME unit=request['unit']
                         elif request['fct_modbus'] == '4':
-                            response = await self.client.read_input_registers(request['addr'], count, request['slave'])
+                            response = await self.client.read_input_registers(address=request['addr'], count=count, salve=request['slave']) # FIXME unit=request['unit']
                         
-                        decoder = BinaryPayloadDecoder.fromRegisters(response.registers, self.byteorder, self.wordorder)
-                        
-                        # Typ: Byte
-                        if '8' in request['data_type']:
-                            if request['data_type'].endswith('msb'): # FIXME: vérifier si msb ou lsb
-                                skip = decoder.decode_8bit_int() # skip one byte
+                        request_ok = self.check_response(response)
+                        if request_ok:
+                            decoder = BinaryPayloadDecoder.fromRegisters(response.registers, self.byteorder, self.wordorder)
                             
-                            if request['data_type'].startswith('int8'):
-                                value = decoder.decode_8bit_int()
-                            elif request['data_type'].startswith('uint8'):
-                                value = decoder.decode_8bit_uint()
+                            # Typ: Byte
+                            if '8' in request['data_type']:
+                                if request['data_type'].endswith('msb'): # FIXME: vérifier si msb ou lsb
+                                    skip = decoder.decode_8bit_int() # skip one byte
+                                
+                                if request['data_type'].startswith('int8'):
+                                    value = decoder.decode_8bit_int()
+                                elif request['data_type'].startswith('uint8'):
+                                    value = decoder.decode_8bit_uint()
+                                
+                            # Typ: Word (16bit)
+                            elif request['data_type'] == 'int16':
+                                value = decoder.decode_16bit_int()
+                            elif request['data_type'] == 'uint16':
+                                value = decoder.decode_16bit_uint()
+                            elif request['data_type'] == 'float16':
+                                value = decoder.decode_16bit_float()
                             
-                        # Typ: Word (16bit)
-                        elif request['data_type'] == 'int16':
-                            value = decoder.decode_16bit_int()
-                        elif request['data_type'] == 'uint16':
-                            value = decoder.decode_16bit_uint()
-                        elif request['data_type'] == 'float16':
-                            value = decoder.decode_16bit_float()
-                        
-                        # Typ: Dword (32bit)
-                        elif request['data_type'] == 'int32':
-                            value = decoder.decode_32bit_int()
-                        elif request['data_type'] == 'uint32':
-                            value = decoder.decode_32bit_uint()
-                        elif request['data_type'] == 'float32':
-                            value = decoder.decode_32bit_float()
-                        
-                        # Typ: Double Dword (64bit)
-                        elif request['data_type'] == 'int64':
-                            value = decoder.decode_64bit_int()
-                        elif request['data_type'] == 'uint64':
-                            value = decoder.decode_64bit_uint()
-                        elif request['data_type'] == 'float64':
-                            value = decoder.decode_64bit_float()
+                            # Typ: Dword (32bit)
+                            elif request['data_type'] == 'int32':
+                                value = decoder.decode_32bit_int()
+                            elif request['data_type'] == 'uint32':
+                                value = decoder.decode_32bit_uint()
+                            elif request['data_type'] == 'float32':
+                                value = decoder.decode_32bit_float()
+                            
+                            # Typ: Double Dword (64bit)
+                            elif request['data_type'] == 'int64':
+                                value = decoder.decode_64bit_int()
+                            elif request['data_type'] == 'uint64':
+                                value = decoder.decode_64bit_uint()
+                            elif request['data_type'] == 'float64':
+                                value = decoder.decode_64bit_float()
                     
                     except ModbusException as exc:
-                        request_ok = False # FIXME / TODO
+                        request_ok = False
                         
                 # Save the result of this request
                 if request_ok:
                     read_results[cmd_id] = value
-                    logging.debug('PyModbusClient: read value:' + str(value))
+                    logging.debug('PyModbusClient: read value: ' + str(value))
+                else:
+                    logging.error('PyModbusClient: Something went wront while reading command id ' + cmd_id)
             
             # After all the requests
             # Keep the connection open or not...
             if not self.keepopen:
-                await self.client.close()
+                try:
+                    await self.client.close()
+                except:
+                    logging.error('PyModbusClient: Something went wront while closing connection to equipment id ' + self.id)
             
             # Send results to jeedom
             if read_results:
                 if self.jcom is not None:
                     self.jcom.send_change_immediate({'values': read_results})
-                # Or show them in the console
+                # Or show them in the log
                 else:
-                    print('read_results:', read_results)
-                    logging.debug('PyModbusClient: read_results:' + json.dumps(read_results))
+                    logging.info('PyModbusClient: read_results:' + json.dumps(read_results))
             
             # Polling time
             await asyncio.sleep(self.pooling)
@@ -289,6 +331,4 @@ class PyModbusClient():
     def shutdown(self):
         self.should_stop.set()
         self.client.close()
-
-# -----------------------------------------------------------------------------
-    
+        

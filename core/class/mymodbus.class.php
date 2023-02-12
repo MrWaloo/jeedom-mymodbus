@@ -36,7 +36,7 @@ class mymodbus extends eqLogic {
 
     public static $_version = '2.0';
     
-    public static $DEFAULT_SOCKET_PORT = 55502;
+    public static $_DEFAULT_SOCKET_PORT = 55502;
 
     /*     * ***********************Methode static*************************** */
   
@@ -85,9 +85,9 @@ class mymodbus extends eqLogic {
 
     //Fonction exécutée automatiquement tous les jours par Jeedom
     public static function cronDaily() {
-//        foreach (self::byType('mymodbus') as $mymodbus) {//parcours tous les équipements du plugin mymodbus
-//            if ($mymodbus->getIsEnable()) {//vérifie que l'équipement est actif
-//                $cmd = $mymodbus->getCmd(null, 'ntp');//retourne la commande 'ntp' si elle existe
+//        foreach (self::byType('mymodbus') as $eqMymodbus) {//parcours tous les équipements du plugin mymodbus
+//            if ($eqMymodbus->getIsEnable()) {//vérifie que l'équipement est actif
+//                $cmd = $eqMymodbus->getCmd(null, 'ntp');//retourne la commande 'ntp' si elle existe
 //                if (!is_object($cmd)) {//Si la commande n'existe pas
 //                    continue; //continue la boucle
 //                }
@@ -104,15 +104,15 @@ class mymodbus extends eqLogic {
         self::deamon_stop();
         
         if (!plugin::byId('mymodbus')->isActive())
-            throw new Exception(__('{{Le plugin Mymodbus n\'est pas actif.', __FILE__));
+            throw new Exception(__('Le plugin Mymodbus n\'est pas actif.', __FILE__));
         
         // Pas de démarrage si aucune commande n'est configurée
         if (self::getDeamonLaunchable() != 'ok')
-            throw new Exception(__('{{Veuillez vérifier la configuration du démon}}', __FILE__));
+            throw new Exception(__('Démarrage du démon impossible, veuillez vérifier la configuration du démon', __FILE__));
         
         $jsonData = self::getCompleteConfiguration();
         
-        $socketPort = is_numeric(config::byKey('socketport', __CLASS__, self::$DEFAULT_SOCKET_PORT, True)) ? config::byKey('socketport', __CLASS__, self::$DEFAULT_SOCKET_PORT) : self::$DEFAULT_SOCKET_PORT;
+        $socketPort = is_numeric(config::byKey('socketport', __CLASS__, self::$_DEFAULT_SOCKET_PORT, True)) ? config::byKey('socketport', __CLASS__, self::$_DEFAULT_SOCKET_PORT) : self::$_DEFAULT_SOCKET_PORT;
         $daemonLoglevel = escapeshellarg('debug'); // DEBUG 'error'
         $daemonApikey = escapeshellarg(jeedom::getApiKey(__CLASS__));
         $daemonCallback = escapeshellarg(self::getCallbackUrl());
@@ -139,7 +139,7 @@ class mymodbus extends eqLogic {
     // TODO
     public static function health() {
         $health_arr = array();
-        $health_arr['test'] = __('Etat(s) démon(s)', __FILE__);
+        $health_arr['test'] = __('Etat du démon', __FILE__);
         $health_arr['result'] ='OK';
         $health_arr['advice'] = '';
         $health_arr['state'] = true;
@@ -149,9 +149,9 @@ class mymodbus extends eqLogic {
             // vérifie si l'eq à un démon qui tourne 
             $health_arr = exec("ps -eo pid,command | grep 'eqid={$eqLogic->getId()}' | grep -v grep | awk '{print $1}' | wc -l");
             if ($health_arr == 0) {
-                $health_arr['state'] = false;
                 $health_arr['result'] = 'NOK';
                 $health_arr['advice'] = __('Le démon ne tourne pas ! Voir la page santé dans la configuration de MyModbus.', __FILE__);    
+                $health_arr['state'] = false;
                 break;
             }
         }
@@ -170,13 +170,11 @@ class mymodbus extends eqLogic {
     
     // TODO
     public static function deamon_stop() {
-        log::add('mymodbus', 'info', 'deamon_stop: Arrêt du démon');
+        log::add('mymodbus', 'info', 'deamon_stop: Début');
         
         $deamon_state = self::getDeamonState();
-        $daemon_running = exec("ps -eo pid,command | grep 'mymodbusd.py' | grep -v grep | awk '{print $1}'| wc -l");
-        log::add('mymodbus', 'debug', 'deamon_stop $daemon_running *' . $daemon_running . '*');
         log::add('mymodbus', 'debug', 'deamon_stop $deamon_state ' . $deamon_state);
-        if ($deamon_state == 'nok' and $daemon_running == 0)
+        if ($deamon_state == 'nok')
             return True;
         
         log::add('mymodbus', 'info', 'deamon_stop: Arrêt du démon...');
@@ -197,7 +195,7 @@ class mymodbus extends eqLogic {
         $params['dt'] = date(DATE_ATOM);
         $payLoad = json_encode($params);
         $socket = socket_create(AF_INET, SOCK_STREAM, 0);
-        $socket_port = is_numeric(config::byKey('socketport', __CLASS__, self::$DEFAULT_SOCKET_PORT, True)) ? config::byKey('socketport', __CLASS__, self::$DEFAULT_SOCKET_PORT) : self::$DEFAULT_SOCKET_PORT;
+        $socket_port = is_numeric(config::byKey('socketport', __CLASS__, self::$_DEFAULT_SOCKET_PORT, True)) ? config::byKey('socketport', __CLASS__, self::$_DEFAULT_SOCKET_PORT) : self::$_DEFAULT_SOCKET_PORT;
         socket_connect($socket, '127.0.0.1', config::byKey('socketport', __CLASS__, $socket_port));
         $socket_ok = socket_write($socket, $payLoad, strlen($payLoad));
         if (!$socket_ok) {
@@ -277,24 +275,32 @@ class mymodbus extends eqLogic {
             $configKeys[] = $key;
             //log::add('mymodbus', 'debug', 'eqLogic Configuration *' . $key . '* : *' . $value . '*');
         }
+        // Equipement non activé, pas de vérification
+        if (!$this->getIsEnable())
+            return True;
+        // Un nouvel équipement vient d'être ajouté, il faut retourner "true" sinon, l'ajout est invalidé
         if (!in_array('eqProtocol', $configKeys) and !in_array('eqKeepopen', $configKeys) and
-                !in_array('eqPolling', $configKeys) and !in_array('eqWordEndianess', $configKeys) and
-                !in_array('eqDWordEndianess', $configKeys)) {
-            //log::add('mymodbus', 'debug', 'Sans doute un nouvel équipement...');
+                !in_array('eqUnitId', $configKeys) and !in_array('eqPolling', $configKeys) and
+                !in_array('eqWordEndianess', $configKeys) and !in_array('eqDWordEndianess', $configKeys)) {
             return True;
         }
         if (!in_array('eqProtocol', $configKeys) or !in_array('eqKeepopen', $configKeys) or
-                !in_array('eqPolling', $configKeys) or !in_array('eqWordEndianess', $configKeys) or
-                !in_array('eqDWordEndianess', $configKeys)) {
+                !in_array('eqUnitId', $configKeys) or  !in_array('eqPolling', $configKeys) or
+                !in_array('eqWordEndianess', $configKeys) or !in_array('eqDWordEndianess', $configKeys)) {
             throw new Exception(__('Veuillez définir la configuration de base de l\'équipement', __FILE__));
         }
         $eqProtocol = $this->getConfiguration('eqProtocol');
+        $eqUnitId = $this->getConfiguration('eqUnitId');
         $eqPolling = $this->getConfiguration('eqPolling');
         $eqWordEndianess = $this->getConfiguration('eqWordEndianess');
         $eqDWordEndianess = $this->getConfiguration('eqDWordEndianess');
         if (!in_array($eqProtocol, self::supportedProtocols())) {
             throw new Exception(__('Le protocol n\'est pas défini correctement.', __FILE__));
         }
+        // FIXME
+        //if (!is_numeric($eqUnitId)) {
+        //    throw new Exception(__('Le paramètre "Unit id" doit être un nombre.', __FILE__));
+        //}
         if (!is_numeric($eqPolling)) {
             throw new Exception(__('Le paramètre "Pooling" doit être un nombre.', __FILE__));
         }
@@ -337,9 +343,10 @@ class mymodbus extends eqLogic {
             
         } elseif ($eqProtocol == 'serial') {
             // Vérification du paramétrage d'une connexion série
-            if (!in_array('eqSerialInterface', $configKeys) or !in_array('eqSerialSlave', $configKeys) or !in_array('eqSerialMethod', $configKeys) or
-                    !in_array('eqSerialBaudrate', $configKeys) or !in_array('eqSerialBytesize', $configKeys) or
-                    !in_array('eqSerialParity', $configKeys) or !in_array('eqSerialStopbits', $configKeys)) {
+            if (!in_array('eqSerialInterface', $configKeys) or !in_array('eqSerialSlave', $configKeys) or
+                    !in_array('eqSerialMethod', $configKeys) or !in_array('eqSerialBaudrate', $configKeys) or
+                    !in_array('eqSerialBytesize', $configKeys) or !in_array('eqSerialParity', $configKeys) or
+                    !in_array('eqSerialStopbits', $configKeys)) {
                 throw new Exception(__('Veuillez définir la configuration série de l\'équipement', __FILE__));
             }
             $eqSerialInterface = $this->getConfiguration('eqSerialInterface');
@@ -437,18 +444,12 @@ class mymodbus extends eqLogic {
             // ne pas exporter la configuration si l'équipement n'est pas activé
             if (!$eqMymodbus->getIsEnable())
                 continue;
-            $eqConfig = array();
+            $eqConfig = $eqMymodbus->getConfiguration();
             $eqConfig['id'] = $eqMymodbus->getId();
-            foreach ($eqMymodbus->getConfiguration() as $key => $value) {
-                $eqConfig[$key] = $value;
-            }
             $eqConfig['cmds'] = array();
             foreach ($eqMymodbus->getCmd('info') as $cmdMymodbus) { // boucle sur les commandes info
-                $cmdConfig = array();
+                $cmdConfig = $cmdMymodbus->getConfiguration();
                 $cmdConfig['id'] = $cmdMymodbus->getId();
-                foreach ($cmdMymodbus->getConfiguration() as $key => $value) {
-                    $cmdConfig[$key] = $value;
-                }
                 $eqConfig['cmds'][] = $cmdConfig;
             }
             $completeConfig[] = $eqConfig;
@@ -468,9 +469,9 @@ class mymodbus extends eqLogic {
     }
     
     public static function getDeamonLaunchable() {
-        foreach (self::byType('mymodbus') as $mymodbus) { // boucle sur les équipements
-            if ($mymodbus->getIsEnable()) {
-                foreach ($mymodbus->getCmd('info') as $cmd) {
+        foreach (self::byType('mymodbus') as $eqMymodbus) { // boucle sur les équipements
+            if ($eqMymodbus->getIsEnable()) {
+                foreach ($eqMymodbus->getCmd('info') as $cmd) {
                     // Au moins une commande enregistrée, donc la configuration est validée par preSave()
                     return 'ok';
                 }

@@ -189,7 +189,7 @@ class Main():
         
         self.config = json.loads(self._json)
         for eqConfig in self.config:
-            multiprocessing.Process(target=self.create_instance, name=eqConfig['id'], args=(eqConfig,), daemon=True).start()
+            multiprocessing.Process(target=self.create_instance, name='eqLogic_'+eqConfig['id'], args=(eqConfig,), daemon=True).start()
         
         # Incoming communication from php
         self.jsock.listen()
@@ -203,6 +203,16 @@ class Main():
                 conn.close()
             except socket.timeout:
                 pass
+            
+            # Test if child process are defunk
+            for process in multiprocessing.active_children():
+                try:
+                    process.join(0.1)
+                except BrokenProcessPool:
+                    pass
+                    #process.kill() OR process.terminate() ??? # FIXME
+                    
+                    
             
         # Stop all communication threads properly
         for eqId, pymodbus_client in self.pymodbus_clients.items():
@@ -258,7 +268,7 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     
-    # Ready ? Let's do something now
+    # Ready? Let's do something now
     m.prepare()
     if m.open_comm():
         m.run()

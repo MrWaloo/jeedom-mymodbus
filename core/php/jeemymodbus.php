@@ -46,7 +46,7 @@ if (isset($result['state'])) {
             $new_value = $new_value.$Options;
             $new_value=jeedom::evaluateExpression($new_value);
         }
-        if(($old_value<=>$new_value)|| empty($cache_value)){
+        if(($old_value<=>$new_value) || empty($cache_value)){
             log::add('mymodbus', 'info', 'jeemymodbus.php: Mise à jour cmd [id] = ' . $cmd_id . ' -> old value:' . $old_value . ' new value:' . $new_value, 'config');
             $cmd->event($new_value);
             $cmd->setValue($new_value);

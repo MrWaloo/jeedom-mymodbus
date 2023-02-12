@@ -174,21 +174,33 @@ if ($deamonRunning['state'] != 'ok') {
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label class="col-sm-4 control-label">{{Garder la connexion ouverte}}</label>
+                                <label class="col-sm-4 control-label"></label>
                                 <div class="col-sm-6">
-                                    <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="configuration" data-l2key="eqKeepopen"/>{{Activer}}</label>
+                                    <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="configuration" data-l2key="eqKeepopen"/>{{Garder la connexion ouverte}}
+                                        <sup><i class="fas fa-question-circle tooltips" title="{{À activer pour une liaison série}}"></i></sup>
+                                    </label>
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label class="col-sm-4 control-label">{{Polling en secondes}}</label>
+                                <label class="col-sm-4 control-label">{{Polling en secondes}}
+                                    <sup><i class="fas fa-question-circle tooltips" title="{{Raffraichissement des valeurs toutes les n secondes}}"></i></sup>
+                                </label>
                                 <div class="col-sm-6">
-                                    <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqPolling" placeholder="{{60}}"/>
+                                    <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqPolling" placeholder="60"/>
                                 </div>
                             </div>
                             
                             <!-- Paramètres propres au protocol "desktop/modal/configuration.*.php" -->
                             <div id="div_protocolParameters"></div>
                             
+                            <div class="form-group">
+                                <label class="col-sm-4 control-label">{{Unit id}}
+                                    <sup><i class="fas fa-question-circle tooltips" title="{{Paramètre non utilisé et en réserve en version beta}}"></i></sup>
+                                </label>
+                                <div class="col-sm-6">
+                                    <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqUnitId" placeholder="1"/>
+                                </div>
+                            </div>
                             <div class="form-group">
                                 <label class="col-sm-4 control-label">{{Ordre des BYTE dans les WORD}}</label>
                                 <div class="col-sm-6">

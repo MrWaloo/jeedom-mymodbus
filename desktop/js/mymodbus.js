@@ -236,13 +236,13 @@ $("#bt_add_ActionNum").on('click', function (event) {
 function addCmdToTable(_cmd) {
     var prefix = init(_cmd.type).toString().substr(0, 3); // 'inf' for info or 'act' for action
     
-    // Structure minimum de _cmd
+    // Minimal struxture for _cmd
     if (!isset(_cmd))
         var _cmd = {configuration: {}};
     if (!isset(_cmd.configuration))
         _cmd.configuration = {};
     
-    // Configuration par défaut en cas d'ajout
+    // Default configuration for a new command
     if (!isset(_cmd.id)) {
         if (prefix == 'inf') {
             if (init(_cmd.mymodbusType) == 'bin') {
@@ -266,7 +266,7 @@ function addCmdToTable(_cmd) {
         }
     }
     
-    // Type de variable de la commande
+    // Command variable type
     if (prefix == 'inf' && !isset(_cmd.mymodbusType)) {
         if (_cmd.subType == 'binary')
             _cmd.mymodbusType = 'bin';
@@ -281,7 +281,7 @@ function addCmdToTable(_cmd) {
     
     //console.log('init(_cmd): ', init(_cmd)); // DEBUG
     
-    // Commande info ou action
+    // Command info or action
     if (prefix == 'inf' || prefix == 'act') {
         var tr = '<tr class="cmd" data-cmd_id="' + init(_cmd.id) + '">';
         // Nom
@@ -294,7 +294,7 @@ function addCmdToTable(_cmd) {
         tr += '     <input class="cmdAttr form-control type input-sm" data-l1key="type" value="' + init(_cmd.type) + '" disabled style="margin-bottom:5px;" />';
         tr += '     <span class="subType" subType="' + init(_cmd.subType) + '"></span>';
         tr += ' </td>';
-        // Fonction modbus / format de donnée
+        // Modbus function / Data format
         tr += ' <td>';
         tr += '     <div class="input-group" style="margin-bottom:5px;">';
         tr += '         <div class="col-sm-12">';
