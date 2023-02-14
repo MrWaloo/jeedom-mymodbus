@@ -19,6 +19,13 @@ import logging
 import threading
 import asyncio
 
+from pymodbus.client import AsyncModbusTcpClient, AsyncModbusUdpClient, AsyncModbusSerialClient
+
+from pymodbus.framer.socket_framer import ModbusSocketFramer
+from pymodbus.framer.rtu_framer import ModbusRtuFramer
+from pymodbus.framer.ascii_framer import ModbusAsciiFramer
+from pymodbus.framer.binary_framer import ModbusBinaryFramer
+
 from pymodbus.payload import BinaryPayloadDecoder # BinaryPayloadBuilder
 #from pymodbus.constants import Endian
 from pymodbus.exceptions import *
@@ -26,8 +33,7 @@ from pymodbus.pdu import ExceptionResponse
 
 """
 -----------------------------------------------------------------------------
-example: [{"id":"34","createtime":"2023-02-04 03:13:17","eqProtocol":"tcp","eqKeepopen":"1","eqPolling":"10","eqTcpAddr":"192.168.1.20","eqTcpPort":"502","eqTcpRtu":"0","eqWordEndianess":">","eqDWordEndianess":"<","updatetime":"2023-02-12 14:19:48","eqSerialAddr":"20","eqSerialMethod":"rtu","eqSerialBaudrate":"19200","eqSerialBytesize":"8","eqSerialParity":"E","eqSerialStopbits":"1","refreshes":[],"eqUnitId":"1","cmds":[{"id":"118","infFctModbus":"3","infFormat":"int16","infAddr":"12308","request":"","minValue":"","maxValue":""},{"id":"121","infFctModbus":"3","infFormat":"int16","infAddr":"12309","request":"","minValue":"","maxValue":""},{"id":"122","infFctModbus":"3","infFormat":"int16","infAddr":"12310","request":"","minValue":"","maxValue":""},{"id":"123","infFctModbus":"3","infFormat":"int16","infAddr":"12311","request":"","minValue":"","maxValue":""},{"id":"124","infFctModbus":"3","infFormat":"int16","infAddr":"12312","request":"","minValue":"","maxValue":""},{"id":"125","infFctModbus":"3","infFormat":"int16","infAddr":"12313","request":"","minValue":"","maxValue":""},{"id":"126","infFctModbus":"3","infFormat":"float32","infAddr":"12352","request":"","minValue":"","maxValue":""}]}]
-0487|[2023-02-12 14:19:54]INFO : Writing PID 1495991 to /tm
+example:  [{"createtime":"2023-02-04 03:13:17","eqProtocol":"tcp","eqKeepopen":"0","eqPolling":"60","eqTcpAddr":"192.168.1.20","eqTcpPort":"502","eqTcpRtu":"0","eqWordEndianess":">","eqDWordEndianess":"<","updatetime":"2023-02-14 21:35:08","eqSerialAddr":"20","eqSerialMethod":"rtu","eqSerialBaudrate":"19200","eqSerialBytesize":"8","eqSerialParity":"E","eqSerialStopbits":"1","refreshes":[],"eqUnitId":"1","id":"34","cmds":[{"infFctModbus":"3","infFormat":"int16","infAddr":"12308","request":"","minValue":"","maxValue":"","infSlave":"0","id":"118"},{"infFctModbus":"3","infFormat":"int16","infAddr":"12309","request":"","minValue":"","maxValue":"","infSlave":"0","id":"121"},{"infFctModbus":"3","infFormat":"int16","infAddr":"12310","request":"","minValue":"","maxValue":"","infSlave":"0","id":"122"},{"infFctModbus":"3","infFormat":"int16","infAddr":"12311","request":"","minValue":"","maxValue":"","infSlave":"0","id":"123"},{"infFctModbus":"3","infFormat":"int16","infAddr":"12312","request":"","minValue":"","maxValue":"","infSlave":"0","id":"124"},{"infFctModbus":"3","infFormat":"int16","infAddr":"12313","request":"","minValue":"","maxValue":"","infSlave":"0","id":"125"},{"infFctModbus":"3","infFormat":"float32","infAddr":"12352","request":"","minValue":"","maxValue":"","infSlave":"0","id":"126"}]}]
 -----------------------------------------------------------------------------
 from pymodbus.client import ModbusTcpClient
 client = ModbusTcpClient(host='192.168.1.20',port='502')
@@ -43,9 +49,8 @@ Test
 -----------------------------------------------------------------------------
 from mymodbus import PyModbusClient
 import json
-config = json.loads('[{"id":"34","createtime":"2023-02-04 03:13:17","eqProtocol":"tcp","eqKeepopen":"1","eqPolling":"10","eqTcpAddr":"192.168.1.20","eqTcpPort":"502","eqTcpRtu":"0","eqWordEndianess":">","eqDWordEndianess":"<","updatetime":"2023-02-12 14:19:48","eqSerialAddr":"20","eqSerialMethod":"rtu","eqSerialBaudrate":"19200","eqSerialBytesize":"8","eqSerialParity":"E","eqSerialStopbits":"1","refreshes":[],"eqUnitId":"1","cmds":[{"id":"118","infFctModbus":"3","infFormat":"int16","infAddr":"12308","request":"","minValue":"","maxValue":""},{"id":"121","infFctModbus":"3","infFormat":"int16","infAddr":"12309","request":"","minValue":"","maxValue":""},{"id":"122","infFctModbus":"3","infFormat":"int16","infAddr":"12310","request":"","minValue":"","maxValue":""},{"id":"123","infFctModbus":"3","infFormat":"int16","infAddr":"12311","request":"","minValue":"","maxValue":""},{"id":"124","infFctModbus":"3","infFormat":"int16","infAddr":"12312","request":"","minValue":"","maxValue":""},{"id":"125","infFctModbus":"3","infFormat":"int16","infAddr":"12313","request":"","minValue":"","maxValue":""},{"id":"126","infFctModbus":"3","infFormat":"float32","infAddr":"12352","request":"","minValue":"","maxValue":""}]}]')
+config = json.loads('[{"createtime":"2023-02-04 03:13:17","eqProtocol":"tcp","eqKeepopen":"0","eqPolling":"60","eqTcpAddr":"192.168.1.20","eqTcpPort":"502","eqTcpRtu":"0","eqWordEndianess":">","eqDWordEndianess":"<","updatetime":"2023-02-14 21:35:08","eqSerialAddr":"20","eqSerialMethod":"rtu","eqSerialBaudrate":"19200","eqSerialBytesize":"8","eqSerialParity":"E","eqSerialStopbits":"1","refreshes":[],"eqUnitId":"1","id":"34","cmds":[{"infFctModbus":"3","infFormat":"int16","infAddr":"12308","request":"","minValue":"","maxValue":"","infSlave":"0","id":"118"},{"infFctModbus":"3","infFormat":"int16","infAddr":"12309","request":"","minValue":"","maxValue":"","infSlave":"0","id":"121"},{"infFctModbus":"3","infFormat":"int16","infAddr":"12310","request":"","minValue":"","maxValue":"","infSlave":"0","id":"122"},{"infFctModbus":"3","infFormat":"int16","infAddr":"12311","request":"","minValue":"","maxValue":"","infSlave":"0","id":"123"},{"infFctModbus":"3","infFormat":"int16","infAddr":"12312","request":"","minValue":"","maxValue":"","infSlave":"0","id":"124"},{"infFctModbus":"3","infFormat":"int16","infAddr":"12313","request":"","minValue":"","maxValue":"","infSlave":"0","id":"125"},{"infFctModbus":"3","infFormat":"float32","infAddr":"12352","request":"","minValue":"","maxValue":"","infSlave":"0","id":"126"}]}]')
 foo = PyModbusClient(config[0])
-
 
 -----------------------------------------------------------------------------
 """
@@ -72,8 +77,7 @@ class PyModbusClient():
         self.byteorder = config['eqWordEndianess']
         self.wordorder = config['eqDWordEndianess']
         self.keepopen = config['eqKeepopen'] == '1'
-        self.unit = float(config['eqUnitId']) # FIXME
-        self.pooling = float(config['eqPolling'])
+        self.pooling = max(float(config['eqPolling']), 10.0) # at least 10 seconds
         
         if self.protocol == 'tcp':
             # To determine the framer
@@ -98,8 +102,6 @@ class PyModbusClient():
             self.bytesize = int(config['eqSerialBytesize'])
             self.parity = config['eqSerialParity']
             self.stopbits = int(config['eqSerialStopbits'])
-            # To configure the request
-            self.slave = int(config['eqSerialSlave'])
         
         self.framer = self.get_framer()
         self.client = self.get_client()
@@ -107,36 +109,32 @@ class PyModbusClient():
         self.requests = self.get_requests(config['cmds'])
         
     def get_framer(self):
-        if self.protocol in ('tcp', 'udp'):
+        if self.protocol == 'tcp':
             if self.rtu:
-                from pymodbus.framer.rtu_framer import ModbusRtuFramer
                 return ModbusRtuFramer
-                
             else:
-                from pymodbus.framer.socket_framer import ModbusSocketFramer
                 return ModbusSocketFramer
+        
+        if self.protocol == 'udp':
+            return ModbusSocketFramer
                 
         elif self.protocol == 'serial':
             if self.method == 'rtu':
-                from pymodbus.framer.rtu_framer import ModbusRtuFramer
                 return ModbusRtuFramer
-                
             elif self.method == 'ascii':
-                from pymodbus.framer.ascii_framer import ModbusAsciiFramer
                 return ModbusAsciiFramer
+            elif self.method == 'binary':
+                return ModbusBinaryFramer
         
     def get_client(self):
         logging.debug('PyModbusClient: client protocol is:' + self.protocol)
         if self.protocol == 'tcp':
-            from pymodbus.client import AsyncModbusTcpClient
             return AsyncModbusTcpClient(host=self.address, port=self.port, framer=self.framer)
             
         elif self.protocol == 'udp':
-            from pymodbus.client import AsyncModbusUdpClient
             return AsyncModbusUdpClient(host=self.address, port=self.port, framer=self.framer)
             
         elif self.protocol == 'serial':
-            from pymodbus.client import AsyncModbusSerialClient
             return AsyncModbusSerialClient(port=self.interface, baudrate=self.baudrate, bytesize=self.bytesize,
                                             parity=self.parity, stopbits=self.stopbits, framer=self.framer)
         
@@ -151,12 +149,7 @@ class PyModbusClient():
                 request['type'] = 'w'
                 prefix = 'act'
                 
-            request['slave'] = 0
-            if hasattr(self, 'slave'):
-                request['slave'] = self.slave
-                
-            request['unit'] = self.unit # FIXME
-            
+            request['slave'] = req_config[prefix + 'Slave']
             request['fct_modbus'] = req_config[prefix + 'FctModbus']
             request['addr'] = int(req_config[prefix + 'Addr'])
             request['data_type'] = req_config[prefix + 'Format']
@@ -194,26 +187,15 @@ class PyModbusClient():
         
         # Polling loop
         while not self.should_stop.is_set():
-            # connect() # FIXME
-            reconnect = True
-            # first method to determine if a reconnection is needed
+            
+            # Connect
             try:
-                reconnect = not self.client.is_socket_open()
+                await self.client.connect()
+                await asyncio.sleep(1)
             except:
-                reconnect = True
-            # second method to determine if a reconnection is needed
-            if reconnect:
-                try:
-                    reconnect = not self.connected
-                except:
-                    reconnect = True
+                logging.error('PyModbusClient: Something went wront while connecting to equipment id ' + self.id)
             
-            if reconnect:
-                try:
-                    await self.client.connect()
-                except:
-                    logging.error('PyModbusClient: Something went wront while connecting equipment id ' + self.id)
-            
+            # Request: await self.client.read_*
             read_results = {}
             for cmd_id, request in self.requests.items():
                 # Only read requests in the loop
@@ -320,7 +302,7 @@ class PyModbusClient():
                     logging.info('PyModbusClient: read_results:' + json.dumps(read_results))
             
             # Polling time
-            await asyncio.sleep(self.pooling)
+            await asyncio.sleep(self.pooling - 1)
             
         # The loop has exited (should never happend)
         try:

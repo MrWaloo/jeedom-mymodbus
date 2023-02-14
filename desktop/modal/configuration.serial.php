@@ -53,6 +53,7 @@ if (!isConnect('admin')) {
         <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqSerialMethod">
             <option value="rtu">{{RTU}}</option>
             <option value="ascii">{{ASCII}}</option>
+            <option value="binary">{{Binaire}}</option>
         </select>
     </div>
 </div>

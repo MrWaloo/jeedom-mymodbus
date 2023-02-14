@@ -6,10 +6,8 @@ $plugin = plugin::byId('mymodbus');
 sendVarToJS('eqType', $plugin->getId());
 $eqLogics = eqLogic::byType($plugin->getId());
 
-$deamonRunning = mymodbus::deamon_info();
-if ($deamonRunning['state'] != 'ok') {
-    echo '<div class="alert alert-danger">ATTENTION LE DEMON MYMODBUS N\'EST PAS DÉMARRÉ. Pour qu\'il démarre il faut créer et activer un équipement MyModbus et configurer au moins une commande&nbsp;!</div>';
-}
+if (mymodbus::getDeamonState() != 'ok')
+    echo '<div class="alert alert-danger">{{ATTENTION LE DEMON MYMODBUS N\'EST PAS DÉMARRÉ.</br>Pour qu\'il démarre il faut créer et activer un équipement MyModbus et configurer au moins une commande valide&nbsp;!}}</div>';
 
 ?>
 
@@ -129,11 +127,8 @@ if ($deamonRunning['state'] != 'ok') {
                                     <select id="sel_object" class="eqLogicAttr form-control" data-l1key="object_id">
                                         <option value="">{{Aucun}}</option>
                                         <?php
-                                        $options = '';
-                                        foreach ((jeeObject::buildTree(null, false)) as $object) {
-                                            $options .= '<option value="' . $object->getId() . '">' . str_repeat('&nbsp;&nbsp;', $object->getConfiguration('parentNumber')) . $object->getName() . '</option>';
-                                        }
-                                        echo $options;
+                                        foreach ((jeeObject::buildTree(null, false)) as $object)
+                                            echo '<option value="' . $object->getId() . '">' . str_repeat('&nbsp;&nbsp;', $object->getConfiguration('parentNumber')) . $object->getName() . '</option>';
                                         ?>
                                     </select>
                                 </div>
@@ -166,9 +161,8 @@ if ($deamonRunning['state'] != 'ok') {
                                     <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqProtocol">
                                         <option disabled selected value>-- {{Choisir un protocol de connexion}} --</option>
                                         <?php
-                                        foreach (mymodbus::supportedProtocols() as $protocol) {
+                                        foreach (mymodbus::supportedProtocols() as $protocol)
                                             echo '<option value="' . $protocol . '">' . $protocol . '</option>';
-                                        }
                                         ?>
                                     </select>
                                 </div>
@@ -176,14 +170,12 @@ if ($deamonRunning['state'] != 'ok') {
                             <div class="form-group">
                                 <label class="col-sm-4 control-label"></label>
                                 <div class="col-sm-6">
-                                    <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="configuration" data-l2key="eqKeepopen"/>{{Garder la connexion ouverte}}
-                                        <sup><i class="fas fa-question-circle tooltips" title="{{À activer pour une liaison série}}"></i></sup>
-                                    </label>
+                                    <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="configuration" data-l2key="eqKeepopen"/>{{Garder la connexion ouverte}}</label>
                                 </div>
                             </div>
                             <div class="form-group">
                                 <label class="col-sm-4 control-label">{{Polling en secondes}}
-                                    <sup><i class="fas fa-question-circle tooltips" title="{{Raffraichissement des valeurs toutes les n secondes}}"></i></sup>
+                                    <sup><i class="fas fa-question-circle tooltips" title="{{Raffraichissement des valeurs toutes les n secondes, minimum 10}}"></i></sup>
                                 </label>
                                 <div class="col-sm-6">
                                     <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqPolling" placeholder="60"/>
@@ -193,14 +185,6 @@ if ($deamonRunning['state'] != 'ok') {
                             <!-- Paramètres propres au protocol "desktop/modal/configuration.*.php" -->
                             <div id="div_protocolParameters"></div>
                             
-                            <div class="form-group">
-                                <label class="col-sm-4 control-label">{{Unit id}}
-                                    <sup><i class="fas fa-question-circle tooltips" title="{{Paramètre non utilisé et en réserve en version beta}}"></i></sup>
-                                </label>
-                                <div class="col-sm-6">
-                                    <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqUnitId" placeholder="1"/>
-                                </div>
-                            </div>
                             <div class="form-group">
                                 <label class="col-sm-4 control-label">{{Ordre des BYTE dans les WORD}}</label>
                                 <div class="col-sm-6">
@@ -250,13 +234,16 @@ if ($deamonRunning['state'] != 'ok') {
                     <table id="table_cmd" class="table table-bordered table-condensed">
                         <thead>
                             <tr>
-                                <th style="width:300px;">{{Nom}}</th>
+                                <th style="min-width:100px;width:300px;">{{Nom}}</th>
                                 <th style="width:100px;">{{Type}}</th>
+                                <th style="min-width:80px;width:130px;">{{Adresse esclave}}
+                                    <sup><i class="fas fa-question-circle tooltips" title="{{'0' si pas de bus série}}"></i></sup>
+                                </th>
                                 <th style="width:300px;">{{Fonction Modbus}}</th>
-                                <th style="width:100px;">{{Adresse}}</th>
+                                <th style="min-width:80px;width:130px;">{{Adresse modbus}}</th>
                                 <th>{{Paramètre(s)}}</th>
-                                <th style="width:100px;">{{Options}}</th>
-                                <th>{{Configuration}}</th>
+                                <th style="min-width:300px;width:310px;">{{Options}}</th>
+                                <th style="width:20px;">&nbsp;</th>
                             </tr>
                         </thead>
                         <tbody>

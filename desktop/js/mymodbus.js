@@ -245,6 +245,7 @@ function addCmdToTable(_cmd) {
     // Default configuration for a new command
     if (!isset(_cmd.id)) {
         if (prefix == 'inf') {
+            _cmd.configuration.infSlave = '0';
             if (init(_cmd.mymodbusType) == 'bin') {
                 _cmd.subType = 'binary';
                 _cmd.configuration.infFctModbus = '1';
@@ -255,6 +256,7 @@ function addCmdToTable(_cmd) {
                 _cmd.configuration.infFormat = 'int16';
             }
         } else if (prefix == 'act') {
+            _cmd.configuration.actSlave = '0';
             _cmd.subType = 'other';
             if (init(_cmd.mymodbusType) == 'bin') {
                 _cmd.configuration.actFctModbus = '5';
@@ -264,6 +266,13 @@ function addCmdToTable(_cmd) {
                 _cmd.configuration.actFormat = 'int16';
             }
         }
+    }
+    
+    // Command slave address
+    if (prefix == 'inf' && !isset(_cmd.infSlave)) {
+        _cmd.infSlave = '0';
+    } else if (prefix == 'act' && !isset(_cmd.actSlave)) {
+        _cmd.actSlave = '0';
     }
     
     // Command variable type
@@ -294,65 +303,63 @@ function addCmdToTable(_cmd) {
         tr += '     <input class="cmdAttr form-control type input-sm" data-l1key="type" value="' + init(_cmd.type) + '" disabled style="margin-bottom:5px;" />';
         tr += '     <span class="subType" subType="' + init(_cmd.subType) + '"></span>';
         tr += ' </td>';
+        // Adresse esclave
+        tr += ' <td><input class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="' + prefix + 'Slave"></td>';
         // Modbus function / Data format
         tr += ' <td>';
         tr += '     <div class="input-group" style="margin-bottom:5px;">';
-        tr += '         <div class="col-sm-12">';
-        tr += '             <select class="cmdAttr form-control input-sm" style="width:300px;" data-l1key="configuration" data-l2key="' + prefix + 'FctModbus">';
+        tr += '         <select class="cmdAttr form-control input-sm" style="width:300px;" data-l1key="configuration" data-l2key="' + prefix + 'FctModbus">';
         if (prefix == 'inf') {
             if (init(_cmd.mymodbusType) == 'bin') {
-                tr += '                 <option value="1">[0x01] Read coils ({{Binaire}} / bit)</option>';
-                tr += '                 <option value="2">[0x02] Read discrete inputs ({{Binaire}} / bit)</option>';
+                tr += '             <option value="1">[0x01] Read coils ({{Binaire}} / bit)</option>';
+                tr += '             <option value="2">[0x02] Read discrete inputs ({{Binaire}} / bit)</option>';
             } else {
-                tr += '                 <option value="3">[0x03] Read holding registers ({{Numérique}})</option>';
-                tr += '                 <option value="4">[0x04] Read input registers ({{Numérique}})</option>';
+                tr += '             <option value="3">[0x03] Read holding registers ({{Numérique}})</option>';
+                tr += '             <option value="4">[0x04] Read input registers ({{Numérique}})</option>';
             }
         } else if (prefix == 'act') {
             if (init(_cmd.mymodbusType) == 'bin') {
-                tr += '                 <option value="5">[0x05] Write single coil ({{Binaire}} / bit)</option>';
-                tr += '                 <option value="15">[0x0F] Write coils ({{Binaire}} / bit)</option>';
+                tr += '             <option value="5">[0x05] Write single coil ({{Binaire}} / bit)</option>';
+                tr += '             <option value="15">[0x0F] Write coils ({{Binaire}} / bit)</option>';
             } else {
-                tr += '                 <option value="6">[0x06] Write register ({{Numérique}})</option>';
-                tr += '                 <option value="16">[0x10] Write registers ({{Numérique}})</option>';
+                tr += '             <option value="6">[0x06] Write register ({{Numérique}})</option>';
+                tr += '             <option value="16">[0x10] Write registers ({{Numérique}})</option>';
             }
         }
         tr += '             </select>';
-        tr += '         </div>';
         tr += '     </div>';
         tr += '     <div class="input-group">';
-        tr += '         <div class="col-sm-12">';
-        tr += '             <select class="cmdAttr form-control input-sm" style="width:300px;" data-l1key="configuration" data-l2key="' + prefix + 'Format">';
+        tr += '         <select class="cmdAttr form-control input-sm" style="width:300px;" data-l1key="configuration" data-l2key="' + prefix + 'Format">';
         if (init(_cmd.mymodbusType) == 'bin') {
-            tr += '                 <option value="bit">bit (0 .. 1)</option>';
-            tr += '                 <option value="bit-inv">{{bit inversé}} (1 .. 0)</option>';
+            tr += '             <option value="bit">bit (0 .. 1)</option>';
+            tr += '             <option value="bit-inv">{{bit inversé}} (1 .. 0)</option>';
         } else {
-            tr += '                 <optgroup label="8 bits">';
-            tr += '                     <option value="int8-lsb">int8 LSB (-128 ... 127)</option>';
-            tr += '                     <option value="int8-msb">int8 MSB (-128 ... 127)</option>';
-            tr += '                     <option value="uint8-lsb">uint8 LSB (0 ... 255)</option>';
-            tr += '                     <option value="uint8-msb">uint8 MSB (0 ... 255)</option>';
-            tr += '                 </optgroup>';
-            tr += '                 <optgroup label="16 bits">';
-            tr += '                     <option value="int16">int16 (-32 768 ... 32 768)</option>';
-            tr += '                     <option value="uint16">uint16 (0 ... 65 535)</option>';
-            tr += '                     <option value="float16">float16 (Real 16bit)</option>';
-            tr += '                 </optgroup>';
-            tr += '                 <optgroup label="32 bits ({{2 registres}})">';
-            tr += '                     <option value="int32">int32 (-2 147 483 648 ... 2 147 483 647)</option>';
-            tr += '                     <option value="uint32">uint32 (0 ... 4 294 967 296)</option>';
-            tr += '                     <option value="float32">float32 (Real 32bit)</option>';
-            tr += '                 </optgroup>';
-            tr += '                 <optgroup label="64 bits ({{4 registres}})">';
-            tr += '                     <option value="int64">int64 (-9e18 ... 9e18)</option>';
-            tr += '                     <option value="uint64">uint64 (0 ... 18e18)</option>';
-            tr += '                     <option value="float64">float64 (Real 64bit)</option>';
-            tr += '                 </optgroup>';
+            tr += '             <optgroup label="8 bits">';
+            tr += '                 <option value="int8-lsb">int8 LSB (-128 ... 127)</option>';
+            tr += '                 <option value="int8-msb">int8 MSB (-128 ... 127)</option>';
+            tr += '                 <option value="uint8-lsb">uint8 LSB (0 ... 255)</option>';
+            tr += '                 <option value="uint8-msb">uint8 MSB (0 ... 255)</option>';
+            tr += '             </optgroup>';
+            tr += '             <optgroup label="16 bits">';
+            tr += '                 <option value="int16">int16 (-32 768 ... 32 768)</option>';
+            tr += '                 <option value="uint16">uint16 (0 ... 65 535)</option>';
+            tr += '                 <option value="float16">float16 (Real 16bit)</option>';
+            tr += '             </optgroup>';
+            tr += '             <optgroup label="32 bits ({{2 registres}})">';
+            tr += '                 <option value="int32">int32 (-2 147 483 648 ... 2 147 483 647)</option>';
+            tr += '                 <option value="uint32">uint32 (0 ... 4 294 967 296)</option>';
+            tr += '                 <option value="float32">float32 (Real 32bit)</option>';
+            tr += '             </optgroup>';
+            tr += '             <optgroup label="64 bits ({{4 registres}})">';
+            tr += '                 <option value="int64">int64 (-9e18 ... 9e18)</option>';
+            tr += '                 <option value="uint64">uint64 (0 ... 18e18)</option>';
+            tr += '                 <option value="float64">float64 (Real 64bit)</option>';
+            tr += '             </optgroup>';
         }
-        tr += '             </select>';
-        tr += '         </div>';
+        tr += '         </select>';
         tr += '     </div>';
         tr += ' </td>';
-        // Adresse
+        // Adresse modbus
         tr += ' <td><input class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="' + prefix + 'Addr"></td>';
         // Paramètre
         tr += ' <td>';
@@ -373,26 +380,28 @@ function addCmdToTable(_cmd) {
             tr += '     <div class="input-group">';
             tr += '         <input class="cmdAttr form-control input-sm roundedLeft" data-l1key="configuration" data-l2key="parameters" placeholder="{{Valeur de retour }}" />';
             tr += '         <span class="input-group-btn">';
-            tr += '             <a class="btn btn-default btn-sm cursor actParamRet roundedRight" data-input="configuration"><i class="fa fa-list-alt "></i></a>';
+            tr += '             <a class="btn btn-default btn-sm cursor actParamRet roundedRight" data-input="configuration"><i class="fa fa-list-alt"></i></a>';
             tr += '         </span>';
             tr += '     </div>';
         }
         tr += ' </td>';  
         // Options
         tr += ' <td>';
-        tr += '     <input class="cmdAttr form-control tooltips input-sm" data-l1key="unite" style="width:100px;" placeholder="Unité" title="{{Unité}}">';
-        tr += '     <input class="cmdAttr form-control tooltips input-sm expertModeVisible" data-l1key="configuration" data-l2key="minValue" placeholder="{{Min}}" title="{{Min}}" style="margin-top:5px;">';
-        tr += '     <input class="cmdAttr form-control tooltips input-sm expertModeVisible" data-l1key="configuration" data-l2key="maxValue" placeholder="{{Max}}" title="{{Max}}" style="margin-top:5px;">';
-        tr += ' </td>';
-        // Configuration commande
-        tr += ' <td>';
         if (is_numeric(_cmd.id)) {
             tr += '     <a class="btn btn-default btn-xs cmdAction" data-action="configure" title="{{Configuration de la commande}}""><i class="fas fa-cogs"></i></a>';
-            tr += '     <a class="btn btn-default btn-xs cmdAction" data-action="test"title="Tester"><i class="fas fa-rss"></i> </a>';
+            tr += '     <a class="btn btn-default btn-xs cmdAction" data-action="test" title="Tester"><i class="fas fa-rss"></i> </a>';
             tr += '     <a class="btn btn-default btn-xs cmdAction" data-action="copy" title="Dupliquer"><i class="far fa-clone"></i></a>';
         }
-        tr += '     <span><label class="checkbox-inline"><input type="checkbox" class="cmdAttr" data-l1key="isHistorized" data-size="mini"/>{{Historiser}}</label></span>';
-        tr += '     <span><label class="checkbox-inline"><input type="checkbox" class="cmdAttr checkbox-inline" data-l1key="isVisible" checked/>{{Afficher}}</label></span>';
+        tr += '     <label class="checkbox-inline"><input type="checkbox" class="cmdAttr checkbox-inline" data-l1key="isVisible" checked/>{{Afficher}}</label>';
+        tr += '     <label class="checkbox-inline"><input type="checkbox" class="cmdAttr" data-l1key="isHistorized" data-size="mini"/>{{Historiser}}</label>';
+        tr += '     <div style="margin-top:7px;">';
+        tr += '         <input class="tooltips cmdAttr form-control tooltips input-sm expertModeVisible" data-l1key="configuration" data-l2key="minValue" placeholder="{{Min}}" title="{{Min}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;">';
+        tr += '         <input class="tooltips cmdAttr form-control tooltips input-sm expertModeVisible" data-l1key="configuration" data-l2key="maxValue" placeholder="{{Max}}" title="{{Max}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;">';
+        tr += '         <input class="tooltips cmdAttr form-control tooltips input-sm" data-l1key="unite" placeholder="{{Unité}}" title="{{Unité}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;">';
+        tr += '     </div>';
+        tr += ' </td>';
+        // Delete button
+        tr += ' <td>';
         tr += '     <i class="fas fa-minus-circle pull-right cmdAction cursor" data-action="remove" title="{{Supprimer}}"></i>';
         tr += ' </td>';
         tr += '</tr>';

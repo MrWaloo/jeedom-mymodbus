@@ -23,16 +23,16 @@ if (!jeedom::apiAccess(init('apikey'), 'mymodbus')) {
 }
 if (init('test') != '') {
     log::add('mymodbus', 'debug', 'jeemymodbus.php: Premier message de test reçu');
-    echo 'OK'; // Michel: ligne obligatoire pour que le test du démon soit OK ?
+    echo 'OK';
     die();
 }
 $result = json_decode(file_get_contents("php://input"), true);
-log::add('mymodbus', 'debug', 'jeemymodbus.php: vivant *' . json_encode($result) . '* type: ' . gettype($result));
+log::add('mymodbus', 'debug', 'jeemymodbus.php: $result *' . json_encode($result) . '* type: ' . gettype($result));
 if (!is_array($result))
     die();
 
-// TODO: 
 if (isset($result['state'])) {
+    // TODO
     //log::add('mymodbus', 'debug', 'jeemymodbus.php: state: *' . $result['state'] . '*');
     
 } elseif (isset($result['values'])) {
@@ -47,7 +47,7 @@ if (isset($result['state'])) {
             $new_value=jeedom::evaluateExpression($new_value);
         }
         if(($old_value<=>$new_value) || empty($cache_value)){
-            log::add('mymodbus', 'info', 'jeemymodbus.php: Mise à jour cmd [id] = ' . $cmd_id . ' -> old value:' . $old_value . ' new value:' . $new_value, 'config');
+            log::add('mymodbus', 'info', 'Mise à jour cmd [id] = ' . $cmd_id . ' -> old value:' . $old_value . ' new value:' . $new_value, 'config');
             $cmd->event($new_value);
             $cmd->setValue($new_value);
             $cmd->save();

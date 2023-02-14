@@ -280,103 +280,77 @@ class mymodbus extends eqLogic {
             return True;
         // Un nouvel équipement vient d'être ajouté, il faut retourner "true" sinon, l'ajout est invalidé
         if (!in_array('eqProtocol', $configKeys) and !in_array('eqKeepopen', $configKeys) and
-                !in_array('eqUnitId', $configKeys) and !in_array('eqPolling', $configKeys) and
-                !in_array('eqWordEndianess', $configKeys) and !in_array('eqDWordEndianess', $configKeys)) {
+                !in_array('eqPolling', $configKeys) and !in_array('eqWordEndianess', $configKeys) and
+                !in_array('eqDWordEndianess', $configKeys))
             return True;
-        }
         if (!in_array('eqProtocol', $configKeys) or !in_array('eqKeepopen', $configKeys) or
-                !in_array('eqUnitId', $configKeys) or  !in_array('eqPolling', $configKeys) or
-                !in_array('eqWordEndianess', $configKeys) or !in_array('eqDWordEndianess', $configKeys)) {
-            throw new Exception(__('Veuillez définir la configuration de base de l\'équipement', __FILE__));
-        }
+                !in_array('eqPolling', $configKeys) or !in_array('eqWordEndianess', $configKeys) or
+                !in_array('eqDWordEndianess', $configKeys))
+            throw new Exception($this->getName() . __('&nbsp;:</br>Veuillez définir la configuration de base de l\'équipement', __FILE__));
         $eqProtocol = $this->getConfiguration('eqProtocol');
-        $eqUnitId = $this->getConfiguration('eqUnitId');
         $eqPolling = $this->getConfiguration('eqPolling');
         $eqWordEndianess = $this->getConfiguration('eqWordEndianess');
         $eqDWordEndianess = $this->getConfiguration('eqDWordEndianess');
-        if (!in_array($eqProtocol, self::supportedProtocols())) {
-            throw new Exception(__('Le protocol n\'est pas défini correctement.', __FILE__));
-        }
-        // FIXME
-        //if (!is_numeric($eqUnitId)) {
-        //    throw new Exception(__('Le paramètre "Unit id" doit être un nombre.', __FILE__));
-        //}
-        if (!is_numeric($eqPolling)) {
-            throw new Exception(__('Le paramètre "Pooling" doit être un nombre.', __FILE__));
-        }
-        if (!in_array($eqWordEndianess, array('>', '<'))) {
-            throw new Exception(__('L\'ordre des BYTE n\'est pas défini correctement.', __FILE__));
-        }
-        if (!in_array($eqDWordEndianess, array('>', '<'))) {
-            throw new Exception(__('L\'ordre des WORD n\'est pas défini correctement.', __FILE__));
-        }
+        if (!in_array($eqProtocol, self::supportedProtocols()))
+            throw new Exception($this->getName() . __('&nbsp;:</br>Le protocol n\'est pas défini correctement.', __FILE__));
+        if (!is_numeric($eqPolling))
+            throw new Exception($this->getName() . __('&nbsp;:</br>Le paramètre "Pooling" doit être un nombre.', __FILE__));
+        if ($eqPolling < 10)
+            throw new Exception($this->getName() . __('&nbsp;:</br>Le paramètre "Pooling" doit être au moins à 10 secondes', __FILE__));
+        if (!in_array($eqWordEndianess, array('>', '<')))
+            throw new Exception($this->getName() . __('&nbsp;:</br>L\'ordre des BYTE n\'est pas défini correctement.', __FILE__));
+        if (!in_array($eqDWordEndianess, array('>', '<')))
+            throw new Exception($this->getName() . __('&nbsp;:</br>L\'ordre des WORD n\'est pas défini correctement.', __FILE__));
         
         if ($eqProtocol == 'tcp') {
             // Vérification du paramétrage d'une connexion TCP
             if (!in_array('eqTcpAddr', $configKeys) and !in_array('eqTcpPort', $configKeys) and
                     !in_array('eqTcpRtu', $configKeys)) {
-                throw new Exception(__('Veuillez définir la configuration TCP de l\'équipement', __FILE__));
+                throw new Exception($this->getName() . __('&nbsp;:</br>Veuillez définir la configuration TCP de l\'équipement', __FILE__));
             }
             $eqTcpAddr = $this->getConfiguration('eqTcpAddr');
             $eqTcpPort = $this->getConfiguration('eqTcpPort');
-            if (!filter_var($eqTcpAddr, FILTER_VALIDATE_IP)) {
-                throw new Exception(__('L\'adresse IP n\'est pas valide', __FILE__));
-            }
-            if (!is_numeric($eqTcpPort)) {
-                throw new Exception(__('Le port doit être un nombre.', __FILE__));
-            }
+            if (!filter_var($eqTcpAddr, FILTER_VALIDATE_IP))
+                throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse IP n\'est pas valide', __FILE__));
+            if (!is_numeric($eqTcpPort))
+                throw new Exception($this->getName() . __('&nbsp;:</br>Le port doit être un nombre.', __FILE__));
             
         } elseif ($eqProtocol == 'udp') {
-            // Vérification du paramétrage d'une connexion TCP
+            // Vérification du paramétrage d'une connexion UDP
             if (!in_array('eqUdpAddr', $configKeys) and !in_array('eqUdpPort', $configKeys) and
-                    !in_array('eqUdpRtu', $configKeys)) {
-                throw new Exception(__('Veuillez définir la configuration UDP de l\'équipement', __FILE__));
-            }
+                    !in_array('eqUdpRtu', $configKeys))
+                throw new Exception($this->getName() . __('&nbsp;:</br>Veuillez définir la configuration UDP de l\'équipement', __FILE__));
             $eqUdpAddr = $this->getConfiguration('eqUdpAddr');
             $eqUdpPort = $this->getConfiguration('eqUdpPort');
-            if (!filter_var($eqUdpAddr, FILTER_VALIDATE_IP)) {
-                throw new Exception(__('L\'adresse IP n\'est pas valide', __FILE__));
-            }
-            if (!is_numeric($eqUdpPort)) {
-                throw new Exception(__('Le port doit être un nombre.', __FILE__));
-            }
+            if (!filter_var($eqUdpAddr, FILTER_VALIDATE_IP))
+                throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse IP n\'est pas valide', __FILE__));
+            if (!is_numeric($eqUdpPort))
+                throw new Exception($this->getName() . __('&nbsp;:</br>Le port doit être un nombre.', __FILE__));
             
         } elseif ($eqProtocol == 'serial') {
             // Vérification du paramétrage d'une connexion série
-            if (!in_array('eqSerialInterface', $configKeys) or !in_array('eqSerialSlave', $configKeys) or
-                    !in_array('eqSerialMethod', $configKeys) or !in_array('eqSerialBaudrate', $configKeys) or
-                    !in_array('eqSerialBytesize', $configKeys) or !in_array('eqSerialParity', $configKeys) or
-                    !in_array('eqSerialStopbits', $configKeys)) {
-                throw new Exception(__('Veuillez définir la configuration série de l\'équipement', __FILE__));
-            }
+            if (!in_array('eqSerialInterface', $configKeys) or !in_array('eqSerialMethod', $configKeys) or
+                    !in_array('eqSerialBaudrate', $configKeys) or !in_array('eqSerialBytesize', $configKeys) or
+                    !in_array('eqSerialParity', $configKeys) or !in_array('eqSerialStopbits', $configKeys))
+                throw new Exception($this->getName() . __('&nbsp;:</br>Veuillez définir la configuration série de l\'équipement', __FILE__));
             $eqSerialInterface = $this->getConfiguration('eqSerialInterface');
-            $eqSerialSlave = $this->getConfiguration('eqSerialSlave');
             $eqSerialMethod = $this->getConfiguration('eqSerialMethod');
             $eqSerialBaudrate = $this->getConfiguration('eqSerialBaudrate');
             $eqSerialBytesize = $this->getConfiguration('eqSerialBytesize');
             $eqSerialParity = $this->getConfiguration('eqSerialParity');
             $eqSerialStopbits = $this->getConfiguration('eqSerialStopbits');
-            if ($eqSerialInterface == '') {
-                throw new Exception(__('L\'interface doit être définie correctement.', __FILE__));
-            }
-            if (!is_numeric($eqSerialSlave)) {
-                throw new Exception(__('L\'adresse modbus doit être un nombre.', __FILE__));
-            }
-            if (!in_array($eqSerialMethod, array('rtu', 'ascii'))) {
-                throw new Exception(__('La méthode de transport n\'est pas défini correctement.', __FILE__));
-            }
-            if (!is_numeric($eqSerialBaudrate)) {
-                throw new Exception(__('La vitesse de transmission modbus doit être un nombre.', __FILE__));
-            }
-            if (!in_array($eqSerialBytesize, array('7', '8'))) {
-                throw new Exception(__('Le nombre de bits par octet n\'est pas défini correctement.', __FILE__));
-            }
-            if (!in_array($eqSerialParity, array('E', 'O', 'N'))) {
-                throw new Exception(__('La parité n\'est pas définie correctement.', __FILE__));
-            }
-            if (!in_array($eqSerialStopbits, array('0', '1', '2'))) {
-                throw new Exception(__('Le nombre de bits de stop n\'est pas défini correctement.', __FILE__));
-            }
+            if ($eqSerialInterface == '')
+                throw new Exception($this->getName() . __('&nbsp;:</br>L\'interface doit être définie correctement.', __FILE__));
+            if (!in_array($eqSerialMethod, array('rtu', 'ascii', 'binary')))
+                throw new Exception($this->getName() . __('&nbsp;:</br>La méthode de transport n\'est pas défini correctement.', __FILE__));
+            if (!is_numeric($eqSerialBaudrate))
+                throw new Exception($this->getName() . __('&nbsp;:</br>La vitesse de transmission modbus doit être un nombre.', __FILE__));
+            if (!in_array($eqSerialBytesize, array('7', '8')))
+                throw new Exception($this->getName() . __('&nbsp;:</br>Le nombre de bits par octet n\'est pas défini correctement.', __FILE__));
+            if (!in_array($eqSerialParity, array('E', 'O', 'N')))
+                throw new Exception($this->getName() . __('&nbsp;:</br>La parité n\'est pas définie correctement.', __FILE__));
+            if (!in_array($eqSerialStopbits, array('0', '1', '2')))
+                throw new Exception($this->getName() . __('&nbsp;:</br>Le nombre de bits de stop n\'est pas défini correctement.', __FILE__));
         }
         //log::add('mymodbus', 'debug', 'Validation de la configuration pour l\'équipement *' . $this->getName() . '* : OK');
     }
@@ -597,9 +571,12 @@ class mymodbusCmd extends cmd {
     // La levée d'une exception invalide la sauvegarde
     public function preSave() {
         $prefix = substr($this->type, 0, 3);
-        $Address = $this->getConfiguration($prefix . 'Addr');
-        if (!is_numeric($Address))
-            throw new Exception(__('L\'adresse doit être un nombre.', __FILE__));
+        $cmdSlave = $this->getConfiguration($prefix . 'Slave');
+        $cmdAddress = $this->getConfiguration($prefix . 'Addr');
+        if (!is_numeric($cmdSlave))
+            throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse esclave doit être un nombre.</br>\'0\' si pas de bus série.', __FILE__));
+        if (!is_numeric($cmdAddress))
+            throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse modbus doit être un nombre.', __FILE__));
         //log::add('mymodbus', 'debug', 'Validation de la configuration pour la commande *' . $this->getName() . '* : OK');
     }
 
