@@ -39,24 +39,11 @@ class mymodbus extends eqLogic {
     public static $_DEFAULT_SOCKET_PORT = 55502;
 
     /*     * ***********************Methode static*************************** */
-  
-    //* Fonction exécutée automatiquement toutes les minutes par Jeedom
-    // TODO
-    public static function cron() {
-        //SI Restart des Démons
-//        if (config::byKey('ActiveRestart', 'mymodbus', true)) {
-//            $deamonsRunning = self::health();
-//            $deamonsRunning = $deamonsRunning[0];  // peut importe l'index  0 
-//            
-//            // Si Healt Nok et que le demon principal est OK alors Restart 
-//            if (($deamonsRunning['result'] == 'NOK') and (self::getDeamonState() == 'ok')) {
-//                log::add('mymodbus', 'info', 'restart by Health');
-//                self::deamon_stop();
-//                sleep(2);
-//                self::deamon_start();
-//            }
-//        }
-    }
+    
+   /*
+    * Fonction exécutée automatiquement toutes les minutes par Jeedom
+    public static function cron() {}
+    */
 
   /*
    * Fonction exécutée automatiquement toutes les 5 minutes par Jeedom
@@ -83,22 +70,25 @@ class mymodbus extends eqLogic {
     public static function cronHourly() {}
    */
 
-    //Fonction exécutée automatiquement tous les jours par Jeedom
-    public static function cronDaily() {
-//        foreach (self::byType('mymodbus') as $eqMymodbus) {//parcourt tous les équipements du plugin mymodbus
-//            if ($eqMymodbus->getIsEnable()) {//vérifie que l'équipement est actif
-//                $cmd = $eqMymodbus->getCmd(null, 'ntp');//retourne la commande 'ntp' si elle existe
-//                if (!is_object($cmd)) {//Si la commande n'existe pas
-//                    continue; //continue la boucle
-//                }
-//                $cmd->execCmd(); // la commande existe on la lance
-//                log::add('mymodbus', 'info', 'mise à jour heure ');
-//            }
-//        }
+   /*
+    * Fonction exécutée automatiquement tous les jours par Jeedom
+    public static function cronDaily() {}
+    */
+
+  /*
+   * Fonction exécutée automatiquement toutes les heures par Jeedom
+    public static function health() {}
+   */
+
+    public static function deamon_info() {
+        $daemon_info = array();
+        $daemon_info['state'] = self::getDeamonState();
+        $daemon_info['launchable'] = self::getDeamonLaunchable();
+        
+        log::add('mymodbus', 'debug', 'deamon_info = ' . json_encode($daemon_info));
+        return $daemon_info;
     }
     
-    // TODO: à adapter en fonction des paramètres nécessaires au démon (ressources/mymodbusd/mymodbusd.py)
-    // log avec mymodbusd
     public static function deamon_start() {
         // Always stop first.
         self::deamon_stop();
@@ -108,7 +98,7 @@ class mymodbus extends eqLogic {
         
         // Pas de démarrage si aucune commande n'est configurée
         if (self::getDeamonLaunchable() != 'ok')
-            throw new Exception(__('Démarrage du démon impossible, veuillez vérifier la configuration du démon', __FILE__));
+            throw new Exception(__('Démarrage du démon impossible, veuillez vérifier la configuration de MyModbus', __FILE__));
         
         $jsonData = self::getCompleteConfiguration();
         
@@ -136,39 +126,6 @@ class mymodbus extends eqLogic {
         }
     }
     
-    // TODO
-    public static function health() {
-        $health_arr = array();
-        $health_arr['test'] = __('Etat du démon', __FILE__);
-        $health_arr['result'] ='OK';
-        $health_arr['advice'] = '';
-        $health_arr['state'] = true;
-
-        foreach (self::byType('mymodbus') as $eqLogic) {
-            if (!$eqLogic->getIsEnable()) continue;
-            // vérifie si l'eq à un démon qui tourne 
-            $health_arr = exec("ps -eo pid,command | grep 'eqid={$eqLogic->getId()}' | grep -v grep | awk '{print $1}' | wc -l");
-            if ($health_arr == 0) {
-                $health_arr['result'] = 'NOK';
-                $health_arr['advice'] = __('Le démon ne tourne pas ! Voir la page santé dans la configuration de MyModbus.', __FILE__);    
-                $health_arr['state'] = false;
-                break;
-            }
-        }
-        return array($health_arr);
-    }
-
-    // Information du démon
-    public static function deamon_info() {
-        $daemon_info = array();
-        $daemon_info['state'] = self::getDeamonState();
-        $daemon_info['launchable'] = self::getDeamonLaunchable();
-        
-        log::add('mymodbus', 'debug', 'deamon_info = ' . json_encode($daemon_info));
-        return $daemon_info;
-    }
-    
-    // TODO
     public static function deamon_stop() {
         log::add('mymodbus', 'info', 'deamon_stop: Début');
         
@@ -186,7 +143,6 @@ class mymodbus extends eqLogic {
         log::add('mymodbus', 'info', 'deamon_stop: Démon arrêté');
     }
     
-    // TODO
     public static function sendToDaemon($params) {
         if (self::getDeamonState() != 'ok') {
             throw new Exception("Le démon n'est pas démarré");
@@ -204,8 +160,32 @@ class mymodbus extends eqLogic {
         }
         socket_close($socket);
     }
+
+//    // Michel: OK
+//    public static function dependancy_info() {
+//        $dep_info = array();
+//        $dep_info['log'] = log::getPathToLog(__CLASS__ . '_update');
+//        $dep_info['progress_file'] = jeedom::getTmpFolder(__CLASS__) . '/dependency';
+//        if (file_exists(jeedom::getTmpFolder(__CLASS__) . '/dependency')) {
+//            $dep_info['state'] = 'in_progress';
+//        } else {
+//            if (exec(system::getCmdSudo() . system::get('cmd_check') . '-Ec "python3\-pip"') < 1) {
+//                $dep_info['state'] = 'nok';
+//            } elseif (exec(system::getCmdSudo() . 'python3 -m pip list | grep -Ewc "pymodbus|pyserial|six|serial|pyudev"') < 5) {
+//                $dep_info['state'] = 'nok';
+//            } else {
+//                $dep_info['state'] = 'ok';
+//            }
+//        }
+//        return $dep_info;
+//    }
+//
+//    // FIXME
+//    public static function dependancy_install() {
+//        log::remove(__CLASS__ . '_update');
+//        return array('script' => dirname(__FILE__) . '/../../ressources/install_#stype#.sh ' . jeedom::getTmpFolder('mymodbus') . '/dependance', 'log' => log::getPathToLog(__CLASS__ . '_update'));
+//    }
     
-    // Michel: OK
     // Supported protocols are in desktop/modal/configuration.[protocol].php
     public static function supportedProtocols() {
         $protocols = array();
@@ -225,31 +205,6 @@ class mymodbus extends eqLogic {
             $interfaces[$tty] = $tty;
         }
         return $interfaces;
-    }
-
-    // Michel: OK
-    public static function dependancy_info() {
-        $dep_info = array();
-        $dep_info['log'] = log::getPathToLog(__CLASS__ . '_update');
-        $dep_info['progress_file'] = jeedom::getTmpFolder(__CLASS__) . '/dependency';
-        if (file_exists(jeedom::getTmpFolder(__CLASS__) . '/dependency')) {
-            $dep_info['state'] = 'in_progress';
-        } else {
-            if (exec(system::getCmdSudo() . system::get('cmd_check') . '-Ec "python3\-pip"') < 1) {
-                $dep_info['state'] = 'nok';
-            } elseif (exec(system::getCmdSudo() . 'python3 -m pip list | grep -Ewc "pymodbus|pyserial|six|serial|pyudev"') < 5) {
-                $dep_info['state'] = 'nok';
-            } else {
-                $dep_info['state'] = 'ok';
-            }
-        }
-        return $dep_info;
-    }
-
-    // Michel: OK
-    public static function dependancy_install() {
-        log::remove(__CLASS__ . '_update');
-        return array('script' => dirname(__FILE__) . '/../../ressources/install_#stype#.sh ' . jeedom::getTmpFolder('mymodbus') . '/dependance', 'log' => log::getPathToLog(__CLASS__ . '_update'));
     }
 
     /*     * *********************Méthodes d'instance************************* */
@@ -287,6 +242,7 @@ class mymodbus extends eqLogic {
                 !in_array('eqPolling', $configKeys) or !in_array('eqWordEndianess', $configKeys) or
                 !in_array('eqDWordEndianess', $configKeys))
             throw new Exception($this->getName() . __('&nbsp;:</br>Veuillez définir la configuration de base de l\'équipement', __FILE__));
+        
         $eqProtocol = $this->getConfiguration('eqProtocol');
         $eqPolling = $this->getConfiguration('eqPolling');
         $eqWordEndianess = $this->getConfiguration('eqWordEndianess');
@@ -355,38 +311,10 @@ class mymodbus extends eqLogic {
         //log::add('mymodbus', 'debug', 'Validation de la configuration pour l\'équipement *' . $this->getName() . '* : OK');
     }
 
-    // Fonction exécutée automatiquement après la sauvegarde de l'équipement (création ou mise à jour)
-    public function postSave() {
-//        foreach (self::byType('mymodbus') as $mymodbus) { // boucle sur les équipements
-//            $mymodbus_mheure = $mymodbus->getConfiguration('mheure');
-//            $mymodbus_auto_cmd = $mymodbus->getConfiguration('auto_cmd');
-//
-//            if ($mymodbus_mheure== 1) {
-//                $ntp = $mymodbus->getCmd(null, 'ntp');
-//                if (!is_object($ntp)) {
-//                    log::add('mymodbus', 'info', 'Ajout cmd synchro heure');
-//                    $ntp = new mymodbusCmd();
-//                    $ntp->setName(__('Synchro_Heure', __FILE__));
-//                }
-//                $ntp->setLogicalId('ntp');
-//                $ntp->setEqLogic_id($mymodbus->getId());
-//                $ntp->setConfiguration('type', 'holding_registers');
-//                $ntp->setConfiguration('request', '30');
-//                $ntp->setConfiguration('location', '33');
-//                $ntp->setType('action');
-//                $ntp->setSubType('other');
-//                $ntp->setIsVisible(0);
-//                $ntp->save();
-//
-//            } else {
-//                $ntp = $mymodbus->getCmd(null, 'ntp');
-//                if (is_object($ntp)) {
-//                    $ntp->remove();
-//                    log::add('mymodbus', 'info', 'suppression cmd synchro heure');
-//                }
-//            }
-//        }
-    }
+   /*
+    * Fonction exécutée automatiquement après la sauvegarde de l'équipement (création ou mise à jour)
+    public function postSave() {}
+    */
 
     public function postAjax() {
         self::deamon_stop();
@@ -394,20 +322,20 @@ class mymodbus extends eqLogic {
         self::deamon_start();
     }
 
-    /*
-     * Non obligatoire mais permet de modifier l'affichage du widget si vous en avez besoin
-      public function toHtml($_version = 'dashboard') {}
-     */
+   /*
+    * Non obligatoire mais permet de modifier l'affichage du widget si vous en avez besoin
+    public function toHtml($_version = 'dashboard') {}
+    */
 
-    /*
-     * Non obligatoire mais ca permet de déclencher une action après modification de variable de configuration
+   /*
+    * Non obligatoire mais ca permet de déclencher une action après modification de variable de configuration
     public static function postConfig_<Variable>() {}
-     */
+    */
 
-    /*
-     * Non obligatoire mais ca permet de déclencher une action avant modification de variable de configuration
+   /*
+    * Non obligatoire mais ca permet de déclencher une action avant modification de variable de configuration
     public static function preConfig_<Variable>() {}
-     */
+    */
 
     /*     * **********************Getteur Setteur*************************** */
     
@@ -573,14 +501,19 @@ class mymodbusCmd extends cmd {
         $prefix = substr($this->type, 0, 3);
         $cmdSlave = $this->getConfiguration($prefix . 'Slave');
         $cmdAddress = $this->getConfiguration($prefix . 'Addr');
+        $cmdFormat = $this->getConfiguration($prefix . 'Format');
         if (!is_numeric($cmdSlave))
             throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse esclave doit être un nombre.</br>\'0\' si pas de bus série.', __FILE__));
-        if (!is_numeric($cmdAddress))
+        if (!is_numeric($cmdAddress) and $cmdFormat != 'string' and $cmdFormat != 'string-swap' and !strstr($cmdFormat, 'se-sf'))
             throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse modbus doit être un nombre.', __FILE__));
+        if (strstr($cmdFormat, 'string') and !preg_match('/\d+[\(\[\{]\d+[\)\]\}]/', $cmdAddress))
+            throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse modbus d\'une chaine de caractère doit être de la forme</br>adresse[longueur]', __FILE__));
+        if (strstr($cmdFormat, 'se-sf') and !preg_match('/\d+sf\d+/', $cmdAddress))
+            throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse modbus d\'un scale factor doit être de la forme (pour le courant, par exemple)</br>40190sf4040194', __FILE__));
+        $this->formatValue(str_replace('"','',jeedom::evaluateExpression($this->getConfiguration('calcul'))));
         //log::add('mymodbus', 'debug', 'Validation de la configuration pour la commande *' . $this->getName() . '* : OK');
     }
 
 
     /*     * **********************Getteur Setteur*************************** */
-    //$this->formatValue(str_replace('"','',jeedom::evaluateExpression($this->getConfiguration('calcul'))));
 }

@@ -18,6 +18,8 @@ import json
 import logging
 import threading
 import asyncio
+import re
+import struct
 
 from pymodbus.client import AsyncModbusTcpClient, AsyncModbusUdpClient, AsyncModbusSerialClient
 
@@ -87,8 +89,6 @@ class PyModbusClient():
             self.port = int(config['eqTcpPort'])
             
         elif self.protocol == 'udp':
-            # To determine the framer
-            self.rtu = config['eqUdpRtu'] == '1'
             # To determine the client
             self.address = config['eqUdpAddr']
             self.port = config['eqUdpPort']
@@ -139,6 +139,8 @@ class PyModbusClient():
                                             parity=self.parity, stopbits=self.stopbits, framer=self.framer)
         
     def get_requests(self, cmds):
+        re_string_address = re.compile(r"(\d+)[\(\[\{](\d+)[\)\]\}]")
+        re_sf = re.compile(r"(\d+)sf(\d+)")
         requests = {}
         for req_config in cmds:
             request = {}
@@ -151,8 +153,24 @@ class PyModbusClient():
                 
             request['slave'] = req_config[prefix + 'Slave']
             request['fct_modbus'] = req_config[prefix + 'FctModbus']
-            request['addr'] = int(req_config[prefix + 'Addr'])
             request['data_type'] = req_config[prefix + 'Format']
+            # address according to data type
+            # string
+            if request['data_type'].startswith('string'):
+                re_match = re_string_address.match(req_config[prefix + 'Addr'])
+                if re_match:
+                    request['addr'] = int(re_match.group(1))
+                    request['strlen'] = int(re_match.group(2))
+                    
+            # solaredge scale factor
+            elif request['data_type'].endswith('se-sf'):
+                re_match = re_sf.match(req_config[prefix + 'Addr'])
+                if re_match:
+                    request['addr'] = int(re_match.group(1))
+                    request['sf'] = int(re_match.group(2))
+                    
+            else:
+                request['addr'] = int(req_config[prefix + 'Addr'])
             
             # req_config['id'] is the Jeedom command id
             requests[req_config['id']] = request
@@ -169,7 +187,6 @@ class PyModbusClient():
         return True
         
     def signal_handler(self, signum=None, frame=None):
-        self.loop.stop()
         self.shutdown()
         
     async def run(self):
@@ -183,6 +200,7 @@ class PyModbusClient():
         
         # SIGTERM catcher # FIXME
         self.loop = asyncio.get_event_loop()
+        self.loop.add_signal_handler(signal.SIGINT, self.signal_handler)
         self.loop.add_signal_handler(signal.SIGTERM, self.signal_handler)
         
         # Polling loop
@@ -210,9 +228,9 @@ class PyModbusClient():
                     
                     try:
                         if request['fct_modbus'] == '1':
-                            response = await self.client.read_coils(address=request['addr'], count=count, salve=request['slave']) # FIXME unit=request['unit']
+                            response = await self.client.read_coils(address=request['addr'], count=count, salve=request['slave'])
                         elif request['fct_modbus'] == '2':
-                            response = await self.client.read_discrete_inputs(address=request['addr'], count=count, salve=request['slave']) # FIXME unit=request['unit']
+                            response = await self.client.read_discrete_inputs(address=request['addr'], count=count, salve=request['slave'])
                         
                         request_ok = self.check_response(response)
                         if request_ok:
@@ -224,18 +242,29 @@ class PyModbusClient():
                         request_ok = False
                         
                 # Read holding registers (code 0x03) || Read input registers (code 0x04)
-                if request['fct_modbus'] in ('3', '4'):
-                    count = 1 # valide for 8bit and 16bit
-                    if request['data_type'].endswith('32'):
-                        count = 2
-                    elif request['data_type'].endswith('64'):
-                        count = 4
+                elif request['fct_modbus'] in ('3', '4'):
+                    normal_number = request['data_type'][-2:] in ('16', '32', '64') and request['data_type'][:-2] in ('int', 'uint', 'float')
+                    se_sf = request['data_type'].endswith('se-sf') # solaredge scale factor
+                    
+                    # bytes count to read
+                    count = 1 # valid for 8bit and 16bit
+                    if normal_number:
+                        if  request['data_type'].endswith('32'):
+                            count = 2
+                        elif request['data_type'].endswith('64'):
+                            count = 4
+                    elif request['data_type'].startswith('string'):
+                        if request['strlen'] % 2 == 1:
+                            request['strlen'] -= 1
+                        count = int(request['strlen'] / 2)
+                    elif se_sf:
+                        count = request['sf'] - request['addr'] + 1
                     
                     try:
                         if request['fct_modbus'] == '3':
-                            response = await self.client.read_holding_registers(address=request['addr'], count=count, salve=request['slave']) # FIXME unit=request['unit']
+                            response = await self.client.read_holding_registers(address=request['addr'], count=count, salve=request['slave'])
                         elif request['fct_modbus'] == '4':
-                            response = await self.client.read_input_registers(address=request['addr'], count=count, salve=request['slave']) # FIXME unit=request['unit']
+                            response = await self.client.read_input_registers(address=request['addr'], count=count, salve=request['slave'])
                         
                         request_ok = self.check_response(response)
                         if request_ok:
@@ -244,36 +273,38 @@ class PyModbusClient():
                             # Typ: Byte
                             if '8' in request['data_type']:
                                 if request['data_type'].endswith('msb'): # FIXME: vérifier si msb ou lsb
-                                    skip = decoder.decode_8bit_int() # skip one byte
+                                    decoder.skip_bytes(1)
                                 
                                 if request['data_type'].startswith('int8'):
                                     value = decoder.decode_8bit_int()
                                 elif request['data_type'].startswith('uint8'):
                                     value = decoder.decode_8bit_uint()
                                 
-                            # Typ: Word (16bit)
-                            elif request['data_type'] == 'int16':
-                                value = decoder.decode_16bit_int()
-                            elif request['data_type'] == 'uint16':
-                                value = decoder.decode_16bit_uint()
-                            elif request['data_type'] == 'float16':
-                                value = decoder.decode_16bit_float()
-                            
-                            # Typ: Dword (32bit)
-                            elif request['data_type'] == 'int32':
-                                value = decoder.decode_32bit_int()
-                            elif request['data_type'] == 'uint32':
-                                value = decoder.decode_32bit_uint()
-                            elif request['data_type'] == 'float32':
-                                value = decoder.decode_32bit_float()
-                            
-                            # Typ: Double Dword (64bit)
-                            elif request['data_type'] == 'int64':
-                                value = decoder.decode_64bit_int()
-                            elif request['data_type'] == 'uint64':
-                                value = decoder.decode_64bit_uint()
-                            elif request['data_type'] == 'float64':
-                                value = decoder.decode_64bit_float()
+                            # Typ: Word (16bit) || Dword (32bit) || Double Dword (64bit)
+                            elif normal_number:
+                               value = getattr(decoder, 'decode_' + request['data_type'][-2:] + 'bit_' + request['data_type'][:-2])()
+                               
+                            # string
+                            elif request['data_type'].startswith('string'):
+                                value = decoder.decode_string(request['strlen'])
+                                if request['data_type'] == 'string-swap':
+                                    value = struct.pack('>' + 'H' * count, *struct.unpack('<' + 'H' * count, value))
+                                
+                            # solaredge scale factor
+                            elif se_sf:
+                                offset = 0
+                                if request['data_type'].startswith('int16'):
+                                    value = decoder.decode_16bit_int()
+                                    offset = 1
+                                elif request['data_type'].startswith('uint16'):
+                                    value = decoder.decode_16bit_uint()
+                                    offset = 1
+                                elif request['data_type'].startswith('uint32'):
+                                    value = decoder.decode_32bit_uint()
+                                    offset = 2
+                                decoder.skip_bytes((count - offset - 1) * 2)
+                                sf = decoder.decode_16bit_int()
+                                value = value * 10 ** sf
                     
                     except ModbusException as exc:
                         request_ok = False
@@ -281,6 +312,8 @@ class PyModbusClient():
                 # Save the result of this request
                 if request_ok:
                     read_results[cmd_id] = value
+                    if request['data_type'].startswith('string'):
+                        read_results[cmd_id] = value.decode()
                     logging.debug('PyModbusClient: read value: ' + str(value))
                 else:
                     logging.error('PyModbusClient: Something went wront while reading command id ' + cmd_id)
@@ -312,5 +345,9 @@ class PyModbusClient():
         
     def shutdown(self):
         self.should_stop.set()
-        self.client.close()
+        self.loop.stop()
+        try:
+            self.client.close()
+        except:
+            pass
         

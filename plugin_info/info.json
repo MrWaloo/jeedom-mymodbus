@@ -6,16 +6,14 @@
 	},
 	"licence" : "AGPL",
 	"author" : "Bebel27",
-	"require" : "4.3",
+	"require" : "4.2",
 	"category" : "automation protocol",
 	"hasDependency" : true,
 	"hasOwnDeamon" : true,
-	"maxDependancyInstallTime" : 5,
 	"changelog" : "https://bebel27a.github.io/jeedom-mymobdus.github.io/#language#/changelog",
 	"documentation" : "https://bebel27a.github.io/jeedom-mymobdus.github.io/#language#/",
 	"link" : {
-		"forum":"https://community.jeedom.com/t/plugin-mymodbus/9395",
-		"video" : "Lien vers une video"
+		"forum":"https://community.jeedom.com/t/plugin-mymodbus/9395"
 	},
 	"language" : ["fr_FR"],
 	"compatibility" : ["miniplus","smart","rpi","docker","diy","mobile"]

@@ -39,19 +39,11 @@ if (isset($result['state'])) {
     //log::add('mymodbus', 'debug', 'jeemymodbus.php: values: *' . $result['values'] . '*');
     foreach ($result['values'] as $cmd_id => $new_value) {
         $cmd = cmd::byid($cmd_id);
-        $old_value = $cmd->getValue();
-        $cache_value = $cmd->getCache();
-        $Options = $cmd->getConfiguration('request');
-        if (is_numeric($new_value)) {  // evite le calcul sur un none
-            $new_value = $new_value.$Options;
-            $new_value=jeedom::evaluateExpression($new_value);
-        }
-        if(($old_value<=>$new_value) || empty($cache_value)){
-            log::add('mymodbus', 'info', 'Mise à jour cmd [id] = ' . $cmd_id . ' -> old value:' . $old_value . ' new value:' . $new_value, 'config');
-            $cmd->event($new_value);
-            $cmd->setValue($new_value);
-            $cmd->save();
-        }
+        //$old_value = $cmd->execCmd();
+        log::add('mymodbus', 'info', 'Mise à jour cmd ' . $cmd->getName() . ' -> new value: ' . $new_value, 'config');
+        
+        $eqlogic = $cmd->getEqLogic();
+        $eqlogic->checkAndUpdateCmd($cmd, $new_value);
     }
 } else {
     log::add('mymodbus', 'error', 'jeemodbus.php: unknown message received from daemon');

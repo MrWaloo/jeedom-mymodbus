@@ -38,7 +38,7 @@ except ImportError:
 
 # Compatibility (pymodbus requires python >= 3.8)
 if (sys.version_info < (3, 8)):
-    sys.stderr("Please install python V3.7 or newer and check the MyModbus dependencies")
+    sys.stderr("Please install python V3.8 or newer and check the MyModbus dependencies")
     sys.exit(1)
 
 # -----------------------------------------------------------------------------
@@ -75,23 +75,23 @@ class Main():
         '''
         # Initialisation with hard coded parameters
         self._socket_host   = 'localhost'
-        self._pidfile       =  '/tmp/mymodbusd.pid'
-        self._cycle         =  0.3
+        self._pidfile       = '/tmp/mymodbusd.pid'
+        self._cycle         = 0.3
         # These parameters can be passed as arguments:
-        self._socket_port   =  55502
-        self._log_level     =  "error"
-        self._apikey        =  ''
-        self._callback      =  ''
-        self._json          =  {}
+        self._socket_port   = 55502
+        self._log_level     = 'error'
+        self._apikey        = ''
+        self._callback      = ''
+        self._json          = ''
         
         # Parameters passed as command line arguments
         parser = argparse.ArgumentParser(description='Mymodbus parameters')
         
-        parser.add_argument("--socketport", help="Communication socket to Jeedom",  type=int)
-        parser.add_argument("--loglevel",   help="Log Level for the daemon",        type=str)
-        parser.add_argument("--apikey",     help="Apikey from Jeedom",              type=str)
-        parser.add_argument("--callback",   help="Callback url",                    type=str)
-        parser.add_argument("--json",       help="MyModbus json data",              type=str)
+        parser.add_argument('--socketport', help='Communication socket to Jeedom',  type=int)
+        parser.add_argument('--loglevel',   help='Log Level for the daemon',        type=str)
+        parser.add_argument('--apikey',     help='Apikey from Jeedom',              type=str)
+        parser.add_argument('--callback',   help='Callback url',                    type=str)
+        parser.add_argument('--json',       help='MyModbus json data',              type=str)
         args = parser.parse_args()
         
         if args.socketport:
@@ -149,9 +149,9 @@ class Main():
         '''Returns True when the communication to jeedom core is opened
         '''
         # jeedom_com: communication daemon --> php
-        self.jcom = jeedom_com(apikey=self._apikey, url='http://' + self._callback, cycle=0) # création de l'objet jeedom_com
+        self.jcom = jeedom_com(apikey=self._apikey, url='http://' + self._callback, cycle=0)
         try:
-            if not self.jcom.test(): #premier test pour vérifier que l'url de callback est correcte
+            if not self.jcom.test(): # first test to check the callback url
                 logging.error('mymodbusd: Network communication issues. Please fixe your Jeedom network configuration.')
                 return False
                 
@@ -226,7 +226,6 @@ class Main():
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(pymodbus_client.run())
-        #asyncio.run(pymodbus_client.run())
         
     def shutdown(self):
         logging.debug("mymodbusd: Shutdown Mymodbus python daemon")

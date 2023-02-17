@@ -355,6 +355,13 @@ function addCmdToTable(_cmd) {
             tr += '                 <option value="uint64">uint64 (0 ... 18e18)</option>';
             tr += '                 <option value="float64">float64 (Real 64bit)</option>';
             tr += '             </optgroup>';
+            tr += '             <option value="string">{{Chaine de caractères}}</option>';
+            tr += '             <option value="string-swap">{{Chaine de caractères (swap)}}</option>';
+            tr += '             <optgroup label="{{Spécial}}">';
+            tr += '                 <option value="int16se-sf">{{solaredge scale factor int16}}</option>';
+            tr += '                 <option value="uint16se-sf">{{solaredge scale factor uint16}}</option>';
+            tr += '                 <option value="uint32se-sf">{{solaredge scale factor float32}}</option>';
+            tr += '             </optgroup>';
         }
         tr += '         </select>';
         tr += '     </div>';

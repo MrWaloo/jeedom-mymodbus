@@ -26,7 +26,7 @@ if (!isConnect()) {
     <fieldset>
         <legend><i class="icon loisir-darth"></i>{{Gestion du démon}}</legend>
         <div class="form-group expertModeVisible">
-            <label class="col-lg-4 control-label">{{Port du socket interne (pour éviter un conflit avec un autre plugin) :}}
+            <label class="col-lg-4 control-label">{{Port du socket interne (pour éviter un conflit avec un autre plugin)&nbsp;:}}
                 <sup><i class="fas fa-question-circle tooltips" title="{{55502 par défaut si non précisé}}"></i></sup>
             </label>
             <div class="col-lg-2">
