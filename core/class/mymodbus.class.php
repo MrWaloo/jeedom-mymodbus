@@ -143,25 +143,6 @@ class mymodbus extends eqLogic {
         log::add('mymodbus', 'info', 'deamon_stop: Démon arrêté');
     }
     
-//    // FIXME: doit être supprimé
-//    public static function dependancy_info() {
-//        $dep_info = array();
-//        $dep_info['log'] = log::getPathToLog(__CLASS__ . '_update');
-//        $dep_info['progress_file'] = jeedom::getTmpFolder(__CLASS__) . '/dependency';
-//        if (file_exists(jeedom::getTmpFolder(__CLASS__) . '/dependency')) {
-//            $dep_info['state'] = 'in_progress';
-//        } else {
-//            if (exec(system::getCmdSudo() . system::get('cmd_check') . '-Ec "python3\-pip"') < 1) {
-//                $dep_info['state'] = 'nok';
-//            } elseif (exec(system::getCmdSudo() . 'python3 -m pip list | grep -Ewc "pymodbus|pyserial|six|serial|pyudev"') < 5) {
-//                $dep_info['state'] = 'nok';
-//            } else {
-//                $dep_info['state'] = 'ok';
-//            }
-//        }
-//        return $dep_info;
-//    }
-    
     public static function sendToDaemon($params) {
         if (self::getDeamonState() != 'ok') {
             throw new Exception("Le démon n'est pas démarré");
