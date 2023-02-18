@@ -27,7 +27,7 @@ $eqLogics = mymodbus::byType('mymodbus');
 			<th>{{Nom}}</th>
   			<th>{{Id}}</th>
 			<th>{{Protocol}}</th>
-			<th>{{Statut}}</th>
+			<th>{{Activé}}</th>
 			<th>{{Démon}}</th>
 			<th>{{Dernière communication}}</th>
 			<th>{{Date de création}}</th>
@@ -39,19 +39,14 @@ foreach ($eqLogics as $eqLogic) {
 	echo '<tr><td><a href="' . $eqLogic->getLinkToConfiguration() . '" style="text-decoration: none;">' . $eqLogic->getHumanName(true) . '</a></td>';
 	echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . $eqLogic->getId() . '</span></td>';
 	echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . $eqLogic->getConfiguration('eqProtocol') . '</span></td>';
-	$status = '<span class="label label-success" style="font-size : 1em; cursor : default;">{{OK}}</span>';
-	if ($eqLogic->getIsEnable()==0) {
-		$status = '<span class="label label-danger" style="font-size : 1em; cursor : default;">{{NOK}}</span>';
-	}
-	echo '<td>' . $status . '</td>';
-	//$result = '<span class="label label-success" style="font-size : 1em; cursor : default;">{{OK}}</span>';
-	$result = exec("ps -eo pid,command | grep 'eqid={$eqLogic->getId()}' | grep -v grep | awk '{print $1}' | wc -l");
-	if ($result==0) {
-		$result = '<span class="label label-danger" style="font-size : 1em; cursor : default;">{{NOK}}</span>';
-	} else {
-        $result = '<span class="label label-success" style="font-size : 1em; cursor : default;">{{OK}}</span>';
-	}
-	echo '<td>' . $result . '</td>';
+	if ($eqLogic->getIsEnable() == 0)
+		echo '<td><span class="label label-danger" style="font-size : 1em; cursor : default;">{{NOK}}</span></td>';
+    else
+        echo '<td><span class="label label-success" style="font-size : 1em; cursor : default;">{{OK}}</span></td>';
+    if ($eqLogic->getDeamonState() != 'ok')
+		echo '<td><span class="label label-danger" style="font-size : 1em; cursor : default;">{{NOK}}</span></td>';
+	else
+        echo '<td><span class="label label-success" style="font-size : 1em; cursor : default;">{{OK}}</span></td>';
 	echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . $eqLogic->getStatus('lastCommunication') . '</span></td>';
 	echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . $eqLogic->getConfiguration('createtime') . '</span></td></tr>';
 }

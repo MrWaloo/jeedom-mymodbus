@@ -179,10 +179,27 @@ class Main():
             return
         # Checking if it is a command
         if 'CMD' in message:
+            # quit
             if message['CMD'] == 'quit':
                 logging.info("mymodbusd: Command 'quit' received from jeedom: exiting")
                 self.should_stop.set()
                 return
+            # write
+            elif message['CMD'] == 'write':
+                logging.info("mymodbusd: Command 'write' received from jeedom: sending the command to the daemon")
+                self.send_write_cmd(message['write_cmd'])
+                return
+        
+    def send_write_cmd(self, write_cmd):
+        if self.clear_to_leave.is_set() or self.should_stop.is_set():
+            return
+        for eqConfig in self.config:
+            for req_config in eqConfig['cmds']:
+                if write_cmd['id'] != req_config['id']:
+                    continue
+                pymodbus_client = self.pymodbus_clients[eqConfig['id']]
+                pymodbus_client.write(write_cmd) # FIXME asyncio ???
+                break
         
     def run(self):
         self.clear_to_leave.clear()
@@ -206,13 +223,27 @@ class Main():
             
             # Test if child process are defunk
             for process in multiprocessing.active_children():
+                eqLogic_id = process.name[8:]
+                kill_process = False
                 try:
                     process.join(0.1)
                 except BrokenProcessPool:
-                    pass
-                    #process.kill() OR process.terminate() ??? # FIXME
+                    kill_process = True
                     
+                # if so, kill and restart the process
+                if kill_process:
+                    try:
+                        process.kill() # OR process.terminate() ??? # FIXME
+                        process.close()
+                        del self.pymodbus_clients[eqConfig_id]
+                    except:
+                        pass
                     
+                    for eqConfig in self.config:
+                        if eqConfig['id'] != eqLogic_id:
+                            continue
+                        multiprocessing.Process(target=self.create_instance, name='eqLogic_'+eqConfig['id'], args=(eqConfig,), daemon=True).start()
+                        break
             
         # Stop all communication threads properly
         for eqId, pymodbus_client in self.pymodbus_clients.items():

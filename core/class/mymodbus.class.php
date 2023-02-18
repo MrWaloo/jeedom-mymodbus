@@ -116,7 +116,7 @@ class mymodbus extends eqLogic {
         $request = ' --socketport ' . $socketPort . ' --loglevel ' . $daemonLoglevel . ' --apikey ' . $daemonApikey . ' --callback ' . $daemonCallback . ' --json ' . $daemonJson;
         
         $mymodbus_path = realpath(dirname(__FILE__) . '/../../ressources/mymodbusd');
-        $cmd = 'nice -n 19 /usr/bin/python3 ' . $mymodbus_path . '/mymodbusd.py' . $request; // FIXME: clarifier si `nice` est utile
+        $cmd = 'nice -n 19 /usr/bin/python3 ' . $mymodbus_path . '/mymodbusd.py' . $request;
         log::add('mymodbus', 'info', 'Lancement du démon mymodbus : ' . $cmd);       
         
         $result = exec($cmd . ' >> ' . log::getPathToLog('mymodbus') . ' 2>&1 &');
@@ -143,25 +143,7 @@ class mymodbus extends eqLogic {
         log::add('mymodbus', 'info', 'deamon_stop: Démon arrêté');
     }
     
-    public static function sendToDaemon($params) {
-        if (self::getDeamonState() != 'ok') {
-            throw new Exception("Le démon n'est pas démarré");
-        }
-        $params['apikey'] = jeedom::getApiKey(__CLASS__);
-        $params['dt'] = date(DATE_ATOM);
-        $payLoad = json_encode($params);
-        $socket = socket_create(AF_INET, SOCK_STREAM, 0);
-        $socket_port = is_numeric(config::byKey('socketport', __CLASS__, self::$_DEFAULT_SOCKET_PORT, True)) ? config::byKey('socketport', __CLASS__, self::$_DEFAULT_SOCKET_PORT) : self::$_DEFAULT_SOCKET_PORT;
-        socket_connect($socket, '127.0.0.1', config::byKey('socketport', __CLASS__, $socket_port));
-        $socket_ok = socket_write($socket, $payLoad, strlen($payLoad));
-        if (!$socket_ok) {
-            $err = socket_last_error($socket);
-            log::add('mymodbus', 'error', 'sendToDaemon: socket_write ERROR: ' . socket_strerror($err));
-        }
-        socket_close($socket);
-    }
-
-//    // Michel: OK
+//    // FIXME: doit être supprimé
 //    public static function dependancy_info() {
 //        $dep_info = array();
 //        $dep_info['log'] = log::getPathToLog(__CLASS__ . '_update');
@@ -179,12 +161,24 @@ class mymodbus extends eqLogic {
 //        }
 //        return $dep_info;
 //    }
-//
-//    // FIXME
-//    public static function dependancy_install() {
-//        log::remove(__CLASS__ . '_update');
-//        return array('script' => dirname(__FILE__) . '/../../ressources/install_#stype#.sh ' . jeedom::getTmpFolder('mymodbus') . '/dependance', 'log' => log::getPathToLog(__CLASS__ . '_update'));
-//    }
+    
+    public static function sendToDaemon($params) {
+        if (self::getDeamonState() != 'ok') {
+            throw new Exception("Le démon n'est pas démarré");
+        }
+        $params['apikey'] = jeedom::getApiKey(__CLASS__);
+        $params['dt'] = date(DATE_ATOM);
+        $payLoad = json_encode($params);
+        $socket = socket_create(AF_INET, SOCK_STREAM, 0);
+        $socket_port = is_numeric(config::byKey('socketport', __CLASS__, self::$_DEFAULT_SOCKET_PORT, True)) ? config::byKey('socketport', __CLASS__, self::$_DEFAULT_SOCKET_PORT) : self::$_DEFAULT_SOCKET_PORT;
+        socket_connect($socket, '127.0.0.1', config::byKey('socketport', __CLASS__, $socket_port));
+        $socket_ok = socket_write($socket, $payLoad, strlen($payLoad));
+        if (!$socket_ok) {
+            $err = socket_last_error($socket);
+            log::add('mymodbus', 'error', 'sendToDaemon: socket_write ERROR: ' . socket_strerror($err));
+        }
+        socket_close($socket);
+    }
     
     // Supported protocols are in desktop/modal/configuration.[protocol].php
     public static function supportedProtocols() {
@@ -363,10 +357,9 @@ class mymodbus extends eqLogic {
     // FIXME
     public static function getDeamonState() {
         $pid = file_get_contents('/tmp/mymodbusd.pid');
-        log::add('mymodbus', 'debug', 'getDeamonState $pid: ' . strval($pid));
+        //log::add('mymodbus', 'debug', 'getDeamonState $pid: ' . strval($pid));
         $running_pid = exec("ps -eo pid,command | grep `cat /tmp/mymodbusd.pid` | grep -v grep | awk '{print $1}'");
-        log::add('mymodbus', 'debug', 'getDeamonState $running_pid: ' . strval($running_pid));
-        //return (($running_pid != 0) and (intval($running_pid) == intval($pid)))? 'ok': 'nok';
+        //log::add('mymodbus', 'debug', 'getDeamonState $running_pid: ' . strval($running_pid));
         return (($running_pid != 0) and (intval($running_pid) == intval($pid)))? 'ok': 'nok';
     }
     
@@ -506,10 +499,10 @@ class mymodbusCmd extends cmd {
             throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse esclave doit être un nombre.</br>\'0\' si pas de bus série.', __FILE__));
         if (!is_numeric($cmdAddress) and $cmdFormat != 'string' and $cmdFormat != 'string-swap' and !strstr($cmdFormat, 'se-sf'))
             throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse modbus doit être un nombre.', __FILE__));
-        if (strstr($cmdFormat, 'string') and !preg_match('/\d+[\(\[\{]\d+[\)\]\}]/', $cmdAddress))
+        if (strstr($cmdFormat, 'string') and !preg_match('/\d+\s*?[\(\[\{]\s*?\d+\s*?[\)\]\}]/', $cmdAddress))
             throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse modbus d\'une chaine de caractère doit être de la forme</br>adresse[longueur]', __FILE__));
-        if (strstr($cmdFormat, 'se-sf') and !preg_match('/\d+sf\d+/', $cmdAddress))
-            throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse modbus d\'un scale factor doit être de la forme (pour le courant, par exemple)</br>40190sf4040194', __FILE__));
+        if (strstr($cmdFormat, 'se-sf') and !preg_match('/\d+\s*?(sf|SF)\s*?\d+/', $cmdAddress))
+            throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse modbus d\'un scale factor doit être de la forme (pour le courant, par exemple)</br>40190 sf 40194', __FILE__));
         $this->formatValue(str_replace('"','',jeedom::evaluateExpression($this->getConfiguration('calcul'))));
         //log::add('mymodbus', 'debug', 'Validation de la configuration pour la commande *' . $this->getName() . '* : OK');
     }

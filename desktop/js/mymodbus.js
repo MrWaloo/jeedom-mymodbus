@@ -391,7 +391,11 @@ function addCmdToTable(_cmd) {
             tr += '         </span>';
             tr += '     </div>';
         }
-        tr += ' </td>';  
+        tr += ' </td>';
+        // Etat
+        tr += ' <td>';
+        tr += '     <span class="cmdAttr" data-l1key="htmlstate"></span>';
+        tr += ' </td>';        
         // Options
         tr += ' <td>';
         if (is_numeric(_cmd.id)) {

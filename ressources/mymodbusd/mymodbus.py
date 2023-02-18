@@ -139,8 +139,8 @@ class PyModbusClient():
                                             parity=self.parity, stopbits=self.stopbits, framer=self.framer)
         
     def get_requests(self, cmds):
-        re_string_address = re.compile(r"(\d+)[\(\[\{](\d+)[\)\]\}]")
-        re_sf = re.compile(r"(\d+)sf(\d+)")
+        re_string_address = re.compile(r"(\d+)\s*?[\(\[\{]\s*?(\d+)\s*?[\)\]\}]")
+        re_sf = re.compile(r"(\d+)\s*?(sf|SF)\s*?(\d+)")
         requests = {}
         for req_config in cmds:
             request = {}
@@ -162,12 +162,12 @@ class PyModbusClient():
                     request['addr'] = int(re_match.group(1))
                     request['strlen'] = int(re_match.group(2))
                     
-            # solaredge scale factor
+            # SolarEdge scale factor
             elif request['data_type'].endswith('se-sf'):
                 re_match = re_sf.match(req_config[prefix + 'Addr'])
                 if re_match:
                     request['addr'] = int(re_match.group(1))
-                    request['sf'] = int(re_match.group(2))
+                    request['sf'] = int(re_match.group(3))
                     
             else:
                 request['addr'] = int(req_config[prefix + 'Addr'])
@@ -198,7 +198,7 @@ class PyModbusClient():
             logging.debug('PyModbusClient: run: nothing to do... exit')
             return
         
-        # SIGTERM catcher # FIXME
+        # SIGTERM catcher
         self.loop = asyncio.get_event_loop()
         self.loop.add_signal_handler(signal.SIGINT, self.signal_handler)
         self.loop.add_signal_handler(signal.SIGTERM, self.signal_handler)
@@ -244,7 +244,7 @@ class PyModbusClient():
                 # Read holding registers (code 0x03) || Read input registers (code 0x04)
                 elif request['fct_modbus'] in ('3', '4'):
                     normal_number = request['data_type'][-2:] in ('16', '32', '64') and request['data_type'][:-2] in ('int', 'uint', 'float')
-                    se_sf = request['data_type'].endswith('se-sf') # solaredge scale factor
+                    se_sf = request['data_type'].endswith('se-sf') # SolarEdge scale factor
                     
                     # bytes count to read
                     count = 1 # valid for 8bit and 16bit
@@ -290,7 +290,7 @@ class PyModbusClient():
                                 if request['data_type'] == 'string-swap':
                                     value = struct.pack('>' + 'H' * count, *struct.unpack('<' + 'H' * count, value))
                                 
-                            # solaredge scale factor
+                            # SolarEdge scale factor
                             elif se_sf:
                                 offset = 0
                                 if request['data_type'].startswith('int16'):

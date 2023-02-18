@@ -242,6 +242,7 @@ if (mymodbus::getDeamonState() != 'ok')
                                 <th style="width:300px;">{{Fonction Modbus}}</th>
                                 <th style="min-width:80px;width:130px;">{{Adresse modbus}}</th>
                                 <th>{{Paramètre(s)}}</th>
+                                <th>{{Etat}}</th>
                                 <th style="min-width:300px;width:310px;">{{Options}}</th>
                                 <th style="width:20px;">&nbsp;</th>
                             </tr>
