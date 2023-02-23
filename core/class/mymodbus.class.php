@@ -70,11 +70,13 @@ class mymodbus extends eqLogic {
     public static function cronHourly() {}
    */
 
-   /*
-    * Fonction exécutée automatiquement tous les jours par Jeedom
-    public static function cronDaily() {}
-    */
-
+    // Fonction exécutée automatiquement tous les jours par Jeedom
+    public static function cronDaily() {
+        // FIXME
+        log::add('mymodbus', 'debug', 'cronDaily: lancé');
+        
+    }
+    
   /*
    * Fonction exécutée automatiquement toutes les heures par Jeedom
     public static function health() {}
@@ -96,9 +98,11 @@ class mymodbus extends eqLogic {
         if (!plugin::byId('mymodbus')->isActive())
             throw new Exception(__('Le plugin Mymodbus n\'est pas actif.', __FILE__));
         
-        // Pas de démarrage si aucune commande n'est configurée
-        if (self::getDeamonLaunchable() != 'ok')
-            throw new Exception(__('Démarrage du démon impossible, veuillez vérifier la configuration de MyModbus', __FILE__));
+        // Pas de démarrage si ce n'est pas possible
+        if (self::getDeamonLaunchable() != 'ok') {
+            log::add('mymodbus', 'error', __('Démarrage du démon impossible, veuillez vérifier la configuration de MyModbus', __FILE__));
+            return true;
+        }
         
         $jsonData = self::getCompleteConfiguration();
         
@@ -118,8 +122,8 @@ class mymodbus extends eqLogic {
         $mymodbus_path = realpath(dirname(__FILE__) . '/../../ressources/mymodbusd');
         $cmd = 'nice -n 19 /usr/bin/python3 ' . $mymodbus_path . '/mymodbusd.py' . $request;
         log::add('mymodbus', 'info', 'Lancement du démon mymodbus : ' . $cmd);       
-        
         $result = exec($cmd . ' >> ' . log::getPathToLog('mymodbus') . ' 2>&1 &');
+        
         if (strpos(strtolower($result), 'error') !== false || strpos(strtolower($result), 'traceback') !== false) {
             log::add('mymodbus', 'error', $result);
             return false;
@@ -135,9 +139,9 @@ class mymodbus extends eqLogic {
             return True;
         
         log::add('mymodbus', 'info', 'deamon_stop: Arrêt du démon...');
-        $cmd = array();
-        $cmd['CMD'] = 'quit';
-        self::sendToDaemon($cmd);
+        $message = array();
+        $message['CMD'] = 'quit';
+        self::sendToDaemon($message);
         sleep(3);
         
         log::add('mymodbus', 'info', 'deamon_stop: Démon arrêté');
@@ -323,10 +327,26 @@ class mymodbus extends eqLogic {
                 continue;
             $eqConfig = $eqMymodbus->getConfiguration();
             $eqConfig['id'] = $eqMymodbus->getId();
+            $eqConfig['name'] = $eqMymodbus->getName();
             $eqConfig['cmds'] = array();
             foreach ($eqMymodbus->getCmd('info') as $cmdMymodbus) { // boucle sur les commandes info
-                $cmdConfig = $cmdMymodbus->getConfiguration();
+                $cmdConfig = array();
                 $cmdConfig['id'] = $cmdMymodbus->getId();
+                $cmdConfig['name'] = $cmdMymodbus->getName();
+                $cmdConfig['infSlave'] = $cmdMymodbus->getConfiguration('infSlave');
+                $cmdConfig['infFctModbus'] = $cmdMymodbus->getConfiguration('infFctModbus');
+                $cmdConfig['infFormat'] = $cmdMymodbus->getConfiguration('infFormat');
+                $cmdConfig['infAddr'] = $cmdMymodbus->getConfiguration('infAddr');
+                $eqConfig['cmds'][] = $cmdConfig;
+            }
+            foreach ($eqMymodbus->getCmd('action') as $cmdMymodbus) { // boucle sur les commandes action
+                $cmdConfig = array();
+                $cmdConfig['id'] = $cmdMymodbus->getId();
+                $cmdConfig['name'] = $cmdMymodbus->getName();
+                $cmdConfig['actSlave'] = $cmdMymodbus->getConfiguration('actSlave');
+                $cmdConfig['actFctModbus'] = $cmdMymodbus->getConfiguration('actFctModbus');
+                $cmdConfig['actFormat'] = $cmdMymodbus->getConfiguration('actFormat');
+                $cmdConfig['actAddr'] = $cmdMymodbus->getConfiguration('actAddr');
                 $eqConfig['cmds'][] = $cmdConfig;
             }
             $completeConfig[] = $eqConfig;
@@ -385,84 +405,21 @@ class mymodbusCmd extends cmd {
      */
 
     // TODO: à adapter en fonction des paramètres nécessaires à la commande action
-    public function execute($_options = array()) {
-        $mymodbus = $this->getEqLogic();
-        $mymodbus_ip = $mymodbus->getConfiguration('addr');
-        $mymodbus_port = $mymodbus->getConfiguration('port');
-        $mymodbus_unit = $mymodbus->getConfiguration('unit');
-        $mymodbus_location = $this->getConfiguration('location');
-        $mymodbus_protocol = $mymodbus->getConfiguration('protocol');
-        $mymodbus_baudrate = $mymodbus->getConfiguration('baudrate');
-        $mymodbus_path = realpath(dirname(__FILE__) . '/../../ressources');
-        $response = true;
-        if ($mymodbus_unit=="") {
-            $mymodbus_unit=1;
-        }
-        if ($this->type == 'action') {
-            $value="";
-            
-            if ($mymodbus_protocol!= "rtu") {
-                $mymodbus_baudrate=0; // Michel: ça n'a aucun sens...
-            }
-            
-            if ($mymodbus_protocol== "wago" || $mymodbus_protocol== "crouzet_m3" || $mymodbus_protocol== "adam" || $mymodbus_protocol== "logo"  ) {
-                $mymodbus_protocol="tcpip";
-            }
-
-            try {
-                if ($this->getConfiguration('type')=='coils') {
-                    $type_input='--wsc=';
-                    $value=$this->getConfiguration('request');
-                    $return_value=$this->getConfiguration('parameters');
-                    
-                } else if ($this->getConfiguration('type')=='holding_registers') {
-                    $type_input='--whr=';
-                    
-                } else if ($this->getConfiguration('type')=='Write_Multiple_Holding') {
-                    $type_input='--wmhr=';
-                    
-                } else {
-                    return;
-                }
-                
-                switch ($this->subType) {
-                    case 'message':
-                        $value = urlencode(str_replace('#message#', $_options['message'], $this->getConfiguration('request')));
-                        break;
-                    case 'slider':
-                        $value = str_replace('#slider#', $_options['slider'], $this->getConfiguration('request'));
-                        if (!is_numeric($value)) {
-                            $value=jeedom::evaluateExpression($value);
-                        }
-                        break;
-                    default:
-                        $value=$this->getConfiguration('request');
-                        if (!is_numeric($value)) {
-                            $value=jeedom::evaluateExpression($value);
-                        }
-                        $return_value=$this->getConfiguration('parameters');
-                        if (!is_numeric($return_value)) {
-                            $return_value=jeedom::evaluateExpression($return_value);
-                        }
-                        break;
-                }
-                log::add('mymodbus', 'info', 'Debut de l action '.'/usr/bin/python3 ' . $mymodbus_path . '/mymodbus_write.py --host='.$mymodbus_ip.' --protocol='.$mymodbus_protocol.' --port='.$mymodbus_port.' --baudrate='.$mymodbus_baudrate.' --unid='.$mymodbus_unit.' ' . $type_input . ''.$mymodbus_location.' --value='.$value.' 2>&1');
-                $result = shell_exec('/usr/bin/python3 ' . $mymodbus_path . '/mymodbus_write.py --host='.$mymodbus_ip.' --protocol='.$mymodbus_protocol.' --port='.$mymodbus_port.' --baudrate='.$mymodbus_baudrate.' --unid='.$mymodbus_unit.' ' . $type_input . ''.$mymodbus_location.' --value='.$value.' 2>&1');
-                if ($return_value<>"") {
-                    sleep(1);
-                    log::add('mymodbus', 'info', 'Debut de l action retour'.'/usr/bin/python3 ' . $mymodbus_path . '/mymodbus_write.py --host='.$mymodbus_ip.' --protocol='.$mymodbus_protocol.' --port='.$mymodbus_port.' --baudrate='.$mymodbus_baudrate.' --unid='.$mymodbus_unit.' ' . $type_input . ''.$mymodbus_location.' --value='.$return_value.' 2>&1');
-                    $result = shell_exec('/usr/bin/python3 ' . $mymodbus_path . '/mymodbus_write.py --host='.$mymodbus_ip.' --protocol='.$mymodbus_protocol.' --port='.$mymodbus_port.' --baudrate='.$mymodbus_baudrate.' --unid='.$mymodbus_unit.' ' . $type_input . ''.$mymodbus_location.' --value='.$return_value.' 2>&1');
-                }
-                return true;
-            } catch (Exception $e) {
-                // 404
-                log::add('mymodbus', 'error', 'valeur '.$this->getConfiguration('id').': ' . $e->getMessage());
-                return false;
-            }
-            
-        } else {
-            return $this->getValue();
-        }
+    public function execute($command = array()) {
+        
+        log::add('mymodbus', 'debug', '**************** execute *****: ' . json_encode($command));
+        
+        $eqMymodbus = $this->getEqLogic();
+        
+        $write_cmd = array();
+        $write_cmd['eqId'] = $eqMymodbus->getId();
+        $write_cmd['cmdId'] = $this->getId();
+        $write_cmd['actValue'] = $this->getConfiguration('actValue');
+        
+        $message = array();
+        $message['CMD'] = 'write';
+        $message['write_cmd'] = $write_cmd;
+        mymodbus::sendToDaemon($message);
     }
 
 //    public function postInsert() { }
@@ -476,14 +433,23 @@ class mymodbusCmd extends cmd {
         $cmdSlave = $this->getConfiguration($prefix . 'Slave');
         $cmdAddress = $this->getConfiguration($prefix . 'Addr');
         $cmdFormat = $this->getConfiguration($prefix . 'Format');
+        $cmdFctModbus = $this->getConfiguration($prefix . 'FctModbus');
         if (!is_numeric($cmdSlave))
             throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse esclave doit être un nombre.</br>\'0\' si pas de bus série.', __FILE__));
-        if (!is_numeric($cmdAddress) and $cmdFormat != 'string' and $cmdFormat != 'string-swap' and !strstr($cmdFormat, 'se-sf'))
+        if (!is_numeric($cmdAddress) and $cmdFormat != 'string' and $cmdFormat != 'string-swap' and !strstr($cmdFormat, 'sp-sf'))
             throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse modbus doit être un nombre.', __FILE__));
         if (strstr($cmdFormat, 'string') and !preg_match('/\d+\s*?[\(\[\{]\s*?\d+\s*?[\)\]\}]/', $cmdAddress))
             throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse modbus d\'une chaine de caractère doit être de la forme</br>adresse[longueur]', __FILE__));
-        if (strstr($cmdFormat, 'se-sf') and !preg_match('/\d+\s*?(sf|SF)\s*?\d+/', $cmdAddress))
+        if (strstr($cmdFormat, 'sp-sf') and !preg_match('/\d+\s*?(sf|SF)\s*?\d+/', $cmdAddress))
             throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse modbus d\'un scale factor doit être de la forme (pour le courant, par exemple)</br>40190 sf 40194', __FILE__));
+        if ($prefix == 'act') {
+            if (strstr($cmdFormat, '8'))
+                log::add('mymodbus', 'warning', $this->getName() . __('&nbsp;:</br>L\'écriture des types 8bit sera ignorée si le registre complet n\'est pas lu ou écrit en deux fois (MSB et LSB).', __FILE__));
+            if ((strstr($cmdFormat, '32') or strstr($cmdFormat, '64')) and $cmdFctModbus == '6')
+                throw new Exception($this->getName() . __('&nbsp;:</br>La fonction "[0x06] Write register" ne permet pas d\'écrire une variable de cette longueur.', __FILE__));
+            if (strstr($cmdFormat, 'sp-sf'))
+                log::add('mymodbus', 'warning', $this->getName() . __('&nbsp;:</br>L\'écriture des types SunSpec sera ignorée.', __FILE__)); // FIXME: TODO
+        }
         $this->formatValue(str_replace('"','',jeedom::evaluateExpression($this->getConfiguration('calcul'))));
         //log::add('mymodbus', 'debug', 'Validation de la configuration pour la commande *' . $this->getName() . '* : OK');
     }

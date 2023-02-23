@@ -6,8 +6,9 @@ $plugin = plugin::byId('mymodbus');
 sendVarToJS('eqType', $plugin->getId());
 $eqLogics = eqLogic::byType($plugin->getId());
 
-if (mymodbus::getDeamonState() != 'ok')
-    echo '<div class="alert alert-danger">{{ATTENTION LE DEMON MYMODBUS N\'EST PAS DÉMARRÉ.</br>Pour qu\'il démarre il faut créer et activer un équipement MyModbus et configurer au moins une commande valide&nbsp;!}}</div>';
+// FIXME: message mis à jour ou pas de message
+//if (mymodbus::getDeamonState() != 'ok')
+//    echo '<div class="alert alert-danger">{{ATTENTION LE DEMON MYMODBUS N\'EST PAS DÉMARRÉ.</br>Pour qu\'il démarre il faut créer et activer un équipement MyModbus et configurer au moins une commande valide&nbsp;!}}</div>';
 
 ?>
 

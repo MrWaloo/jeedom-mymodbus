@@ -262,7 +262,7 @@ function addCmdToTable(_cmd) {
                 _cmd.configuration.actFctModbus = '5';
                 _cmd.configuration.actFormat = 'bit';
             } else {
-                _cmd.configuration.actFctModbus = '6';
+                _cmd.configuration.actFctModbus = '16';
                 _cmd.configuration.actFormat = 'int16';
             }
         }
@@ -358,9 +358,9 @@ function addCmdToTable(_cmd) {
             tr += '             <option value="string">{{Chaine de caractères}}</option>';
             tr += '             <option value="string-swap">{{Chaine de caractères (swap)}}</option>';
             tr += '             <optgroup label="{{Spécial}}">';
-            tr += '                 <option value="int16se-sf">{{solaredge scale factor int16}}</option>';
-            tr += '                 <option value="uint16se-sf">{{solaredge scale factor uint16}}</option>';
-            tr += '                 <option value="uint32se-sf">{{solaredge scale factor float32}}</option>';
+            tr += '                 <option value="int16sp-sf">{{SunSpec scale factor int16}}</option>';
+            tr += '                 <option value="uint16sp-sf">{{SunSpec scale factor uint16}}</option>';
+            tr += '                 <option value="uint32sp-sf">{{SunSpec scale factor uint32}}</option>';
             tr += '             </optgroup>';
         }
         tr += '         </select>';
@@ -372,22 +372,16 @@ function addCmdToTable(_cmd) {
         tr += ' <td>';
         if (prefix == 'inf') {
             tr += '     <div class="input-group" style="margin-bottom : 5px;">';
-            tr += '         <input class="cmdAttr form-control input-sm roundedLeft" data-l1key="configuration" data-l2key="request" placeholder="{{Option}}" />';
+            tr += '         <input class="cmdAttr form-control input-sm roundedLeft" data-l1key="configuration" data-l2key="infOption" placeholder="{{Option}}" />';
             tr += '         <span class="input-group-btn">';
             tr += '             <a class="btn btn-default btn-sm cursor infParamFiltre roundedRight" data-input="configuration"><i class="fa fa-list-alt"></i></a>';
             tr += '         </span>';
             tr += '     </div>';
         } else if (prefix == 'act') {
             tr += '     <div class="input-group" style="margin-bottom:5px;">';
-            tr += '         <input class="cmdAttr form-control input-sm roundedLeft" data-l1key="configuration" data-l2key="request" placeholder="{{Valeur}}"/>';
+            tr += '         <input class="cmdAttr form-control input-sm roundedLeft" data-l1key="configuration" data-l2key="actValue" placeholder="{{Valeur}}"/>';
             tr += '         <span class="input-group-btn">';
             tr += '             <a class="btn btn-default btn-sm cursor actParamValue roundedRight" data-input="configuration"><i class="fa fa-list-alt "></i></a>';
-            tr += '         </span>';
-            tr += '     </div>';
-            tr += '     <div class="input-group">';
-            tr += '         <input class="cmdAttr form-control input-sm roundedLeft" data-l1key="configuration" data-l2key="parameters" placeholder="{{Valeur de retour }}" />';
-            tr += '         <span class="input-group-btn">';
-            tr += '             <a class="btn btn-default btn-sm cursor actParamRet roundedRight" data-input="configuration"><i class="fa fa-list-alt"></i></a>';
             tr += '         </span>';
             tr += '     </div>';
         }

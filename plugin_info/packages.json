@@ -1,4 +1,7 @@
 {
+  "_ _pre-install" : {
+    "script" : ""
+  },
   "apt" : {
     "python3" : {},
     "python3-pip" : {},

@@ -37,14 +37,18 @@ if (isset($result['state'])) {
     
 } elseif (isset($result['values'])) {
     //log::add('mymodbus', 'debug', 'jeemymodbus.php: values: *' . $result['values'] . '*');
+    $names = '';
     foreach ($result['values'] as $cmd_id => $new_value) {
         $cmd = cmd::byid($cmd_id);
         //$old_value = $cmd->execCmd();
-        log::add('mymodbus', 'info', 'Mise à jour cmd ' . $cmd->getName() . ' -> new value: ' . $new_value, 'config');
+        log::add('mymodbus', 'debug', 'Mise à jour cmd ' . $cmd->getName() . ' -> new value: ' . $new_value, 'config');
         
         $eqlogic = $cmd->getEqLogic();
         $eqlogic->checkAndUpdateCmd($cmd, $new_value);
+        
+        $names .= ' \'' . $cmd->getName() . '\'';
     }
+    log::add('mymodbus', 'info', 'Mise à jour des commandes info :' . $names);
 } else {
     log::add('mymodbus', 'error', 'jeemodbus.php: unknown message received from daemon');
 }

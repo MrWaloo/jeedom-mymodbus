@@ -13,10 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with Jeedom. If not, see <http://www.gnu.org/licenses/>.
 
-import logging
-import string
 import sys
 import os
+import logging
+import time
 import traceback
 import signal
 from optparse import OptionParser
@@ -68,7 +68,9 @@ class Main():
         self.jcom = None
         
         self.config = None
+        self.queues = {}
         self.pymodbus_clients = {}
+        self.sub_process = {}
         
     def read_args(self):
         ''' Reads arguments from the command line and set self.param
@@ -178,7 +180,10 @@ class Main():
             logging.error("mymodbusd: Invalid apikey from socket: " + str(message))
             return
         # Checking if it is a command
-        if 'CMD' in message:
+        if 'CMD' not in message:
+            logging.error("mymodbusd: Received data without CMD: " + str(message))
+            return
+        else:
             # quit
             if message['CMD'] == 'quit':
                 logging.info("mymodbusd: Command 'quit' received from jeedom: exiting")
@@ -186,6 +191,9 @@ class Main():
                 return
             # write
             elif message['CMD'] == 'write':
+                if 'write_cmd' not in message:
+                    logging.error("mymodbusd: Received CMD=write without write_cmd: " + str(message))
+                    return
                 logging.info("mymodbusd: Command 'write' received from jeedom: sending the command to the daemon")
                 self.send_write_cmd(message['write_cmd'])
                 return
@@ -193,20 +201,27 @@ class Main():
     def send_write_cmd(self, write_cmd):
         if self.clear_to_leave.is_set() or self.should_stop.is_set():
             return
-        for eqConfig in self.config:
-            for req_config in eqConfig['cmds']:
-                if write_cmd['id'] != req_config['id']:
-                    continue
-                pymodbus_client = self.pymodbus_clients[eqConfig['id']]
-                pymodbus_client.write(write_cmd) # FIXME asyncio ???
-                break
+        if 'eqId' not in write_cmd:
+            logging.error("mymodbusd: Received CMD=write: no 'eqId' write_cmd: " + str(write_cmd))
+            return
+        
+        eqId = write_cmd['eqId']
+        try:
+            self.queues[eqId].put(write_cmd, True, self.pymodbus_clients[eqId].pooling * 2)
+        except Full:
+            logging.debug("mymodbusd: send_write_cmd: Full/Timeout !!!!")
         
     def run(self):
         self.clear_to_leave.clear()
         
         self.config = json.loads(self._json)
         for eqConfig in self.config:
-            multiprocessing.Process(target=self.create_instance, name='eqLogic_'+eqConfig['id'], args=(eqConfig,), daemon=True).start()
+            eqId = eqConfig['id']
+            self.queues[eqId] = multiprocessing.Queue()
+            self.pymodbus_clients[eqId] = PyModbusClient(eqConfig, self.jcom)
+            self.sub_process[eqId] = multiprocessing.Process(target=self.pymodbus_clients[eqId].run, args=(self.queues[eqId], ), name=eqConfig['name'], daemon=True)
+            self.sub_process[eqId].start()
+            time.sleep(1)
         
         # Incoming communication from php
         self.jsock.listen()
@@ -223,40 +238,36 @@ class Main():
             
             # Test if child process are defunk
             for process in multiprocessing.active_children():
-                eqLogic_id = process.name[8:]
+                eqLogic_id = process.name
                 kill_process = False
                 try:
                     process.join(0.1)
                 except BrokenProcessPool:
                     kill_process = True
                     
-                # if so, kill and restart the process
+                # if so, kill the process
                 if kill_process:
                     try:
-                        process.kill() # OR process.terminate() ??? # FIXME
-                        process.close()
-                        del self.pymodbus_clients[eqConfig_id]
+                        process.kill()
                     except:
                         pass
-                    
-                    for eqConfig in self.config:
-                        if eqConfig['id'] != eqLogic_id:
-                            continue
-                        multiprocessing.Process(target=self.create_instance, name='eqLogic_'+eqConfig['id'], args=(eqConfig,), daemon=True).start()
-                        break
+            
+            if len(multiprocessing.active_children()) < len(self.pymodbus_clients):
+                logging.debug("mymodbusd: active_children: " + str(len(multiprocessing.active_children())))
+                for eqId, process in self.sub_process.items():
+                    if process not in multiprocessing.active_children():
+                        for eqConfig in self.config:
+                            if eqId == eqConfig['id']:
+                                logging.debug("mymodbusd: process re-run: " + process.name)
+                                self.sub_process[eqId] = multiprocessing.Process(target=self.pymodbus_clients[eqId].run, args=(self.queues[eqId], ), name=eqConfig['name'], daemon=True)
+                                self.sub_process[eqId].start()
+                                break
             
         # Stop all communication threads properly
-        for eqId, pymodbus_client in self.pymodbus_clients.items():
-            pymodbus_client.shutdown()
+        for process in multiprocessing.active_children():
+            process.terminate()
         
         self.clear_to_leave.set()
-        
-    def create_instance(self, eqConfig):
-        pymodbus_client = PyModbusClient(eqConfig, self.jcom)
-        self.pymodbus_clients[eqConfig['id']] = pymodbus_client
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(pymodbus_client.run())
         
     def shutdown(self):
         logging.debug("mymodbusd: Shutdown Mymodbus python daemon")
