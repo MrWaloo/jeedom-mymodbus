@@ -186,24 +186,6 @@ $eqLogics = eqLogic::byType($plugin->getId());
                             <!-- Paramètres propres au protocol "desktop/modal/configuration.*.php" -->
                             <div id="div_protocolParameters"></div>
                             
-                            <div class="form-group">
-                                <label class="col-sm-4 control-label">{{Ordre des BYTE dans les WORD}}</label>
-                                <div class="col-sm-6">
-                                    <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqWordEndianess">
-                                        <option value=">">{{Big Endian}}</option>
-                                        <option value="<">{{Little Endian}}</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="col-sm-4 control-label">{{Ordre des WORD dans les DWORD}}</label>
-                                <div class="col-sm-6">
-                                    <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqDWordEndianess">
-                                        <option value=">">{{Big Endian}}</option>
-                                        <option value="<">{{Little Endian}}</option>
-                                    </select>
-                                </div>
-                            </div>
                         </div>
                         
                         <!-- Partie droite de l'onglet "Équipement" -->

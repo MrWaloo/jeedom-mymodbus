@@ -24,14 +24,7 @@ $("#table_cmd").sortable({
     tolerance: "intersect",
     forcePlaceholderSize: true
 });
-$("#table_mymodbusFilters").sortable({
-    axis: "y",
-    cursor: "move",
-    items: ".filter",
-    placeholder: "ui-state-highlight",
-    tolerance: "intersect",
-    forcePlaceholderSize: true
-});
+
 /*
  * Fonction pour l'ajout de commande, appellé automatiquement par plugin.template
  */
@@ -175,44 +168,6 @@ $("#table_cmd").delegate(".actParamValue", 'click', function () {
     });
 });
 
-$("#table_cmd").delegate(".actParamRet", 'click', function () {
-    var el = $(this);
-    jeedom.cmd.getSelectModal({cmd: {type: 'info'}}, function (result) {
-        var calcul = el.closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=parameters]');
-        // définition de la structure du message
-        var message = '<div class="row">  ' +
-            '   <div class="col-md-12"> ' +
-            '       <form class="form-horizontal" onsubmit="return false;"> ' +
-            '           <div class="form-group"> ' +
-            '               <label class="col-xs-5 control-label" >' + result.human + ' {{=>}}</label>' +
-                            bitSelect +
-            '           </div>' +
-            '       </form>' +
-            '   </div> ' +
-            '</div>';
-        bootbox.dialog({
-            title: "{{Ajout d'un filtre }}",
-            message: message,
-            buttons: {
-                "{{Ne rien mettre}}": {
-                    className: "btn-default",
-                    callback: function () {
-                        calcul.atCaret('insert', result.human);
-                    }
-                },
-                success: {
-                    label: "{{Valider}}",
-                    className: "btn-primary",
-                    callback: function () {
-                        var condition = result.human + ' & ' + $('.conditionAttr[data-l1key=operator]').value();
-                        calcul.atCaret('insert', condition);
-                    }
-                },
-            }
-        });
-    });
-});
-
 $("#bt_add_InfoBin").on('click', function (event) {
     addCmdToTable({type: 'info', mymodbusType: 'bin'});
     modifyWithoutSave = true;
@@ -311,19 +266,19 @@ function addCmdToTable(_cmd) {
         tr += '         <select class="cmdAttr form-control input-sm" style="width:300px;" data-l1key="configuration" data-l2key="' + prefix + 'FctModbus">';
         if (prefix == 'inf') {
             if (init(_cmd.mymodbusType) == 'bin') {
-                tr += '             <option value="1">[0x01] Read coils ({{Binaire}} / bit)</option>';
-                tr += '             <option value="2">[0x02] Read discrete inputs ({{Binaire}} / bit)</option>';
+                tr += '             <option value="1">[0x01] Read coils</option>';
+                tr += '             <option value="2">[0x02] Read discrete inputs</option>';
             } else {
-                tr += '             <option value="3">[0x03] Read holding registers ({{Numérique}})</option>';
-                tr += '             <option value="4">[0x04] Read input registers ({{Numérique}})</option>';
+                tr += '             <option value="3">[0x03] Read holding registers</option>';
+                tr += '             <option value="4">[0x04] Read input registers</option>';
             }
         } else if (prefix == 'act') {
             if (init(_cmd.mymodbusType) == 'bin') {
-                tr += '             <option value="5">[0x05] Write single coil ({{Binaire}} / bit)</option>';
-                tr += '             <option value="15">[0x0F] Write coils ({{Binaire}} / bit)</option>';
+                tr += '             <option value="5">[0x05] Write single coil</option>';
+                tr += '             <option value="15">[0x0F] Write coils)/option>';
             } else {
-                tr += '             <option value="6">[0x06] Write register ({{Numérique}})</option>';
-                tr += '             <option value="16">[0x10] Write registers ({{Numérique}})</option>';
+                tr += '             <option value="6">[0x06] Write register</option>';
+                tr += '             <option value="16">[0x10] Write registers</option>';
             }
         }
         tr += '             </select>';
@@ -356,7 +311,6 @@ function addCmdToTable(_cmd) {
             tr += '                 <option value="float64">float64 (Real 64bit)</option>';
             tr += '             </optgroup>';
             tr += '             <option value="string">{{Chaine de caractères}}</option>';
-            tr += '             <option value="string-swap">{{Chaine de caractères (swap)}}</option>';
             tr += '             <optgroup label="{{Spécial}}">';
             tr += '                 <option value="int16sp-sf">{{SunSpec scale factor int16}}</option>';
             tr += '                 <option value="uint16sp-sf">{{SunSpec scale factor uint16}}</option>';
@@ -367,7 +321,15 @@ function addCmdToTable(_cmd) {
         tr += '     </div>';
         tr += ' </td>';
         // Adresse modbus
-        tr += ' <td><input class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="' + prefix + 'Addr"></td>';
+        tr += ' <td>';
+        tr += '     <input class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="' + prefix + 'Addr">';
+        tr += '     <label class="checkbox-inline">';
+        tr += '         <input type="checkbox" class="cmdAttr checkbox-inline tooltips" title="{{\'Little endian\' si coché}}" data-l1key="configuration" data-l2key="' + prefix + 'WordEndianess"/>{{Inverser octets}}';
+        tr += '     </label></br>';
+        tr += '     <label class="checkbox-inline">';
+        tr += '         <input type="checkbox" class="cmdAttr checkbox-inline tooltips" title="{{\'Little endian\' si coché}}" data-l1key="configuration" data-l2key="' + prefix + 'DWordEndianess"/>{{Inverser mots}}</label></br>';
+        tr += '     </label></br>';
+        tr += ' </td>';
         // Paramètre
         tr += ' <td>';
         if (prefix == 'inf') {
@@ -400,9 +362,9 @@ function addCmdToTable(_cmd) {
         tr += '     <label class="checkbox-inline"><input type="checkbox" class="cmdAttr checkbox-inline" data-l1key="isVisible" checked/>{{Afficher}}</label>';
         tr += '     <label class="checkbox-inline"><input type="checkbox" class="cmdAttr" data-l1key="isHistorized" data-size="mini"/>{{Historiser}}</label>';
         tr += '     <div style="margin-top:7px;">';
-        tr += '         <input class="tooltips cmdAttr form-control tooltips input-sm expertModeVisible" data-l1key="configuration" data-l2key="minValue" placeholder="{{Min}}" title="{{Min}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;">';
-        tr += '         <input class="tooltips cmdAttr form-control tooltips input-sm expertModeVisible" data-l1key="configuration" data-l2key="maxValue" placeholder="{{Max}}" title="{{Max}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;">';
-        tr += '         <input class="tooltips cmdAttr form-control tooltips input-sm" data-l1key="unite" placeholder="{{Unité}}" title="{{Unité}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;">';
+        tr += '         <input class="tooltips cmdAttr form-control input-sm expertModeVisible" data-l1key="configuration" data-l2key="minValue" placeholder="{{Min}}" title="{{Min}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;">';
+        tr += '         <input class="tooltips cmdAttr form-control input-sm expertModeVisible" data-l1key="configuration" data-l2key="maxValue" placeholder="{{Max}}" title="{{Max}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;">';
+        tr += '         <input class="tooltips cmdAttr form-control input-sm" data-l1key="unite" placeholder="{{Unité}}" title="{{Unité}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;">';
         tr += '     </div>';
         tr += ' </td>';
         // Delete button

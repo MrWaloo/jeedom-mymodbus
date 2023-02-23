@@ -20,7 +20,6 @@ import time
 import threading
 import asyncio
 import re
-import struct
 from queue import Empty, Full
 
 from pymodbus.client import AsyncModbusTcpClient, AsyncModbusUdpClient, AsyncModbusSerialClient
@@ -78,8 +77,6 @@ class PyModbusClient():
         # To determine the framer and the client
         self.protocol = config['eqProtocol']
         # To configure the payload decoder
-        self.byteorder = config['eqWordEndianess']
-        self.wordorder = config['eqDWordEndianess']
         self.keepopen = config['eqKeepopen'] == '1'
         self.pooling = max(float(config['eqPolling']), 10.0) # at least 10 seconds
         
@@ -175,7 +172,9 @@ class PyModbusClient():
                     
             else:
                 request['addr'] = int(req_config[prefix + 'Addr'])
-            
+            # Endianess
+            request['byteorder'] = '>' if req_config[prefix + 'WordEndianess'] == '0' else '<'
+            request['wordorder'] = '>' if req_config[prefix + 'DWordEndianess'] == '0' else '<'
             # req_config['id'] is the Jeedom command id
             requests[req_config['id']] = request
         logging.debug('PyModbusClient: requests:' + json.dumps(requests))
@@ -307,7 +306,7 @@ class PyModbusClient():
                         request_ok = False
                         
                     if request_ok:
-                        decoder = BinaryPayloadDecoder.fromRegisters(response.registers, self.byteorder, self.wordorder)
+                        decoder = BinaryPayloadDecoder.fromRegisters(response.registers, request['byteorder'], request['wordorder'])
                         
                         # Type: Byte
                         if '8' in request['data_type']:
@@ -326,8 +325,6 @@ class PyModbusClient():
                         # string
                         elif request['data_type'].startswith('string'):
                             value = decoder.decode_string(request['strlen'])
-                            if request['data_type'] == 'string-swap':
-                                value = struct.pack('>' + 'H' * count, *struct.unpack('<' + 'H' * count, value))
                             
                         #---------------
                         # Special cases
@@ -403,7 +400,7 @@ class PyModbusClient():
                 elif request['fct_modbus'] in ('6', '16'):
                     normal_number, sp_sf, count = self.request_info(request)
                     
-                    builder = BinaryPayloadBuilder(byteorder=self.byteorder, wordorder=self.wordorder)
+                    builder = BinaryPayloadBuilder(byteorder=request['byteorder'], wordorder=request['wordorder'])
                     
                     # Type: Byte
                     if '8' in request['data_type']:
@@ -451,12 +448,13 @@ class PyModbusClient():
                     logging.error('PyModbusClient: Something went wront while closing connection to equipment id ' + self.id)
             
             # Polling time
-            t_end = time.time()
-            elapsed_time = t_end - t_begin
+            elapsed_time = time.time() - t_begin
             if elapsed_time >= self.pooling:
                 self.pooling = elapsed_time // self.pooling + 1
                 logging.warning('PyModbusClient: the pooling time is too short, setting it to ' + str(self.pooling) + ' s.')
-            self.check_queue(self.pooling - elapsed_time)
+            while self.pooling - elapsed_time > 0:
+                self.check_queue(self.pooling - elapsed_time)
+                elapsed_time = time.time() - t_begin
             
         # The loop has exited (should never happend)
         try:

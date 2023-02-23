@@ -213,29 +213,19 @@ class mymodbus extends eqLogic {
         if (!$this->getIsEnable())
             return True;
         // Un nouvel équipement vient d'être ajouté, il faut retourner "true" sinon, l'ajout est invalidé
-        if (!in_array('eqProtocol', $configKeys) and !in_array('eqKeepopen', $configKeys) and
-                !in_array('eqPolling', $configKeys) and !in_array('eqWordEndianess', $configKeys) and
-                !in_array('eqDWordEndianess', $configKeys))
+        if (!in_array('eqProtocol', $configKeys) and !in_array('eqKeepopen', $configKeys) and !in_array('eqPolling', $configKeys))
             return True;
-        if (!in_array('eqProtocol', $configKeys) or !in_array('eqKeepopen', $configKeys) or
-                !in_array('eqPolling', $configKeys) or !in_array('eqWordEndianess', $configKeys) or
-                !in_array('eqDWordEndianess', $configKeys))
+        if (!in_array('eqProtocol', $configKeys) or !in_array('eqKeepopen', $configKeys) or !in_array('eqPolling', $configKeys))
             throw new Exception($this->getName() . __('&nbsp;:</br>Veuillez définir la configuration de base de l\'équipement', __FILE__));
         
         $eqProtocol = $this->getConfiguration('eqProtocol');
         $eqPolling = $this->getConfiguration('eqPolling');
-        $eqWordEndianess = $this->getConfiguration('eqWordEndianess');
-        $eqDWordEndianess = $this->getConfiguration('eqDWordEndianess');
         if (!in_array($eqProtocol, self::supportedProtocols()))
             throw new Exception($this->getName() . __('&nbsp;:</br>Le protocol n\'est pas défini correctement.', __FILE__));
         if (!is_numeric($eqPolling))
             throw new Exception($this->getName() . __('&nbsp;:</br>Le paramètre "Pooling" doit être un nombre.', __FILE__));
         if ($eqPolling < 10)
             throw new Exception($this->getName() . __('&nbsp;:</br>Le paramètre "Pooling" doit être au moins à 10 secondes', __FILE__));
-        if (!in_array($eqWordEndianess, array('>', '<')))
-            throw new Exception($this->getName() . __('&nbsp;:</br>L\'ordre des BYTE n\'est pas défini correctement.', __FILE__));
-        if (!in_array($eqDWordEndianess, array('>', '<')))
-            throw new Exception($this->getName() . __('&nbsp;:</br>L\'ordre des WORD n\'est pas défini correctement.', __FILE__));
         
         if ($eqProtocol == 'tcp') {
             // Vérification du paramétrage d'une connexion TCP
@@ -337,6 +327,8 @@ class mymodbus extends eqLogic {
                 $cmdConfig['infFctModbus'] = $cmdMymodbus->getConfiguration('infFctModbus');
                 $cmdConfig['infFormat'] = $cmdMymodbus->getConfiguration('infFormat');
                 $cmdConfig['infAddr'] = $cmdMymodbus->getConfiguration('infAddr');
+                $cmdConfig['infWordEndianess'] = $cmdMymodbus->getConfiguration('infWordEndianess');
+                $cmdConfig['infDWordEndianess'] = $cmdMymodbus->getConfiguration('infDWordEndianess');
                 $eqConfig['cmds'][] = $cmdConfig;
             }
             foreach ($eqMymodbus->getCmd('action') as $cmdMymodbus) { // boucle sur les commandes action
@@ -347,6 +339,8 @@ class mymodbus extends eqLogic {
                 $cmdConfig['actFctModbus'] = $cmdMymodbus->getConfiguration('actFctModbus');
                 $cmdConfig['actFormat'] = $cmdMymodbus->getConfiguration('actFormat');
                 $cmdConfig['actAddr'] = $cmdMymodbus->getConfiguration('actAddr');
+                $cmdConfig['actWordEndianess'] = $cmdMymodbus->getConfiguration('actWordEndianess');
+                $cmdConfig['actDWordEndianess'] = $cmdMymodbus->getConfiguration('actDWordEndianess');
                 $eqConfig['cmds'][] = $cmdConfig;
             }
             $completeConfig[] = $eqConfig;
@@ -436,7 +430,7 @@ class mymodbusCmd extends cmd {
         $cmdFctModbus = $this->getConfiguration($prefix . 'FctModbus');
         if (!is_numeric($cmdSlave))
             throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse esclave doit être un nombre.</br>\'0\' si pas de bus série.', __FILE__));
-        if (!is_numeric($cmdAddress) and $cmdFormat != 'string' and $cmdFormat != 'string-swap' and !strstr($cmdFormat, 'sp-sf'))
+        if (!is_numeric($cmdAddress) and $cmdFormat != 'string' and !strstr($cmdFormat, 'sp-sf'))
             throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse modbus doit être un nombre.', __FILE__));
         if (strstr($cmdFormat, 'string') and !preg_match('/\d+\s*?[\(\[\{]\s*?\d+\s*?[\)\]\}]/', $cmdAddress))
             throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse modbus d\'une chaine de caractère doit être de la forme</br>adresse[longueur]', __FILE__));
