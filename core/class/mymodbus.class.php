@@ -392,12 +392,23 @@ class mymodbusCmd extends cmd {
         
         log::add('mymodbus', 'debug', '**************** execute *****: ' . json_encode($command));
         
+        if (in_array($this->getSubType(), array('color', 'select')))
+            continue;
+        
         $eqMymodbus = $this->getEqLogic();
         
         $write_cmd = array();
         $write_cmd['eqId'] = $eqMymodbus->getId();
         $write_cmd['cmdId'] = $this->getId();
-        $write_cmd['actValue'] = $this->getConfiguration('cmdWriteValue');
+        
+        if ($this->getSubtype() == 'other') {
+            
+        } elseif ($this->getSubtype() == 'slider') {
+            
+        } elseif ($this->getSubtype() == 'message') {
+            
+        }
+        $write_cmd['cmdWriteValue'] = $this->getConfiguration('cmdWriteValue');
         
         $message = array();
         $message['CMD'] = 'write';
@@ -431,6 +442,8 @@ class mymodbusCmd extends cmd {
                 throw new Exception($this->getName() . __('&nbsp;:</br>La fonction "[0x06] Write register" ne permet pas d\'écrire une variable de cette longueur.', __FILE__));
             if (strstr($cmdFormat, 'sp-sf'))
                 log::add('mymodbus', 'warning', $this->getName() . __('&nbsp;:</br>L\'écriture des types SunSpec sera ignorée.', __FILE__)); // FIXME: TODO
+            if (in_array($this->getSubType(), array('color', 'select')))
+                log::add('mymodbus', 'warning', $this->getName() . __('&nbsp;:</br>L\'écriture sera ignorée.', __FILE__)); // FIXME: TODO
         }
         $this->formatValue(str_replace('"','',jeedom::evaluateExpression($this->getConfiguration('calcul'))));
         //log::add('mymodbus', 'debug', 'Validation de la configuration pour la commande *' . $this->getName() . '* : OK');

@@ -347,7 +347,7 @@ class PyModbusClient():
                 
                 # Write single coil (code 0x05) || Write coils (code 0x0F)
                 if request['fct_modbus'] in ('5', '15'):
-                    value = write_cmd['actValue'] == '1'
+                    value = write_cmd['cmdWriteValue'] == '1'
                     
                     try:
                         if request['fct_modbus'] == '5':
@@ -377,12 +377,12 @@ class PyModbusClient():
                         
                     # Type: Word (16bit) || Dword (32bit) || Double Dword (64bit)
                     elif normal_number:
-                        value = float(write_cmd['actValue']) if request['data_type'][:-2] == 'float' else int(write_cmd['actValue'])
+                        value = float(write_cmd['cmdWriteValue']) if request['data_type'][:-2] == 'float' else int(write_cmd['cmdWriteValue'])
                         getattr(builder, 'add_' + request['data_type'][-2:] + 'bit_' + request['data_type'][:-2])(value)
                         
                     # string
                     elif request['data_type'].startswith('string'):
-                        value = write_cmd['actValue']
+                        value = write_cmd['cmdWriteValue']
                         builder.add_string(value)
                         
                     #---------------

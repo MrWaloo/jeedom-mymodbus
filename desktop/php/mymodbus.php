@@ -206,10 +206,7 @@ $eqLogics = eqLogic::byType($plugin->getId());
             <div role="tabpanel" class="tab-pane" id="commandtab">
                 <div class="input-group pull-right" style="display:inline-flex;margin-top:5px;">
                     <span class="input-group-btn">
-                        <a class="btn btn-info btn-sm roundedLeft" id="bt_add_InfoBin" style="margin-right:5px;"><i class="fas fa-plus-circle"></i> {{Ajouter une info binaire}} </a>
-                        <a class="btn btn-info btn-sm roundedLeft" id="bt_add_InfoNum" style="margin-right:5px;"><i class="fas fa-plus-circle"></i> {{Ajouter une info numérique}} </a>
-                        <a class="btn btn-warning btn-sm roundedRight" id="bt_add_ActionBin" style="margin-right:5px;"><i class="fas fa-plus-circle"></i> {{Ajouter une action binaire}} </a>
-                        <a class="btn btn-warning btn-sm roundedRight" id="bt_add_ActionNum"><i class="fas fa-plus-circle"></i> {{Ajouter une action numérique}} </a>
+                        <a class="btn btn-warning btn-sm roundedRight" id="bt_add_command"><i class="fas fa-plus-circle"></i> {{Ajouter une commande}} </a>
                     </span>
                 </div>
                 <br/><br/>

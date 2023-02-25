@@ -186,6 +186,8 @@ function actualise_visible(me) {
     var subType = $(me).closest('tr').find('.cmdAttr[data-l1key=subType]').value();
     var cmdFctModbus = $(me).closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=cmdFctModbus]').value();
     
+    console.log('subType: ' + subType);
+    
     $(me).closest('tr').find('.formatNum').hide();
     $(me).closest('tr').find('.formatBin').hide();
     $(me).closest('tr').find('.readFunction').hide();
