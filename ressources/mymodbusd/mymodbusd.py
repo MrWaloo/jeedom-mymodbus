@@ -24,6 +24,7 @@ import json
 import argparse
 import threading
 import multiprocessing
+from queue import Empty, Full
 import socket
 import asyncio
 from mymodbus import PyModbusClient
@@ -207,7 +208,7 @@ class Main():
         
         eqId = write_cmd['eqId']
         try:
-            self.queues[eqId].put(write_cmd, True, self.pymodbus_clients[eqId].pooling * 2)
+            self.queues[eqId].put(write_cmd, True, self.pymodbus_clients[eqId].polling * 2)
         except Full:
             logging.debug("mymodbusd: send_write_cmd: Full/Timeout !!!!")
         

@@ -319,28 +319,17 @@ class mymodbus extends eqLogic {
             $eqConfig['id'] = $eqMymodbus->getId();
             $eqConfig['name'] = $eqMymodbus->getName();
             $eqConfig['cmds'] = array();
-            foreach ($eqMymodbus->getCmd('info') as $cmdMymodbus) { // boucle sur les commandes info
+            foreach ($eqMymodbus->getCmd() as $cmdMymodbus) { // boucle sur les commandes
                 $cmdConfig = array();
                 $cmdConfig['id'] = $cmdMymodbus->getId();
                 $cmdConfig['name'] = $cmdMymodbus->getName();
-                $cmdConfig['infSlave'] = $cmdMymodbus->getConfiguration('infSlave');
-                $cmdConfig['infFctModbus'] = $cmdMymodbus->getConfiguration('infFctModbus');
-                $cmdConfig['infFormat'] = $cmdMymodbus->getConfiguration('infFormat');
-                $cmdConfig['infAddr'] = $cmdMymodbus->getConfiguration('infAddr');
-                $cmdConfig['infWordEndianess'] = $cmdMymodbus->getConfiguration('infWordEndianess');
-                $cmdConfig['infDWordEndianess'] = $cmdMymodbus->getConfiguration('infDWordEndianess');
-                $eqConfig['cmds'][] = $cmdConfig;
-            }
-            foreach ($eqMymodbus->getCmd('action') as $cmdMymodbus) { // boucle sur les commandes action
-                $cmdConfig = array();
-                $cmdConfig['id'] = $cmdMymodbus->getId();
-                $cmdConfig['name'] = $cmdMymodbus->getName();
-                $cmdConfig['actSlave'] = $cmdMymodbus->getConfiguration('actSlave');
-                $cmdConfig['actFctModbus'] = $cmdMymodbus->getConfiguration('actFctModbus');
-                $cmdConfig['actFormat'] = $cmdMymodbus->getConfiguration('actFormat');
-                $cmdConfig['actAddr'] = $cmdMymodbus->getConfiguration('actAddr');
-                $cmdConfig['actWordEndianess'] = $cmdMymodbus->getConfiguration('actWordEndianess');
-                $cmdConfig['actDWordEndianess'] = $cmdMymodbus->getConfiguration('actDWordEndianess');
+                $cmdConfig['type'] = $cmdMymodbus->getType();
+                $cmdConfig['cmdSlave'] = $cmdMymodbus->getConfiguration('cmdSlave');
+                $cmdConfig['cmdFctModbus'] = $cmdMymodbus->getConfiguration('cmdFctModbus');
+                $cmdConfig['cmdFormat'] = $cmdMymodbus->getConfiguration('cmdFormat');
+                $cmdConfig['cmdAddress'] = $cmdMymodbus->getConfiguration('cmdAddress');
+                $cmdConfig['cmdInvertBytes'] = $cmdMymodbus->getConfiguration('cmdInvertBytes');
+                $cmdConfig['cmdInvertWords'] = $cmdMymodbus->getConfiguration('cmdInvertWords');
                 $eqConfig['cmds'][] = $cmdConfig;
             }
             $completeConfig[] = $eqConfig;
@@ -408,7 +397,7 @@ class mymodbusCmd extends cmd {
         $write_cmd = array();
         $write_cmd['eqId'] = $eqMymodbus->getId();
         $write_cmd['cmdId'] = $this->getId();
-        $write_cmd['actValue'] = $this->getConfiguration('actValue');
+        $write_cmd['actValue'] = $this->getConfiguration('cmdWriteValue');
         
         $message = array();
         $message['CMD'] = 'write';
@@ -423,11 +412,10 @@ class mymodbusCmd extends cmd {
     // Fonction exécutée automatiquement avant la sauvegarde de la commande (création ou mise à jour)
     // La levée d'une exception invalide la sauvegarde
     public function preSave() {
-        $prefix = substr($this->type, 0, 3);
-        $cmdSlave = $this->getConfiguration($prefix . 'Slave');
-        $cmdAddress = $this->getConfiguration($prefix . 'Addr');
-        $cmdFormat = $this->getConfiguration($prefix . 'Format');
-        $cmdFctModbus = $this->getConfiguration($prefix . 'FctModbus');
+        $cmdSlave = $this->getConfiguration('cmdSlave');
+        $cmdAddress = $this->getConfiguration('cmdAddress');
+        $cmdFormat = $this->getConfiguration('cmdFormat');
+        $cmdFctModbus = $this->getConfiguration('cmdFctModbus');
         if (!is_numeric($cmdSlave))
             throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse esclave doit être un nombre.</br>\'0\' si pas de bus série.', __FILE__));
         if (!is_numeric($cmdAddress) and $cmdFormat != 'string' and !strstr($cmdFormat, 'sp-sf'))
@@ -436,7 +424,7 @@ class mymodbusCmd extends cmd {
             throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse modbus d\'une chaine de caractère doit être de la forme</br>adresse[longueur]', __FILE__));
         if (strstr($cmdFormat, 'sp-sf') and !preg_match('/\d+\s*?(sf|SF)\s*?\d+/', $cmdAddress))
             throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse modbus d\'un scale factor doit être de la forme (pour le courant, par exemple)</br>40190 sf 40194', __FILE__));
-        if ($prefix == 'act') {
+        if ($this->getType() == 'action') {
             if (strstr($cmdFormat, '8'))
                 log::add('mymodbus', 'warning', $this->getName() . __('&nbsp;:</br>L\'écriture des types 8bit sera ignorée si le registre complet n\'est pas lu ou écrit en deux fois (MSB et LSB).', __FILE__));
             if ((strstr($cmdFormat, '32') or strstr($cmdFormat, '64')) and $cmdFctModbus == '6')

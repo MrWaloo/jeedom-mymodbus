@@ -36,7 +36,7 @@ from pymodbus.pdu import ExceptionResponse
 
 """
 -----------------------------------------------------------------------------
-example:  [{"createtime":"2023-02-19 09:34:47","eqProtocol":"tcp","eqKeepopen":"0","eqPolling":"10","eqTcpAddr":"192.168.1.21","eqTcpPort":"502","eqTcpRtu":"0","eqWordEndianess":">","eqDWordEndianess":"<","updatetime":"2023-02-20 00:40:48","id":"34","name":"Wago-garage","cmds":[{"id":"115","name":"Besoin élairage","infSlave":"0","infFctModbus":"1","infFormat":"bit","infAddr":"12288"}]},{"createtime":"2023-02-18 23:35:50","eqProtocol":"tcp","eqKeepopen":"0","eqPolling":"10","eqTcpAddr":"192.168.1.20","eqTcpPort":"502","eqTcpRtu":"0","eqWordEndianess":">","eqDWordEndianess":"<","updatetime":"2023-02-20 00:56:10","id":"33","name":"Wago-knx","cmds":[{"id":"113","name":"year","infSlave":"0","infFctModbus":"3","infFormat":"int16","infAddr":"12308"},{"id":"116","name":"month","infSlave":"0","infFctModbus":"3","infFormat":"int16","infAddr":"12309"},{"id":"117","name":"day","infSlave":"0","infFctModbus":"3","infFormat":"int16","infAddr":"12310"},{"id":"118","name":"hour","infSlave":"0","infFctModbus":"3","infFormat":"int16","infAddr":"12311"},{"id":"114","name":"wr test","actSlave":"0","actFctModbus":"6","actFormat":"int32","actAddr":"12468"}]}]
+example:  [{"createtime":"2023-02-19 09:34:47","eqProtocol":"tcp","eqKeepopen":"0","eqPolling":"10","eqTcpAddr":"192.168.1.21","eqTcpPort":"502","eqTcpRtu":"0","eqWordEndianess":">","eqDWordEndianess":"<","updatetime":"2023-02-20 00:40:48","id":"34","name":"Wago-garage","cmds":[{"id":"115","name":"Besoin \u00e9clairage","type":"info","cmdSlave":"","cmdFctModbus":"","cmdFormat":"","cmdAddress":"","cmdInvertBytes":"","cmdInvertWords":""}]},{"createtime":"2023-02-18 23:35:50","eqProtocol":"tcp","eqKeepopen":"0","eqPolling":"10","eqTcpAddr":"192.168.1.20","eqTcpPort":"502","eqTcpRtu":"0","eqWordEndianess":">","eqDWordEndianess":"<","updatetime":"2023-02-23 03:14:35","id":"33","name":"Wago-knx","cmds":[{"id":"113","name":"year","type":"info","cmdSlave":"0","cmdFctModbus":"3","cmdFormat":"int16","cmdAddress":"12308","cmdInvertBytes":"0","cmdInvertWords":"1"},{"id":"116","name":"month","type":"info","cmdSlave":"0","cmdFctModbus":"3","cmdFormat":"int16","cmdAddress":"12309","cmdInvertBytes":"0","cmdInvertWords":"1"},{"id":"117","name":"day","type":"info","cmdSlave":"0","cmdFctModbus":"3","cmdFormat":"int16","cmdAddress":"12310","cmdInvertBytes":"0","cmdInvertWords":"1"},{"id":"118","name":"hour","type":"info","cmdSlave":"0","cmdFctModbus":"3","cmdFormat":"int16","cmdAddress":"12311","cmdInvertBytes":"0","cmdInvertWords":"1"},{"id":"114","name":"wr test","type":"action","cmdSlave":"0","cmdFctModbus":"16","cmdFormat":"string","cmdAddress":"12468 [6]","cmdInvertBytes":"1","cmdInvertWords":"1"},{"id":"123","name":"wr read 12468","type":"info","cmdSlave":"0","cmdFctModbus":"3","cmdFormat":"string","cmdAddress":"12468 [6]","cmdInvertBytes":"1","cmdInvertWords":"1"},{"id":"124","name":"minutes","type":"info","cmdSlave":"0","cmdFctModbus":"3","cmdFormat":"int16","cmdAddress":"12312","cmdInvertBytes":"0","cmdInvertWords":"1"}]}]
 -----------------------------------------------------------------------------
 from pymodbus.client import ModbusTcpClient
 client = ModbusTcpClient(host='192.168.1.20',port='502')
@@ -54,7 +54,7 @@ cd /var/www/html/plugins/mymodbus/ressources/mymodbusd/
 
 from mymodbus import PyModbusClient
 import json
-config = json.loads('[{"createtime":"2023-02-19 09:34:47","eqProtocol":"tcp","eqKeepopen":"0","eqPolling":"10","eqTcpAddr":"192.168.1.21","eqTcpPort":"502","eqTcpRtu":"0","eqWordEndianess":">","eqDWordEndianess":"<","updatetime":"2023-02-20 00:40:48","id":"34","name":"Wago-garage","cmds":[{"id":"115","name":"Besoin elairage","infSlave":"0","infFctModbus":"1","infFormat":"bit","infAddr":"12288"}]},{"createtime":"2023-02-18 23:35:50","eqProtocol":"tcp","eqKeepopen":"0","eqPolling":"10","eqTcpAddr":"192.168.1.20","eqTcpPort":"502","eqTcpRtu":"0","eqWordEndianess":">","eqDWordEndianess":"<","updatetime":"2023-02-20 00:56:10","id":"33","name":"Wago-knx","cmds":[{"id":"113","name":"year","infSlave":"0","infFctModbus":"3","infFormat":"int16","infAddr":"12308"},{"id":"116","name":"month","infSlave":"0","infFctModbus":"3","infFormat":"int16","infAddr":"12309"},{"id":"117","name":"day","infSlave":"0","infFctModbus":"3","infFormat":"int16","infAddr":"12310"},{"id":"118","name":"hour","infSlave":"0","infFctModbus":"3","infFormat":"int16","infAddr":"12311"},{"id":"114","name":"wr test","actSlave":"0","actFctModbus":"6","actFormat":"int32","actAddr":"12468"}]}]')
+config = json.loads('[{"createtime":"2023-02-19 09:34:47","eqProtocol":"tcp","eqKeepopen":"0","eqPolling":"10","eqTcpAddr":"192.168.1.21","eqTcpPort":"502","eqTcpRtu":"0","eqWordEndianess":">","eqDWordEndianess":"<","updatetime":"2023-02-20 00:40:48","id":"34","name":"Wago-garage","cmds":[{"id":"115","name":"Besoin \u00e9clairage","type":"info","cmdSlave":"","cmdFctModbus":"","cmdFormat":"","cmdAddress":"","cmdInvertBytes":"","cmdInvertWords":""}]},{"createtime":"2023-02-18 23:35:50","eqProtocol":"tcp","eqKeepopen":"0","eqPolling":"10","eqTcpAddr":"192.168.1.20","eqTcpPort":"502","eqTcpRtu":"0","eqWordEndianess":">","eqDWordEndianess":"<","updatetime":"2023-02-23 03:14:35","id":"33","name":"Wago-knx","cmds":[{"id":"113","name":"year","type":"info","cmdSlave":"0","cmdFctModbus":"3","cmdFormat":"int16","cmdAddress":"12308","cmdInvertBytes":"0","cmdInvertWords":"1"},{"id":"116","name":"month","type":"info","cmdSlave":"0","cmdFctModbus":"3","cmdFormat":"int16","cmdAddress":"12309","cmdInvertBytes":"0","cmdInvertWords":"1"},{"id":"117","name":"day","type":"info","cmdSlave":"0","cmdFctModbus":"3","cmdFormat":"int16","cmdAddress":"12310","cmdInvertBytes":"0","cmdInvertWords":"1"},{"id":"118","name":"hour","type":"info","cmdSlave":"0","cmdFctModbus":"3","cmdFormat":"int16","cmdAddress":"12311","cmdInvertBytes":"0","cmdInvertWords":"1"},{"id":"114","name":"wr test","type":"action","cmdSlave":"0","cmdFctModbus":"16","cmdFormat":"string","cmdAddress":"12468 [6]","cmdInvertBytes":"1","cmdInvertWords":"1"},{"id":"123","name":"wr read 12468","type":"info","cmdSlave":"0","cmdFctModbus":"3","cmdFormat":"string","cmdAddress":"12468 [6]","cmdInvertBytes":"1","cmdInvertWords":"1"},{"id":"124","name":"minutes","type":"info","cmdSlave":"0","cmdFctModbus":"3","cmdFormat":"int16","cmdAddress":"12312","cmdInvertBytes":"0","cmdInvertWords":"1"}]}]')
 foo = PyModbusClient(config[0])
 
 -----------------------------------------------------------------------------
@@ -74,69 +74,44 @@ class PyModbusClient():
         
         # Jeedom equipment id
         self.id = config['id']
-        # To determine the framer and the client
-        self.protocol = config['eqProtocol']
-        # To configure the payload decoder
+        self.polling = float(config['eqPolling'])
         self.keepopen = config['eqKeepopen'] == '1'
-        self.pooling = max(float(config['eqPolling']), 10.0) # at least 10 seconds
         
-        if self.protocol == 'tcp':
-            # To determine the framer
-            self.rtu = config['eqTcpRtu'] == '1'
-            # To determine the client
-            self.address = config['eqTcpAddr']
-            self.port = int(config['eqTcpPort'])
-            
-        elif self.protocol == 'udp':
-            # To determine the client
-            self.address = config['eqUdpAddr']
-            self.port = config['eqUdpPort']
-            
-        elif self.protocol == 'serial':
-            # To determine the framer
-            self.method = int(config['eqSerialMethod'])
-            # To determine the client
-            self.interface = config['eqSerialInterface']
-            self.baudrate = int(config['eqSerialBaudrate'])
-            self.bytesize = int(config['eqSerialBytesize'])
-            self.parity = config['eqSerialParity']
-            self.stopbits = int(config['eqSerialStopbits'])
-        
-        self.framer = self.get_framer()
-        self.client = self.get_client()
+        self.framer = self.get_framer(config)
+        self.client = self.get_client(config)
         
         self.requests = self.get_requests(config['cmds'])
         self.write_cmds = []
         
-    def get_framer(self):
-        if self.protocol == 'tcp':
-            if self.rtu:
+    def get_framer(self, config):
+        if config['eqProtocol'] == 'tcp':
+            if config['eqTcpRtu'] == '1':
                 return ModbusRtuFramer
             else:
                 return ModbusSocketFramer
         
-        if self.protocol == 'udp':
+        if config['eqProtocol'] == 'udp':
             return ModbusSocketFramer
                 
-        elif self.protocol == 'serial':
-            if self.method == 'rtu':
+        elif config['eqProtocol'] == 'serial':
+            if config['eqSerialMethod'] == 'rtu':
                 return ModbusRtuFramer
-            elif self.method == 'ascii':
+            elif config['eqSerialMethod'] == 'ascii':
                 return ModbusAsciiFramer
-            elif self.method == 'binary':
+            elif config['eqSerialMethod'] == 'binary':
                 return ModbusBinaryFramer
         
-    def get_client(self):
-        logging.debug('PyModbusClient: client protocol is:' + self.protocol)
-        if self.protocol == 'tcp':
-            return AsyncModbusTcpClient(host=self.address, port=self.port, framer=self.framer)
+    def get_client(self, config):
+        logging.debug('PyModbusClient: client protocol is:' + config['eqProtocol'])
+        if config['eqProtocol'] == 'tcp':
+            return AsyncModbusTcpClient(host=config['eqTcpAddr'], port=int(config['eqTcpPort']), framer=self.framer)
             
-        elif self.protocol == 'udp':
-            return AsyncModbusUdpClient(host=self.address, port=self.port, framer=self.framer)
+        elif config['eqProtocol'] == 'udp':
+            return AsyncModbusUdpClient(host=config['eqUdpAddr'], port=int(config['eqUdpPort']), framer=self.framer)
             
-        elif self.protocol == 'serial':
-            return AsyncModbusSerialClient(port=self.interface, baudrate=self.baudrate, bytesize=self.bytesize,
-                                            parity=self.parity, stopbits=self.stopbits, framer=self.framer)
+        elif config['eqProtocol'] == 'serial':
+            return AsyncModbusSerialClient(port=config['eqSerialInterface'], baudrate=int(config['eqSerialBaudrate']), bytesize=int(config['eqSerialBytesize']),
+                                            parity=config['eqSerialParity'], stopbits=int(config['eqSerialStopbits']), framer=self.framer)
         
     def get_requests(self, cmds):
         re_string_address = re.compile(r"(\d+)\s*?[\(\[\{]\s*?(\d+)\s*?[\)\]\}]")
@@ -144,37 +119,32 @@ class PyModbusClient():
         requests = {}
         for req_config in cmds:
             request = {}
-            if 'infAddr' in req_config:
-                request['type'] = 'r'
-                prefix = 'inf'
-            else:
-                request['type'] = 'w'
-                prefix = 'act'
-            
             request['last_value'] = None
-            request['slave'] = int(req_config[prefix + 'Slave'])
-            request['fct_modbus'] = req_config[prefix + 'FctModbus']
-            request['data_type'] = req_config[prefix + 'Format']
+            request['type'] = req_config['type']
+            request['name'] = req_config['name']
+            request['slave'] = int(req_config['cmdSlave'])
+            request['fct_modbus'] = req_config['cmdFctModbus']
+            request['data_type'] = req_config['cmdFormat']
             # address according to data type
             # string
-            if request['data_type'].startswith('string'):
-                re_match = re_string_address.match(req_config[prefix + 'Addr'])
+            if request['data_type'] == 'string':
+                re_match = re_string_address.match(req_config['cmdAddress'])
                 if re_match:
                     request['addr'] = int(re_match.group(1))
                     request['strlen'] = int(re_match.group(2))
                     
             # SunSpec scale factor
             elif request['data_type'].endswith('sp-sf'):
-                re_match = re_sf.match(req_config[prefix + 'Addr'])
+                re_match = re_sf.match(req_config['cmdAddress'])
                 if re_match:
                     request['addr'] = int(re_match.group(1))
                     request['sf'] = int(re_match.group(3))
                     
             else:
-                request['addr'] = int(req_config[prefix + 'Addr'])
+                request['addr'] = int(req_config['cmdAddress'])
             # Endianess
-            request['byteorder'] = '>' if req_config[prefix + 'WordEndianess'] == '0' else '<'
-            request['wordorder'] = '>' if req_config[prefix + 'DWordEndianess'] == '0' else '<'
+            request['byteorder'] = '>' if req_config['cmdInvertBytes'] == '0' else '<'
+            request['wordorder'] = '>' if req_config['cmdInvertWords'] == '0' else '<'
             # req_config['id'] is the Jeedom command id
             requests[req_config['id']] = request
         logging.debug('PyModbusClient: requests:' + json.dumps(requests))
@@ -237,7 +207,7 @@ class PyModbusClient():
         
         # Don't do anything if there is no info command (read)
         for cmd_id, request in self.requests.items():
-            if request['type'] == 'r':
+            if request['type'] == 'info':
                 break
         else:
             logging.debug('PyModbusClient: run: nothing to do... exit')
@@ -254,7 +224,6 @@ class PyModbusClient():
             # Connect
             try:
                 await self.client.connect()
-                await asyncio.sleep(1) # FIXME time
             except:
                 logging.error('PyModbusClient: Something went wrong while connecting to equipment id ' + self.id)
             
@@ -264,7 +233,7 @@ class PyModbusClient():
             read_results, request_number = {}, 0
             for cmd_id, request in self.requests.items():
                 # Only read requests in the loop
-                if request['type'] == 'w':
+                if request['type'] == 'action':
                     continue
                 
                 request_ok = True
@@ -404,7 +373,7 @@ class PyModbusClient():
                     
                     # Type: Byte
                     if '8' in request['data_type']:
-                        pass # TODO: vérifier si le registre complet est lu ou s'il y a une commande d'écriture sur l'autre partie (msb / lsb), sinon ignorer la commande
+                        pass # FIXME TODO: vérifier si le registre complet est lu ou s'il y a une commande d'écriture sur l'autre partie (msb / lsb), sinon ignorer la commande
                         
                     # Type: Word (16bit) || Dword (32bit) || Double Dword (64bit)
                     elif normal_number:
@@ -449,11 +418,11 @@ class PyModbusClient():
             
             # Polling time
             elapsed_time = time.time() - t_begin
-            if elapsed_time >= self.pooling:
-                self.pooling = elapsed_time // self.pooling + 1
-                logging.warning('PyModbusClient: the pooling time is too short, setting it to ' + str(self.pooling) + ' s.')
-            while self.pooling - elapsed_time > 0:
-                self.check_queue(self.pooling - elapsed_time)
+            if elapsed_time >= self.polling:
+                self.polling = elapsed_time // self.polling + 1
+                logging.warning('PyModbusClient: the polling time is too short, setting it to ' + str(self.polling) + ' s.')
+            while self.polling - elapsed_time > 0:
+                self.check_queue(self.polling - elapsed_time)
                 elapsed_time = time.time() - t_begin
             
         # The loop has exited (should never happend)
