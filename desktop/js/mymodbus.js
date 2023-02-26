@@ -230,6 +230,7 @@ function addCmdToTable(_cmd) {
         _cmd.configuration.cmdSlave = '0';
         _cmd.configuration.cmdFctModbus = '3';
         _cmd.configuration.cmdFormat = 'int16';
+        _cmd.configuration.cmdFrequency = '1';
     }
     
     // Command info or action
@@ -307,10 +308,15 @@ function addCmdToTable(_cmd) {
     // Paramètre
     tr += ' <td>';
     tr += '     <div class="input-group">';
-    tr += '         <input class="cmdAttr form-control input-sm roundedLeft readFunction" data-l1key="configuration" data-l2key="cmdOption" placeholder="{{Option}}" />';
+    tr += '         <input class="cmdAttr form-control input-sm roundedLeft readFunction" data-l1key="configuration" data-l2key="cmdOption" placeholder="{{Option}}"/>';
     tr += '         <span class="input-group-btn">';
     tr += '             <a class="btn btn-default btn-sm cursor paramFiltre roundedRight readFunction" data-input="configuration"><i class="fa fa-list-alt"></i></a>';
     tr += '         </span>';
+    tr += '     </div>';
+    tr += '     <div class="input-group">';
+    tr += '         <label class="label readFunction">{{Lecture 1x sur&nbsp;:}}&nbsp;';
+    tr += '             <input class="cmdAttr form-inline input-sm roundedLeft readFunction" data-l1key="configuration" data-l2key="cmdFrequency" placeholder="{{1}}"/>';
+    tr += '         </label>';
     tr += '     </div>';
     tr += '     <div class="input-group">';
     tr += '         <input class="cmdAttr form-control input-sm roundedLeft writeFunction" style="width:100%;" data-l1key="configuration" data-l2key="cmdWriteValue" placeholder="{{Valeur}}"/>';

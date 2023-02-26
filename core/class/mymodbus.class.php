@@ -328,6 +328,7 @@ class mymodbus extends eqLogic {
                 $cmdConfig['cmdFctModbus'] = $cmdMymodbus->getConfiguration('cmdFctModbus');
                 $cmdConfig['cmdFormat'] = $cmdMymodbus->getConfiguration('cmdFormat');
                 $cmdConfig['cmdAddress'] = $cmdMymodbus->getConfiguration('cmdAddress');
+                $cmdConfig['cmdFrequency'] = $cmdMymodbus->getConfiguration('cmdFrequency');
                 $cmdConfig['cmdInvertBytes'] = $cmdMymodbus->getConfiguration('cmdInvertBytes');
                 $cmdConfig['cmdInvertWords'] = $cmdMymodbus->getConfiguration('cmdInvertWords');
                 $eqConfig['cmds'][] = $cmdConfig;
@@ -393,7 +394,7 @@ class mymodbusCmd extends cmd {
         log::add('mymodbus', 'debug', '**************** execute *****: ' . json_encode($command));
         
         if (in_array($this->getSubType(), array('color', 'select')))
-            continue;
+            return;
         
         $eqMymodbus = $this->getEqLogic();
         
@@ -401,14 +402,19 @@ class mymodbusCmd extends cmd {
         $write_cmd['eqId'] = $eqMymodbus->getId();
         $write_cmd['cmdId'] = $this->getId();
         
-        if ($this->getSubtype() == 'other') {
-            
+        if (in_array($this->getSubtype(), array('other', 'message'))) {
+            if (isset($command['message']))
+                $write_cmd['cmdWriteValue'] = $command['message'];
+            else
+                $write_cmd['cmdWriteValue'] = $this->getConfiguration('cmdWriteValue');
         } elseif ($this->getSubtype() == 'slider') {
-            
-        } elseif ($this->getSubtype() == 'message') {
-            
+            $write_cmd['cmdWriteValue'] = 0;
+            $cmdFormat = $this->getConfiguration('cmdFormat');
+            if (strstr($cmdFormat, 'int'))
+                $write_cmd['cmdWriteValue'] = intval($command['slider']);
+            else if (strstr($cmdFormat, 'float'))
+                $write_cmd['cmdWriteValue'] = floatval($command['slider']);
         }
-        $write_cmd['cmdWriteValue'] = $this->getConfiguration('cmdWriteValue');
         
         $message = array();
         $message['CMD'] = 'write';
@@ -416,8 +422,8 @@ class mymodbusCmd extends cmd {
         mymodbus::sendToDaemon($message);
     }
 
-//    public function postInsert() { }
-//    public function postRemove() { }
+//    public function postInsert() {}
+//    public function postRemove() {}
 //    public function postSave() {}
     
     // Fonction exécutée automatiquement avant la sauvegarde de la commande (création ou mise à jour)
@@ -425,10 +431,13 @@ class mymodbusCmd extends cmd {
     public function preSave() {
         $cmdSlave = $this->getConfiguration('cmdSlave');
         $cmdAddress = $this->getConfiguration('cmdAddress');
+        $cmdFrequency = $this->getConfiguration('cmdFrequency');
         $cmdFormat = $this->getConfiguration('cmdFormat');
         $cmdFctModbus = $this->getConfiguration('cmdFctModbus');
         if (!is_numeric($cmdSlave))
             throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse esclave doit être un nombre.</br>\'0\' si pas de bus série.', __FILE__));
+        if ($this->getType() == 'info' && !is_numeric($cmdFrequency))
+            throw new Exception($this->getName() . __('&nbsp;:</br>La configuration \'Lecture 1x sur\' doit être un nombre.', __FILE__));
         if (!is_numeric($cmdAddress) and $cmdFormat != 'string' and !strstr($cmdFormat, 'sp-sf'))
             throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse modbus doit être un nombre.', __FILE__));
         if (strstr($cmdFormat, 'string') and !preg_match('/\d+\s*?[\(\[\{]\s*?\d+\s*?[\)\]\}]/', $cmdAddress))

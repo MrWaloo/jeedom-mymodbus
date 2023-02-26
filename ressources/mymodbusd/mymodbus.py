@@ -36,18 +36,6 @@ from pymodbus.pdu import ExceptionResponse
 
 """
 -----------------------------------------------------------------------------
-example:  [{"createtime":"2023-02-19 09:34:47","eqProtocol":"tcp","eqKeepopen":"0","eqPolling":"10","eqTcpAddr":"192.168.1.21","eqTcpPort":"502","eqTcpRtu":"0","eqWordEndianess":">","eqDWordEndianess":"<","updatetime":"2023-02-20 00:40:48","id":"34","name":"Wago-garage","cmds":[{"id":"115","name":"Besoin \u00e9clairage","type":"info","cmdSlave":"","cmdFctModbus":"","cmdFormat":"","cmdAddress":"","cmdInvertBytes":"","cmdInvertWords":""}]},{"createtime":"2023-02-18 23:35:50","eqProtocol":"tcp","eqKeepopen":"0","eqPolling":"10","eqTcpAddr":"192.168.1.20","eqTcpPort":"502","eqTcpRtu":"0","eqWordEndianess":">","eqDWordEndianess":"<","updatetime":"2023-02-23 03:14:35","id":"33","name":"Wago-knx","cmds":[{"id":"113","name":"year","type":"info","cmdSlave":"0","cmdFctModbus":"3","cmdFormat":"int16","cmdAddress":"12308","cmdInvertBytes":"0","cmdInvertWords":"1"},{"id":"116","name":"month","type":"info","cmdSlave":"0","cmdFctModbus":"3","cmdFormat":"int16","cmdAddress":"12309","cmdInvertBytes":"0","cmdInvertWords":"1"},{"id":"117","name":"day","type":"info","cmdSlave":"0","cmdFctModbus":"3","cmdFormat":"int16","cmdAddress":"12310","cmdInvertBytes":"0","cmdInvertWords":"1"},{"id":"118","name":"hour","type":"info","cmdSlave":"0","cmdFctModbus":"3","cmdFormat":"int16","cmdAddress":"12311","cmdInvertBytes":"0","cmdInvertWords":"1"},{"id":"114","name":"wr test","type":"action","cmdSlave":"0","cmdFctModbus":"16","cmdFormat":"string","cmdAddress":"12468 [6]","cmdInvertBytes":"1","cmdInvertWords":"1"},{"id":"123","name":"wr read 12468","type":"info","cmdSlave":"0","cmdFctModbus":"3","cmdFormat":"string","cmdAddress":"12468 [6]","cmdInvertBytes":"1","cmdInvertWords":"1"},{"id":"124","name":"minutes","type":"info","cmdSlave":"0","cmdFctModbus":"3","cmdFormat":"int16","cmdAddress":"12312","cmdInvertBytes":"0","cmdInvertWords":"1"}]}]
------------------------------------------------------------------------------
-from pymodbus.client import ModbusTcpClient
-client = ModbusTcpClient(host='192.168.1.20',port='502')
-client.connect()
-# True
-rhr = client.read_holding_registers(12308, 6)
-rhr.registers
-# [2023, 2, 9, 22, 40, 0]
-client.close()
-
------------------------------------------------------------------------------
 Test
 -----------------------------------------------------------------------------
 cd /var/www/html/plugins/mymodbus/ressources/mymodbusd/
@@ -57,7 +45,6 @@ import json
 config = json.loads('[{"createtime":"2023-02-19 09:34:47","eqProtocol":"tcp","eqKeepopen":"0","eqPolling":"10","eqTcpAddr":"192.168.1.21","eqTcpPort":"502","eqTcpRtu":"0","eqWordEndianess":">","eqDWordEndianess":"<","updatetime":"2023-02-20 00:40:48","id":"34","name":"Wago-garage","cmds":[{"id":"115","name":"Besoin \u00e9clairage","type":"info","cmdSlave":"","cmdFctModbus":"","cmdFormat":"","cmdAddress":"","cmdInvertBytes":"","cmdInvertWords":""}]},{"createtime":"2023-02-18 23:35:50","eqProtocol":"tcp","eqKeepopen":"0","eqPolling":"10","eqTcpAddr":"192.168.1.20","eqTcpPort":"502","eqTcpRtu":"0","eqWordEndianess":">","eqDWordEndianess":"<","updatetime":"2023-02-23 03:14:35","id":"33","name":"Wago-knx","cmds":[{"id":"113","name":"year","type":"info","cmdSlave":"0","cmdFctModbus":"3","cmdFormat":"int16","cmdAddress":"12308","cmdInvertBytes":"0","cmdInvertWords":"1"},{"id":"116","name":"month","type":"info","cmdSlave":"0","cmdFctModbus":"3","cmdFormat":"int16","cmdAddress":"12309","cmdInvertBytes":"0","cmdInvertWords":"1"},{"id":"117","name":"day","type":"info","cmdSlave":"0","cmdFctModbus":"3","cmdFormat":"int16","cmdAddress":"12310","cmdInvertBytes":"0","cmdInvertWords":"1"},{"id":"118","name":"hour","type":"info","cmdSlave":"0","cmdFctModbus":"3","cmdFormat":"int16","cmdAddress":"12311","cmdInvertBytes":"0","cmdInvertWords":"1"},{"id":"114","name":"wr test","type":"action","cmdSlave":"0","cmdFctModbus":"16","cmdFormat":"string","cmdAddress":"12468 [6]","cmdInvertBytes":"1","cmdInvertWords":"1"},{"id":"123","name":"wr read 12468","type":"info","cmdSlave":"0","cmdFctModbus":"3","cmdFormat":"string","cmdAddress":"12468 [6]","cmdInvertBytes":"1","cmdInvertWords":"1"},{"id":"124","name":"minutes","type":"info","cmdSlave":"0","cmdFctModbus":"3","cmdFormat":"int16","cmdAddress":"12312","cmdInvertBytes":"0","cmdInvertWords":"1"}]}]')
 foo = PyModbusClient(config[0])
 
------------------------------------------------------------------------------
 """
 
 # -----------------------------------------------------------------------------
@@ -74,6 +61,7 @@ class PyModbusClient():
         
         # Jeedom equipment id
         self.id = config['id']
+        self.polling_config = float(config['eqPolling'])
         self.polling = float(config['eqPolling'])
         self.keepopen = config['eqKeepopen'] == '1'
         
@@ -82,6 +70,8 @@ class PyModbusClient():
         
         self.requests = self.get_requests(config['cmds'])
         self.write_cmds = []
+        
+        self.cycle = 0
         
     def get_framer(self, config):
         if config['eqProtocol'] == 'tcp':
@@ -142,6 +132,8 @@ class PyModbusClient():
                     
             else:
                 request['addr'] = int(req_config['cmdAddress'])
+            if request['type'] == 'info':
+                request['freq'] = int(req_config['cmdFrequency'])
             # Endianess
             request['byteorder'] = '>' if req_config['cmdInvertBytes'] == '0' else '<'
             request['wordorder'] = '>' if req_config['cmdInvertWords'] == '0' else '<'
@@ -230,14 +222,18 @@ class PyModbusClient():
             #----------------------------------------------------------------------
             # Read requests
             # Request: await self.client.read_*
-            read_results, request_number = {}, 0
+            read_results = {}
+            self.cycle += 1
             for cmd_id, request in self.requests.items():
                 # Only read requests in the loop
                 if request['type'] == 'action':
                     continue
                 
+                # Read once every n cycles
+                if self.cycle % request['freq'] != 0:
+                    continue
+                
                 request_ok = True
-                request_number += 1
                 
                 # Read coils (code 0x01) || Read discrete inputs (code 0x02)
                 if request['fct_modbus'] in ('1', '2'):
@@ -322,7 +318,7 @@ class PyModbusClient():
                 else:
                     logging.error('PyModbusClient: Something went wrong while reading command id ' + cmd_id)
                 
-                # Send results to jeedom if len(json) > 400
+                # Send results to jeedom if len(json) > 400 (arbitrary length)
                 if len(json.dumps(read_results)) > 400:
                     self.send_results_to_jeedom(read_results)
                     read_results = {}
@@ -365,48 +361,53 @@ class PyModbusClient():
                     if not request_ok:
                         logging.error('PyModbusClient: Something went wrong while writing command id ' + write_cmd['cmdId'])
                     
-                # Read holding registers (code 0x03) || Read input registers (code 0x04)
+                # Write register (code 0x06) || Write registers (code 0x10)
                 elif request['fct_modbus'] in ('6', '16'):
                     normal_number, sp_sf, count = self.request_info(request)
                     
                     builder = BinaryPayloadBuilder(byteorder=request['byteorder'], wordorder=request['wordorder'])
                     
-                    # Type: Byte
-                    if '8' in request['data_type']:
-                        pass # FIXME TODO: vérifier si le registre complet est lu ou s'il y a une commande d'écriture sur l'autre partie (msb / lsb), sinon ignorer la commande
-                        
-                    # Type: Word (16bit) || Dword (32bit) || Double Dword (64bit)
-                    elif normal_number:
-                        value = float(write_cmd['cmdWriteValue']) if request['data_type'][:-2] == 'float' else int(write_cmd['cmdWriteValue'])
-                        getattr(builder, 'add_' + request['data_type'][-2:] + 'bit_' + request['data_type'][:-2])(value)
-                        
-                    # string
-                    elif request['data_type'].startswith('string'):
-                        value = write_cmd['cmdWriteValue']
-                        builder.add_string(value)
-                        
-                    #---------------
-                    # Special cases
-                    # SunSpec scale factor
-                    elif sp_sf:
-                        pass # FIXME TODO
-                    
-                    # buid registers
-                    registers = builder.to_registers()
-                    if len(registers):
-                        try:
-                            if request['fct_modbus'] == '6':
-                                response = await self.client.write_register(address=request['addr'], value=registers, slave=request['slave'])
-                            elif request['fct_modbus'] == '16':
-                                response = await self.client.write_registers(address=request['addr'], values=registers, slave=request['slave'])
+                    try:
+                        # Type: Byte
+                        if '8' in request['data_type']:
+                            pass # FIXME TODO: vérifier si le registre complet est lu ou s'il y a une commande d'écriture sur l'autre partie (msb / lsb), sinon ignorer la commande
                             
-                            request_ok = self.check_response(response)
-                        
-                        except:
-                            request_ok = False
+                        # Type: Word (16bit) || Dword (32bit) || Double Dword (64bit)
+                        elif normal_number:
+                            value = float(write_cmd['cmdWriteValue']) if request['data_type'][:-2] == 'float' else int(write_cmd['cmdWriteValue'])
+                            getattr(builder, 'add_' + request['data_type'][-2:] + 'bit_' + request['data_type'][:-2])(value)
                             
-                        if not request_ok:
-                            logging.error('PyModbusClient: Something went wrong while writing command id ' + write_cmd['cmdId'])
+                        # string
+                        elif request['data_type'].startswith('string'):
+                            value = write_cmd['cmdWriteValue'][:request['strlen']]
+                            builder.add_string(value)
+                            
+                        #---------------
+                        # Special cases
+                        # SunSpec scale factor
+                        elif sp_sf:
+                            pass # FIXME TODO
+                        
+                    except:
+                        logging.error('PyModbusClient: Something went wrong while building the write command id ' + write_cmd['cmdId'])
+                        
+                    else:
+                        # buid registers
+                        registers = builder.to_registers()
+                        if len(registers):
+                            try:
+                                if request['fct_modbus'] == '6':
+                                    response = await self.client.write_register(address=request['addr'], value=registers, slave=request['slave'])
+                                elif request['fct_modbus'] == '16':
+                                    response = await self.client.write_registers(address=request['addr'], values=registers, slave=request['slave'])
+                                
+                                request_ok = self.check_response(response)
+                            
+                            except:
+                                request_ok = False
+                                
+                            if not request_ok:
+                                logging.error('PyModbusClient: Something went wrong while writing command id ' + write_cmd['cmdId'])
                     
             # After all the action requests
             # Keep the connection open or not...
@@ -419,7 +420,7 @@ class PyModbusClient():
             # Polling time
             elapsed_time = time.time() - t_begin
             if elapsed_time >= self.polling:
-                self.polling = elapsed_time // self.polling + 1
+                self.polling = (elapsed_time // self.polling_config + 1) * self.polling_config
                 logging.warning('PyModbusClient: the polling time is too short, setting it to ' + str(self.polling) + ' s.')
             while self.polling - elapsed_time > 0:
                 self.check_queue(self.polling - elapsed_time)
