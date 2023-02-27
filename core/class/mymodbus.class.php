@@ -434,6 +434,7 @@ class mymodbusCmd extends cmd {
         $cmdFrequency = $this->getConfiguration('cmdFrequency');
         $cmdFormat = $this->getConfiguration('cmdFormat');
         $cmdFctModbus = $this->getConfiguration('cmdFctModbus');
+        $cmdOption = $this->getConfiguration('cmdOption');
         if (!is_numeric($cmdSlave))
             throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse esclave doit être un nombre.</br>\'0\' si pas de bus série.', __FILE__));
         if ($this->getType() == 'info' && !is_numeric($cmdFrequency))
@@ -444,6 +445,8 @@ class mymodbusCmd extends cmd {
             throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse modbus d\'une chaine de caractère doit être de la forme</br>adresse[longueur]', __FILE__));
         if (strstr($cmdFormat, 'sp-sf') and !preg_match('/\d+\s*?(sf|SF)\s*?\d+/', $cmdAddress))
             throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse modbus d\'un scale factor doit être de la forme (pour le courant, par exemple)</br>40190 sf 40194', __FILE__));
+        if ($cmdOption != '' and (!strstr($cmdOption, '#value#') or strstr($cmdOption, ';')))
+            throw new Exception($this->getName() . __('&nbsp;:</br>Le paramètre \'Option\' doit contenir \'#value#\' et aucun \';\'.', __FILE__));
         if ($this->getType() == 'action') {
             if (strstr($cmdFormat, '8'))
                 log::add('mymodbus', 'warning', $this->getName() . __('&nbsp;:</br>L\'écriture des types 8bit sera ignorée si le registre complet n\'est pas lu ou écrit en deux fois (MSB et LSB).', __FILE__));

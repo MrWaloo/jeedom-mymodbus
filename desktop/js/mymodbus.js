@@ -97,7 +97,7 @@ bitSelect +=
 
 $("#table_cmd").delegate(".paramFiltre", 'click', function () {
     var el = $(this);
-    var calcul = el.closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=cmdWriteValue]');
+    var calcul = el.closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=cmdOption]');
     var message = '<div class="row">  ' +
             '   <div class="col-md-12"> ' +
             '       <form class="form-horizontal" onsubmit="return false;"> ' +
@@ -122,9 +122,8 @@ $("#table_cmd").delegate(".paramFiltre", 'click', function () {
                 label: "{{Valider}}",
                 className: "btn-primary",
                 callback: function () {
-                    var condition = ' & ' + $('.conditionAttr[data-l1key=operande]').value();
+                    var condition = '#value# & ' + $('.conditionAttr[data-l1key=operande]').value();
                     calcul.atCaret('insert', condition);
-                    console.log('condition: ' + condition)
                 }
             },
         }
@@ -134,7 +133,7 @@ $("#table_cmd").delegate(".paramFiltre", 'click', function () {
 //$("#table_cmd").delegate(".paramValue", 'click', function () {
 //    var el = $(this);
 //    jeedom.cmd.getSelectModal({cmd: {type: 'info'}}, function (result) {
-//        var calcul = el.closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=request]');
+//        var calcul = el.closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=cmdWriteValue]');
 //        // définition de la structure du message
 //        var message = '<div class="row">  ' +
 //            '   <div class="col-md-12"> ' +

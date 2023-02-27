@@ -41,14 +41,26 @@ if (isset($result['state'])) {
     foreach ($result['values'] as $cmd_id => $new_value) {
         $cmd = cmd::byid($cmd_id);
         //$old_value = $cmd->execCmd();
-        log::add('mymodbus', 'debug', 'Mise à jour cmd ' . $cmd->getName() . ' -> new value: ' . $new_value, 'config');
+        
+        $cmdOption = $cmd->getConfiguration('cmdOption');
+        // Only if the option is valid and cannot be malicious code
+        if (strstr($cmdOption, '#value#') && !strstr($cmdOption, ';')) {
+            try {
+                $eval = str_replace('#value#', '$new_value', $cmdOption);
+                $new_value = eval('return ' . $eval . ';');
+            } catch (Throwable $t) {
+                log::add('mymodbus', 'error', 'jeemodbus.php: ' . $cmd->getName() . __(' - Erreur lors du calcul : ' . $t, __FILE__));
+            }
+        }
+        
+        log::add('mymodbus', 'debug', 'jeemodbus.php: Mise à jour cmd ' . $cmd->getName() . ' -> new value: ' . $new_value, 'config');
         
         $eqlogic = $cmd->getEqLogic();
         $eqlogic->checkAndUpdateCmd($cmd, $new_value);
         
         $names .= ' \'' . $cmd->getName() . '\'';
     }
-    log::add('mymodbus', 'info', 'Mise à jour des commandes info :' . $names);
+    log::add('mymodbus', 'info', 'jeemodbus.php: Mise à jour des commandes info :' . $names);
 } else {
     log::add('mymodbus', 'error', 'jeemodbus.php: unknown message received from daemon');
 }

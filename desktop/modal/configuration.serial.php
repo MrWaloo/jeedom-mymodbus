@@ -61,7 +61,24 @@ if (!isConnect('admin')) {
 <div class="form-group">
     <label class="col-sm-4 control-label">{{Vitesse de transmission}}</label>
     <div class="col-sm-6">
-        <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqSerialBaudrate" placeholder="{{19200}}"/>
+        <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqSerialBaudrate">
+            <option disabled selected value>-- {{Selectionnez une valeur}} --</option>
+            <option value="300">300</option>
+            <option value="600">600</option>
+            <option value="1200">1200</option>
+            <option value="2400">2400</option>
+            <option value="4800">4800</option>
+            <option value="9600">9600</option>
+            <option value="14400">14400</option>
+            <option value="19200">19200</option>
+            <option value="38400">38400</option>
+            <option value="56000">56000</option>
+            <option value="57600">57600</option>
+            <option value="115200">115200</option>
+            <option value="128000">128000</option>
+            <option value="230400">230400</option>
+            <option value="256000">256000</option>
+        </select>
     </div>
 </div>
 
@@ -70,8 +87,8 @@ if (!isConnect('admin')) {
     <div class="col-sm-6">
         <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqSerialBytesize">
             <option disabled selected value>-- {{Selectionnez une valeur}} --</option>
-            <option value="7">{{7}}</option>
-            <option value="8">{{8}}</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
         </select>
     </div>
 </div>
@@ -93,9 +110,9 @@ if (!isConnect('admin')) {
     <div class="col-sm-6">
         <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqSerialStopbits">
             <option disabled selected value>-- {{Selectionnez une valeur}} --</option>
-            <option value="0">{{0}}</option>
-            <option value="1">{{1}}</option>
-            <option value="2">{{2}}</option>
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
         </select>
     </div>
 </div>
