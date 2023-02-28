@@ -41,13 +41,6 @@ if (!isConnect('admin')) {
 </div>
 
 <div class="form-group">
-    <label class="col-sm-4 control-label">{{Adresse de l'esclave}}</label>
-    <div class="col-sm-6">
-        <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqSerialSlave" placeholder="{{Adresse modbus}}"/>
-    </div>
-</div>
-
-<div class="form-group">
     <label class="col-sm-4 control-label">{{Méthode de transport}}</label>
     <div class="col-sm-6">
         <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqSerialMethod">

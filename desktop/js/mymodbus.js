@@ -130,44 +130,7 @@ $("#table_cmd").delegate(".paramFiltre", 'click', function () {
     });
 });
 
-//$("#table_cmd").delegate(".paramValue", 'click', function () {
-//    var el = $(this);
-//    jeedom.cmd.getSelectModal({cmd: {type: 'info'}}, function (result) {
-//        var calcul = el.closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=cmdWriteValue]');
-//        // définition de la structure du message
-//        var message = '<div class="row">  ' +
-//            '   <div class="col-md-12"> ' +
-//            '       <form class="form-horizontal" onsubmit="return false;"> ' +
-//            '           <div class="form-group"> ' +
-//            '               <label class="col-xs-5 control-label" >' + result.human + ' {{=>}}</label>' +
-//                            bitSelect +
-//            '           </div>' +
-//            '       </form> ' +
-//            '   </div> ' +
-//            '</div>';
-//        bootbox.dialog({
-//            title: "{{Ajout d'un filtre }}",
-//            message: message,
-//            buttons: {
-//                "{{Ne rien mettre}}": {
-//                    className: "btn-default",
-//                    callback: function () {
-//                        calcul.atCaret('insert', result.human);
-//                    }
-//                },
-//                success: {
-//                    label: "{{Valider}}",
-//                    className: "btn-primary",
-//                    callback: function () {
-//                        var condition = result.human + ' & ' + $('.conditionAttr[data-l1key=operator]').value();
-//                        calcul.atCaret('insert', condition);
-//                    }
-//                },
-//            }
-//        });
-//    });
-//});
-//
+
 $("#table_cmd tbody").delegate(".cmdAttr[data-l1key=type]", 'change', function (event) {
     actualise_visible($(this));
 });
@@ -319,9 +282,6 @@ function addCmdToTable(_cmd) {
     tr += '     </div>';
     tr += '     <div class="input-group">';
     tr += '         <input class="cmdAttr form-control input-sm roundedLeft writeFunction" style="width:100%;" data-l1key="configuration" data-l2key="cmdWriteValue" placeholder="{{Valeur}}"/>';
-    //tr += '         <span class="input-group-btn">';
-    //tr += '             <a class="btn btn-default btn-sm cursor paramValue roundedRight writeFunction" data-input="configuration"><i class="fa fa-list-alt "></i></a>';
-    //tr += '         </span>';
     tr += '     </div>';
     tr += ' </td>';
     // Etat
@@ -358,7 +318,6 @@ function addCmdToTable(_cmd) {
         },
         success: function (result) {
             tr.find('.cmdAttr[data-l1key=value]').append(result);
-            //tr.find('.cmdAttr[data-l1key=configuration][data-l2key=updateCmdId]').append(result);
             tr.setValues(_cmd, '.cmdAttr');
             jeedom.cmd.changeType(tr, init(_cmd.subType));
         }
