@@ -27,13 +27,10 @@ import multiprocessing
 from queue import Empty, Full
 import socket
 import asyncio
+
 from mymodbus import PyModbusClient
 
-try:
-    from jeedom.jeedom import jeedom_utils, jeedom_com
-except ImportError:
-    print("Error: importing module jeedom.jeedom")
-    sys.exit(1)
+from jeedom.jeedom import jeedom_utils, jeedom_com
 
 # -----------------------------------------------------------------------------
 
@@ -120,11 +117,11 @@ class Main():
             sys.exit(2)
         # API key is mandatory
         if self._apikey is None:
-            logginglog.critical('mymodbusd: Missing API key')
+            logging.critical('mymodbusd: Missing API key')
             sys.exit(2)
         # Json data is mandatory
         if self._json is None:
-            logginglog.critical('mymodbusd: Missing json data')
+            logging.critical('mymodbusd: Missing json data')
             sys.exit(2)
         
         # Check the pid file

@@ -107,7 +107,7 @@ class mymodbus extends eqLogic {
         $jsonData = self::getCompleteConfiguration();
         
         $socketPort = is_numeric(config::byKey('socketport', __CLASS__, self::$_DEFAULT_SOCKET_PORT, True)) ? config::byKey('socketport', __CLASS__, self::$_DEFAULT_SOCKET_PORT) : self::$_DEFAULT_SOCKET_PORT;
-        $daemonLoglevel = escapeshellarg('debug'); // DEBUG 'error'
+        $daemonLoglevel = escapeshellarg('debug');
         $daemonApikey = escapeshellarg(jeedom::getApiKey(__CLASS__));
         $daemonCallback = escapeshellarg(self::getCallbackUrl());
         $daemonJson = escapeshellarg(json_encode($jsonData));
@@ -120,7 +120,9 @@ class mymodbus extends eqLogic {
         $request = ' --socketport ' . $socketPort . ' --loglevel ' . $daemonLoglevel . ' --apikey ' . $daemonApikey . ' --callback ' . $daemonCallback . ' --json ' . $daemonJson;
         
         $mymodbus_path = realpath(dirname(__FILE__) . '/../../ressources/mymodbusd');
-        $cmd = 'nice -n 19 /usr/bin/python3 ' . $mymodbus_path . '/mymodbusd.py' . $request;
+        $cmd = 'export PYENV_ROOT="/root/.pyenv"; command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"; eval "$(pyenv init -)"; ';
+        $cmd .= 'cd ' . $mymodbus_path . '; ';
+        $cmd .= 'nice -n 19 python3 mymodbusd.py' . $request;
         log::add('mymodbus', 'info', 'Lancement du démon mymodbus : ' . $cmd);       
         $result = exec($cmd . ' >> ' . log::getPathToLog('mymodbus') . ' 2>&1 &');
         
