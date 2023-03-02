@@ -256,7 +256,7 @@ class Main():
                     if process not in multiprocessing.active_children():
                         for eqConfig in self.config:
                             if eqId == eqConfig['id']:
-                                logging.debug("mymodbusd: process re-run: " + process.name)
+                                logging.warning("mymodbusd: process re-run: " + process.name)
                                 self.sub_process[eqId] = multiprocessing.Process(target=self.pymodbus_clients[eqId].run, args=(self.queues[eqId], ), name=eqConfig['name'], daemon=True)
                                 self.sub_process[eqId].start()
                                 break

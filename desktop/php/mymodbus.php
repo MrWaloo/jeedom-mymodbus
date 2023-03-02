@@ -6,10 +6,6 @@ $plugin = plugin::byId('mymodbus');
 sendVarToJS('eqType', $plugin->getId());
 $eqLogics = eqLogic::byType($plugin->getId());
 
-// FIXME: message mis à jour ou pas de message
-//if (mymodbus::getDeamonState() != 'ok')
-//    echo '<div class="alert alert-danger">{{ATTENTION LE DEMON MYMODBUS N\'EST PAS DÉMARRÉ.</br>Pour qu\'il démarre il faut créer et activer un équipement MyModbus et configurer au moins une commande valide&nbsp;!}}</div>';
-
 ?>
 
 <div class="row row-overflow">
@@ -188,7 +184,7 @@ $eqLogics = eqLogic::byType($plugin->getId());
                             
                         </div>
                         
-                        <!-- Partie droite de l'onglet "Équipement" -->
+                        <!-- Partie basse ou droite de l'onglet "Équipement" -->
                         <div class="col-lg-6">
                             <legend><i class="fas fa-info"></i>{{Informations}}</legend>
                             <div class="form-group">
@@ -232,7 +228,6 @@ $eqLogics = eqLogic::byType($plugin->getId());
                     </table>
                 </div>
             </div><!-- /.tabpanel #commandtab-->
-
         </div><!-- /.tab-content -->
     </div><!-- /.eqLogic -->
 </div><!-- /.row row-overflow -->

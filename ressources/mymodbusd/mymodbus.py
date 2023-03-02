@@ -20,19 +20,21 @@ import time
 import threading
 import asyncio
 import re
-from queue import Empty, Full
+from queue import (Empty, Full)
 
-from pymodbus.client import AsyncModbusTcpClient, AsyncModbusUdpClient, AsyncModbusSerialClient
+from pymodbus.client import (AsyncModbusTcpClient, AsyncModbusUdpClient, AsyncModbusSerialClient)
 
 from pymodbus.framer.socket_framer import ModbusSocketFramer
 from pymodbus.framer.rtu_framer import ModbusRtuFramer
 from pymodbus.framer.ascii_framer import ModbusAsciiFramer
 from pymodbus.framer.binary_framer import ModbusBinaryFramer
 
-from pymodbus.payload import BinaryPayloadDecoder, BinaryPayloadBuilder
+from pymodbus.payload import (BinaryPayloadDecoder, BinaryPayloadBuilder)
 #from pymodbus.constants import Endian
 #from pymodbus.exceptions import *
 from pymodbus.pdu import ExceptionResponse
+
+from mymodbuslib import *
 
 """
 -----------------------------------------------------------------------------
@@ -105,7 +107,7 @@ class PyModbusClient():
         
     def get_requests(self, cmds):
         re_string_address = re.compile(r"(\d+)\s*?[\(\[\{]\s*?(\d+)\s*?[\)\]\}]")
-        re_sf = re.compile(r"(\d+)\s*?(sf|SF)\s*?(\d+)")
+        re_sf = re.compile(r"(\d+)\s*?(sf|SF|Sf|sF)\s*?(\d+)")
         requests = {}
         for req_config in cmds:
             request = {}
@@ -162,7 +164,7 @@ class PyModbusClient():
                 count = 2
             elif request['data_type'].endswith('64'):
                 count = 4
-        elif request['data_type'].startswith('string'):
+        elif request['data_type'] == 'string':
             if request['strlen'] % 2 == 1:
                 request['strlen'] -= 1
             count = int(request['strlen'] / 2)
@@ -275,7 +277,7 @@ class PyModbusClient():
                         
                         # Type: Byte
                         if '8' in request['data_type']:
-                            if request['data_type'].endswith('-msb'): # FIXME: vérifier si msb ou lsb
+                            if request['data_type'].endswith('-lsb'):
                                 decoder.skip_bytes(1)
                             
                             if request['data_type'].startswith('int8'):
@@ -288,7 +290,7 @@ class PyModbusClient():
                            value = getattr(decoder, 'decode_' + request['data_type'][-2:] + 'bit_' + request['data_type'][:-2])()
                            
                         # string
-                        elif request['data_type'].startswith('string'):
+                        elif request['data_type'] == 'string':
                             value = decoder.decode_string(request['strlen'])
                             
                         #---------------
@@ -308,7 +310,7 @@ class PyModbusClient():
                 # Save the result of this request
                 if request_ok:
                     read_results[cmd_id] = value
-                    if request['data_type'].startswith('string'):
+                    if request['data_type'] == 'string':
                         try:
                             read_results[cmd_id] = value.decode()
                         except:
@@ -318,10 +320,10 @@ class PyModbusClient():
                 else:
                     logging.error('PyModbusClient: Something went wrong while reading command id ' + cmd_id)
                 
-                # Send results to jeedom if len(json) > 400 (arbitrary length)
-                if len(json.dumps(read_results)) > 400:
-                    self.send_results_to_jeedom(read_results)
-                    read_results = {}
+            #    # Send results to jeedom if len(json) > 400 (arbitrary length)
+            #    if len(json.dumps(read_results)) > 400:
+            #        self.send_results_to_jeedom(read_results)
+            #        read_results = {}
                 
             # After all the info requests
             # Send results to jeedom
@@ -343,7 +345,10 @@ class PyModbusClient():
                 
                 # Write single coil (code 0x05) || Write coils (code 0x0F)
                 if request['fct_modbus'] in ('5', '15'):
-                    value = write_cmd['cmdWriteValue'] == '1'
+                    value = not (write_cmd['cmdWriteValue'] == '0' or write_cmd['cmdWriteValue'].lower() == 'false') # anything else than '0' or 'false' will be True
+                    
+                    if request['data_type'] == 'bin-inv':
+                            value = not value
                     
                     try:
                         if request['fct_modbus'] == '5':
@@ -370,7 +375,7 @@ class PyModbusClient():
                     try:
                         # Type: Byte
                         if '8' in request['data_type']:
-                            pass # FIXME TODO: vérifier si le registre complet est lu ou s'il y a une commande d'écriture sur l'autre partie (msb / lsb), sinon ignorer la commande
+                            pass # ignore this command
                             
                         # Type: Word (16bit) || Dword (32bit) || Double Dword (64bit)
                         elif normal_number:
@@ -378,7 +383,7 @@ class PyModbusClient():
                             getattr(builder, 'add_' + request['data_type'][-2:] + 'bit_' + request['data_type'][:-2])(value)
                             
                         # string
-                        elif request['data_type'].startswith('string'):
+                        elif request['data_type'] == 'string':
                             value = write_cmd['cmdWriteValue'][:request['strlen']]
                             builder.add_string(value)
                             
@@ -386,13 +391,24 @@ class PyModbusClient():
                         # Special cases
                         # SunSpec scale factor
                         elif sp_sf:
-                            pass # FIXME TODO
+                            sp_pf_data_type = request['data_type'][:-5]
+                            offset = 1
+                            if sp_pf_data_type[-2:] == '32':
+                                offset = 2
+                            
+                            if count == offset + 1:
+                                value, sf = value_to_sf(float(write_cmd['cmdWriteValue']))
+                                getattr(builder, 'add_' + sp_pf_data_type[-2:] + 'bit_' + sp_pf_data_type[:-2])(value)
+                                builder.add_16bit_int(sf)
+                                
+                            else:
+                                logging.warning('PyModbusClient: Cannot write command id ' + write_cmd['cmdId'] + ', the registers aren\'t consecutive.')
                         
                     except:
                         logging.error('PyModbusClient: Something went wrong while building the write command id ' + write_cmd['cmdId'])
                         
                     else:
-                        # buid registers
+                        # build registers
                         registers = builder.to_registers()
                         if len(registers):
                             try:

@@ -24,7 +24,7 @@ echo 50 > ${PROGRESS_FILE}
 echo "********************************************************"
 echo "*             Installation de python 3.9.5             *"
 echo "********************************************************"
-sudo /root/.pyenv/bin/pyenv install -k 3.9.5
+sudo /root/.pyenv/bin/pyenv install 3.9.5
 echo 85 > ${PROGRESS_FILE}
 echo "********************************************************"
 echo "*       Configuration de pyenv avec python 3.9.5       *"
@@ -38,4 +38,3 @@ rm ${PROGRESS_FILE}
 echo "********************************************************"
 echo "*             Installation terminée                    *"
 echo "********************************************************"
-

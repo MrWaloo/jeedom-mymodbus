@@ -70,12 +70,10 @@ class mymodbus extends eqLogic {
     public static function cronHourly() {}
    */
 
-    // Fonction exécutée automatiquement tous les jours par Jeedom
-    public static function cronDaily() {
-        // FIXME
-        log::add('mymodbus', 'debug', 'cronDaily: lancé');
-        
-    }
+  /*
+   * Fonction exécutée automatiquement tous les jours par Jeedom
+    public static function cronDaily() {}
+   */
     
   /*
    * Fonction exécutée automatiquement toutes les heures par Jeedom
@@ -206,6 +204,14 @@ class mymodbus extends eqLogic {
     // Fonction exécutée automatiquement avant la sauvegarde de l'équipement (création ou mise à jour)
     // La levée d'une exception invalide la sauvegarde
     public function preSave() {
+        // ----------------------------------
+        // A supprimer dans quelques temps
+        $cron = cron::byClassAndFunction('mymodbus', 'cronDaily');
+        if (is_object($cron)) {
+            $cron->remove();
+        }
+        // ----------------------------------
+        
         $configKeys = array();
         foreach ($this->getConfiguration() as $key => $value) {
             $configKeys[] = $key;
@@ -215,9 +221,9 @@ class mymodbus extends eqLogic {
         if (!$this->getIsEnable())
             return True;
         // Un nouvel équipement vient d'être ajouté, il faut retourner "true" sinon, l'ajout est invalidé
-        if (!in_array('eqProtocol', $configKeys) and !in_array('eqKeepopen', $configKeys) and !in_array('eqPolling', $configKeys))
+        if (!in_array('eqProtocol', $configKeys) && !in_array('eqKeepopen', $configKeys) && !in_array('eqPolling', $configKeys))
             return True;
-        if (!in_array('eqProtocol', $configKeys) or !in_array('eqKeepopen', $configKeys) or !in_array('eqPolling', $configKeys))
+        if (!in_array('eqProtocol', $configKeys) || !in_array('eqKeepopen', $configKeys) || !in_array('eqPolling', $configKeys))
             throw new Exception($this->getName() . __('&nbsp;:</br>Veuillez définir la configuration de base de l\'équipement', __FILE__));
         
         $eqProtocol = $this->getConfiguration('eqProtocol');
@@ -231,8 +237,7 @@ class mymodbus extends eqLogic {
         
         if ($eqProtocol == 'tcp') {
             // Vérification du paramétrage d'une connexion TCP
-            if (!in_array('eqTcpAddr', $configKeys) and !in_array('eqTcpPort', $configKeys) and
-                    !in_array('eqTcpRtu', $configKeys)) {
+            if (!in_array('eqTcpAddr', $configKeys) && !in_array('eqTcpPort', $configKeys) && !in_array('eqTcpRtu', $configKeys)) {
                 throw new Exception($this->getName() . __('&nbsp;:</br>Veuillez définir la configuration TCP de l\'équipement', __FILE__));
             }
             $eqTcpAddr = $this->getConfiguration('eqTcpAddr');
@@ -244,8 +249,7 @@ class mymodbus extends eqLogic {
             
         } elseif ($eqProtocol == 'udp') {
             // Vérification du paramétrage d'une connexion UDP
-            if (!in_array('eqUdpAddr', $configKeys) and !in_array('eqUdpPort', $configKeys) and
-                    !in_array('eqUdpRtu', $configKeys))
+            if (!in_array('eqUdpAddr', $configKeys) && !in_array('eqUdpPort', $configKeys) && !in_array('eqUdpRtu', $configKeys))
                 throw new Exception($this->getName() . __('&nbsp;:</br>Veuillez définir la configuration UDP de l\'équipement', __FILE__));
             $eqUdpAddr = $this->getConfiguration('eqUdpAddr');
             $eqUdpPort = $this->getConfiguration('eqUdpPort');
@@ -256,9 +260,9 @@ class mymodbus extends eqLogic {
             
         } elseif ($eqProtocol == 'serial') {
             // Vérification du paramétrage d'une connexion série
-            if (!in_array('eqSerialInterface', $configKeys) or !in_array('eqSerialMethod', $configKeys) or
-                    !in_array('eqSerialBaudrate', $configKeys) or !in_array('eqSerialBytesize', $configKeys) or
-                    !in_array('eqSerialParity', $configKeys) or !in_array('eqSerialStopbits', $configKeys))
+            if (!in_array('eqSerialInterface', $configKeys) || !in_array('eqSerialMethod', $configKeys) ||
+                    !in_array('eqSerialBaudrate', $configKeys) || !in_array('eqSerialBytesize', $configKeys) ||
+                    !in_array('eqSerialParity', $configKeys) || !in_array('eqSerialStopbits', $configKeys))
                 throw new Exception($this->getName() . __('&nbsp;:</br>Veuillez définir la configuration série de l\'équipement', __FILE__));
             $eqSerialInterface = $this->getConfiguration('eqSerialInterface');
             $eqSerialMethod = $this->getConfiguration('eqSerialMethod');
@@ -341,13 +345,12 @@ class mymodbus extends eqLogic {
         return $completeConfig;
     }
     
-    // FIXME
     public static function getDeamonState() {
         $pid = file_get_contents('/tmp/mymodbusd.pid');
         //log::add('mymodbus', 'debug', 'getDeamonState $pid: ' . strval($pid));
         $running_pid = exec("ps -eo pid,command | grep `cat /tmp/mymodbusd.pid` | grep -v grep | awk '{print $1}'");
         //log::add('mymodbus', 'debug', 'getDeamonState $running_pid: ' . strval($running_pid));
-        return (($running_pid != 0) and (intval($running_pid) == intval($pid)))? 'ok': 'nok';
+        return (($running_pid != 0) && (intval($running_pid) == intval($pid)))? 'ok': 'nok';
     }
     
     public static function getDeamonLaunchable() {
@@ -389,8 +392,7 @@ class mymodbusCmd extends cmd {
       return true;
       }
      */
-
-    // TODO: à adapter en fonction des paramètres nécessaires à la commande action
+    
     public function execute($command = array()) {
         
         log::add('mymodbus', 'debug', '**************** execute *****: ' . json_encode($command));
@@ -437,29 +439,32 @@ class mymodbusCmd extends cmd {
         $cmdFormat = $this->getConfiguration('cmdFormat');
         $cmdFctModbus = $this->getConfiguration('cmdFctModbus');
         $cmdOption = $this->getConfiguration('cmdOption');
+        if ($cmdSlave == '') {
+            $cmdSlave = '0';
+            $this->setConfiguration('cmdSlave', $cmdSlave);
+        }
         if (!is_numeric($cmdSlave))
             throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse esclave doit être un nombre.</br>\'0\' si pas de bus série.', __FILE__));
+        if ($this->getType() == 'info' && $cmdFrequency == '') {
+            $cmdFrequency = '1';
+            $this->setConfiguration('cmdFrequency', $cmdFrequency);
+        }
         if ($this->getType() == 'info' && !is_numeric($cmdFrequency))
             throw new Exception($this->getName() . __('&nbsp;:</br>La configuration \'Lecture 1x sur\' doit être un nombre.', __FILE__));
-        if (!is_numeric($cmdAddress) and $cmdFormat != 'string' and !strstr($cmdFormat, 'sp-sf'))
+        if (!is_numeric($cmdAddress) && $cmdFormat != 'string' && !strstr($cmdFormat, 'sp-sf'))
             throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse modbus doit être un nombre.', __FILE__));
-        if (strstr($cmdFormat, 'string') and !preg_match('/\d+\s*?[\(\[\{]\s*?\d+\s*?[\)\]\}]/', $cmdAddress))
+        if (strstr($cmdFormat, 'string') && !preg_match('/\d+\s*?[\(\[\{]\s*?\d+\s*?[\)\]\}]/', $cmdAddress))
             throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse modbus d\'une chaine de caractère doit être de la forme</br>adresse[longueur]', __FILE__));
-        if (strstr($cmdFormat, 'sp-sf') and !preg_match('/\d+\s*?(sf|SF)\s*?\d+/', $cmdAddress))
-            throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse modbus d\'un scale factor doit être de la forme (pour le courant, par exemple)</br>40190 sf 40194', __FILE__));
-        if ($cmdOption != '' and (!strstr($cmdOption, '#value#') or strstr($cmdOption, ';')))
+        if (strstr($cmdFormat, 'sp-sf') && !preg_match('/\d+\s*?(sf|SF|Sf|sF)\s*?\d+/', $cmdAddress))
+            throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse modbus d\'un scale factor doit être de la forme&nbsp;:</br><i>adresse_valeur</i> sf <i>adresse_scale_factor</i>', __FILE__));
+        if ($cmdOption != '' && (!strstr($cmdOption, '#value#') || strstr($cmdOption, ';')))
             throw new Exception($this->getName() . __('&nbsp;:</br>Le paramètre \'Option\' doit contenir \'#value#\' et aucun \';\'.', __FILE__));
         if ($this->getType() == 'action') {
-            if (strstr($cmdFormat, '8'))
-                log::add('mymodbus', 'warning', $this->getName() . __('&nbsp;:</br>L\'écriture des types 8bit sera ignorée si le registre complet n\'est pas lu ou écrit en deux fois (MSB et LSB).', __FILE__));
-            if ((strstr($cmdFormat, '32') or strstr($cmdFormat, '64')) and $cmdFctModbus == '6')
+            if ($cmdFctModbus == '6' && (strstr($cmdFormat, '32') || strstr($cmdFormat, '64')))
                 throw new Exception($this->getName() . __('&nbsp;:</br>La fonction "[0x06] Write register" ne permet pas d\'écrire une variable de cette longueur.', __FILE__));
-            if (strstr($cmdFormat, 'sp-sf'))
-                log::add('mymodbus', 'warning', $this->getName() . __('&nbsp;:</br>L\'écriture des types SunSpec sera ignorée.', __FILE__)); // FIXME: TODO
-            if (in_array($this->getSubType(), array('color', 'select')))
-                log::add('mymodbus', 'warning', $this->getName() . __('&nbsp;:</br>L\'écriture sera ignorée.', __FILE__)); // FIXME: TODO
+            if (strstr($cmdFormat, '8') || in_array($this->getSubType(), array('color', 'select')))
+                log::add('mymodbus', 'warning', $this->getName() . __('&nbsp;:</br>L\'écriture sera ignorée.', __FILE__));
         }
-        $this->formatValue(str_replace('"','',jeedom::evaluateExpression($this->getConfiguration('calcul'))));
         //log::add('mymodbus', 'debug', 'Validation de la configuration pour la commande *' . $this->getName() . '* : OK');
     }
 

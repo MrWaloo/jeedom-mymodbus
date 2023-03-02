@@ -36,7 +36,6 @@ if (isset($result['state'])) {
     //log::add('mymodbus', 'debug', 'jeemymodbus.php: state: *' . $result['state'] . '*');
     
 } elseif (isset($result['values'])) {
-    //log::add('mymodbus', 'debug', 'jeemymodbus.php: values: *' . $result['values'] . '*');
     $names = '';
     foreach ($result['values'] as $cmd_id => $new_value) {
         $cmd = cmd::byid($cmd_id);
@@ -49,7 +48,7 @@ if (isset($result['state'])) {
                 $eval = str_replace('#value#', '$new_value', $cmdOption);
                 $new_value = eval('return ' . $eval . ';');
             } catch (Throwable $t) {
-                log::add('mymodbus', 'error', 'jeemodbus.php: ' . $cmd->getName() . __(' - Erreur lors du calcul : ' . $t, __FILE__));
+                log::add('mymodbus', 'error', 'jeemodbus.php: ' . $cmd->getName() . __(' Calcul non effectué. Erreur lors du calcul : ' . $t, __FILE__));
             }
         }
         
@@ -64,3 +63,5 @@ if (isset($result['state'])) {
 } else {
     log::add('mymodbus', 'error', 'jeemodbus.php: unknown message received from daemon');
 }
+
+?>
