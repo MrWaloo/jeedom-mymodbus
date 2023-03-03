@@ -346,11 +346,15 @@ class mymodbus extends eqLogic {
     }
     
     public static function getDeamonState() {
-        $pid = file_get_contents('/tmp/mymodbusd.pid');
-        //log::add('mymodbus', 'debug', 'getDeamonState $pid: ' . strval($pid));
-        $running_pid = exec("ps -eo pid,command | grep `cat /tmp/mymodbusd.pid` | grep -v grep | awk '{print $1}'");
-        //log::add('mymodbus', 'debug', 'getDeamonState $running_pid: ' . strval($running_pid));
-        return (($running_pid != 0) && (intval($running_pid) == intval($pid)))? 'ok': 'nok';
+        $pid_file = '/tmp/mymodbusd.pid';
+        if (file_exists($pid_file)) {
+            $pid = file_get_contents($pid_file);
+            //log::add('mymodbus', 'debug', 'getDeamonState $pid: ' . strval($pid));
+            $running_pid = exec("ps -eo pid,command | grep `cat $pid_file` | grep -v grep | awk '{print $1}'");
+            //log::add('mymodbus', 'debug', 'getDeamonState $running_pid: ' . strval($running_pid));
+            return (($running_pid != 0) && (intval($running_pid) == intval($pid)))? 'ok': 'nok';
+        } else
+            return 'nok';
     }
     
     public static function getDeamonLaunchable() {
