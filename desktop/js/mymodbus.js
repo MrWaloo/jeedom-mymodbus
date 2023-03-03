@@ -148,8 +148,6 @@ function actualise_visible(me) {
     var subType = $(me).closest('tr').find('.cmdAttr[data-l1key=subType]').value();
     var cmdFctModbus = $(me).closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=cmdFctModbus]').value();
     
-    console.log('subType: ' + subType);
-    
     $(me).closest('tr').find('.formatNum').hide();
     $(me).closest('tr').find('.formatBin').hide();
     $(me).closest('tr').find('.readFunction').hide();
@@ -192,6 +190,12 @@ function addCmdToTable(_cmd) {
         _cmd.configuration.cmdSlave = '0';
         _cmd.configuration.cmdFctModbus = '3';
         _cmd.configuration.cmdFormat = 'int16';
+        _cmd.configuration.cmdFrequency = '1';
+    }
+    if (!isset(_cmd.configuration.cmdSlave)) {
+        _cmd.configuration.cmdSlave = '0';
+    }
+    if (!isset(_cmd.configuration.cmdFrequency)) {
         _cmd.configuration.cmdFrequency = '1';
     }
     
@@ -277,7 +281,7 @@ function addCmdToTable(_cmd) {
     tr += '     </div>';
     tr += '     <div class="input-group">';
     tr += '         <label class="label readFunction">{{Lecture 1x sur&nbsp;:}}&nbsp;';
-    tr += '             <input class="cmdAttr form-inline input-sm roundedLeft readFunction" data-l1key="configuration" data-l2key="cmdFrequency" placeholder="{{1}}"/>';
+    tr += '             <input class="cmdAttr form-inline input-sm roundedLeft readFunction" data-l1key="configuration" data-l2key="cmdFrequency" placeholder="{{1 par défaut}}"/>';
     tr += '         </label>';
     tr += '     </div>';
     tr += '     <div class="input-group">';

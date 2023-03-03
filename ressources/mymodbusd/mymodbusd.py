@@ -14,6 +14,16 @@
 # along with Jeedom. If not, see <http://www.gnu.org/licenses/>.
 
 import sys
+
+# -----------------------------------------------------------------------------
+
+# Compatibility (pymodbus requires python >= 3.8)
+if (sys.version_info < (3, 8)):
+    sys.stderr("Please install python V3.8 or newer and check the MyModbus dependencies")
+    sys.exit(1)
+
+# -----------------------------------------------------------------------------
+
 import os
 import logging
 import time
@@ -34,16 +44,9 @@ from jeedom.jeedom import jeedom_utils, jeedom_com
 
 # -----------------------------------------------------------------------------
 
-# Compatibility (pymodbus requires python >= 3.8)
-if (sys.version_info < (3, 8)):
-    sys.stderr("Please install python V3.8 or newer and check the MyModbus dependencies")
-    sys.exit(1)
-
-# -----------------------------------------------------------------------------
-
 class Main():
     def __init__(self, should_stop):
-        # Deamon parameters
+        # Daemon parameters
         self.read_args()
         
         jeedom_utils.set_log_level(self._log_level)

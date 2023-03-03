@@ -27,25 +27,11 @@ if (!isConnect()) {
         <legend><i class="icon loisir-darth"></i>{{Gestion du démon}}</legend>
         <div class="form-group expertModeVisible">
             <label class="col-lg-4 control-label">{{Port du socket interne (pour éviter un conflit avec un autre plugin)&nbsp;:}}
-                <sup><i class="fas fa-question-circle tooltips" title="{{55502 par défaut si non précisé}}"></i></sup>
+                <i class="fas fa-question-circle tooltips" title="{{55502 par défaut si non précisé}}"></i>
             </label>
             <div class="col-lg-2">
                 <input class="configKey form-control" data-l1key="socketport" placeholder="55502"/>
             </div>
         </div>
-        <!--
-        <div class="form-group" >
-            <label class="col-lg-4 control-label">{{Activer les logs séparés des démons locaux}} <i class="fas fa-question-circle tooltips" title="{{Nécéssite un redémarrage des démons}}"></i></label>
-            <div class="col-lg-3">
-                <input type="checkbox"disabled="disabled" class="configKey " data-l1key="ActiveDemonLog" />
-            </div>
-        </div>
-        <div class="form-group" >
-            <label class="col-lg-4 control-label">{{Activer le redémarrage des démons locaux (t/mn) }} <i class="fas fa-question-circle tooltips" title="{{Nécéssite un redémarrage des démons}}"></i></label>
-            <div class="col-lg-3">
-                <input type="checkbox" class="configKey " data-l1key="ActiveRestart" />
-            </div>
-        </div>
-        -->
     </fieldset>
 </form>
