@@ -24,12 +24,14 @@ echo 30 > ${PROGRESS_FILE}
 echo "********************************************************"
 echo "* Installation de python 3.9.5 : peut prendre du temps *"
 echo "********************************************************"
+chown -R www-data:www-data ~www-data/.pyenv
 sudo -u www-data ~www-data/.pyenv/bin/pyenv install 3.9.5
 echo 95 > ${PROGRESS_FILE}
 echo "********************************************************"
 echo "*       Configuration de pyenv avec python 3.9.5       *"
 echo "********************************************************"
 cd ../../plugins/mymodbus/ressources
+chown -R www-data:www-data ~www-data/.pyenv
 sudo -u www-data ~www-data/.pyenv/bin/pyenv local 3.9.5
 sudo -u www-data ~www-data/.pyenv/bin/pyenv exec pip install --upgrade pip setuptools
 sudo -u www-data ~www-data/.pyenv/bin/pyenv exec pip install requests serial pyudev pymodbus

@@ -118,7 +118,7 @@ class mymodbus extends eqLogic {
         $request = ' --socketport ' . $socketPort . ' --loglevel ' . $daemonLoglevel . ' --apikey ' . $daemonApikey . ' --callback ' . $daemonCallback . ' --json ' . $daemonJson;
         
         $mymodbus_path = realpath(dirname(__FILE__) . '/../../ressources/mymodbusd');
-        $cmd = 'export PYENV_ROOT="/root/.pyenv"; command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"; eval "$(pyenv init -)"; ';
+        $cmd = 'export PYENV_ROOT="$HOME/.pyenv"; command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"; eval "$(pyenv init -)"; ';
         $cmd .= 'cd ' . $mymodbus_path . '; pyenv shell 3.9.5; ';
         $cmd .= 'nice -n 19 python3 mymodbusd.py' . $request;
         log::add('mymodbus', 'info', 'Lancement du démon mymodbus : ' . $cmd);       
