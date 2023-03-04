@@ -7,13 +7,15 @@ fi
 touch ${PROGRESS_FILE}
 echo 0 > ${PROGRESS_FILE}
 echo "********************************************************"
-echo "*     Installation de pyenv : peut prendre du temps    *"
+echo "*    Installation de pyenv : peut prendre du temps     *"
 echo "********************************************************"
 echo $(date)
-curl https://pyenv.run | bash
+#export PYENV_ROOT="${HOME}/.pyenv"
+export PYENV_ROOT="$(echo ~www-data)/.pyenv"
+sudo -u www-data curl https://pyenv.run | bash
 echo 20 > ${PROGRESS_FILE}
 echo "****  Configuration de pyenv..."
-cat >> ~/.bashrc<< EOF
+sudo -u www-data cat >> ~www-data/.bashrc<< EOF
 export PYENV_ROOT="$HOME/.pyenv"
 command -v pyenv >/dev/null || export PATH="\$PYENV_ROOT/bin:\$PATH"
 eval "\$(pyenv init -)"
@@ -22,15 +24,15 @@ echo 30 > ${PROGRESS_FILE}
 echo "********************************************************"
 echo "*             Installation de python 3.9.5             *"
 echo "********************************************************"
-~/.pyenv/bin/pyenv install 3.9.5
-echo 85 > ${PROGRESS_FILE}
+~www-data/.pyenv/bin/pyenv install 3.9.5
+echo 95 > ${PROGRESS_FILE}
 echo "********************************************************"
 echo "*       Configuration de pyenv avec python 3.9.5       *"
 echo "********************************************************"
 cd ../../plugins/mymodbus/ressources
-~/.pyenv/bin/pyenv local 3.9.5
-~/.pyenv/bin/pyenv exec pip install --upgrade pip setuptools
-~/.pyenv/bin/pyenv exec pip install requests serial pyudev pymodbus
+~www-data/.pyenv/bin/pyenv local 3.9.5
+~www-data/.pyenv/bin/pyenv exec pip install --upgrade pip setuptools
+~www-data/.pyenv/bin/pyenv exec pip install requests serial pyudev pymodbus
 echo 100 > ${PROGRESS_FILE}
 rm ${PROGRESS_FILE}
 echo "********************************************************"
