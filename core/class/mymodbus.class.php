@@ -120,7 +120,7 @@ class mymodbus extends eqLogic {
         $mymodbus_path = realpath(dirname(__FILE__) . '/../../ressources/mymodbusd');
         $pyenv_path = realpath(dirname(__FILE__) . '/../../ressources/_pyenv');
         $cmd = 'export PYENV_ROOT="' . $pyenv_path . '"; command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"; eval "$(pyenv init -)"; ';
-        $cmd .= 'cd ' . $mymodbus_path . '; '; // pyenv shell 3.9.16; ';
+        $cmd .= 'cd ' . $mymodbus_path . '; ';
         $cmd .= 'nice -n 19 python3 mymodbusd.py' . $request;
         log::add('mymodbus', 'info', 'Lancement du démon mymodbus : ' . $cmd);       
         $result = exec($cmd . ' >> ' . log::getPathToLog('mymodbus') . ' 2>&1 &');
