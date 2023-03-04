@@ -4,7 +4,7 @@ if [ ! -z $1 ]; then
 	PROGRESS_FILE=$1
 fi
 # Version of python into pyenv to install
-PYENV_VERSION="3.9.16"
+PYENV_VERSION="3.9.15"
 
 touch "$PROGRESS_FILE"
 echo 0 > "$PROGRESS_FILE"
@@ -13,18 +13,18 @@ echo "*               Installation de pyenv                  *"
 echo "********************************************************"
 echo $(date)
 export PYENV_ROOT="$(realpath ../../plugins/mymodbus/ressources)/_pyenv"
-if [ ! -d "$PYENV_ROOT"]; then
+if [ ! -d "$PYENV_ROOT" ]; then
     sudo -u www-data curl https://pyenv.run | bash
     echo 20 > "$PROGRESS_FILE"
     echo "****  Configuration de pyenv..."
     sudo -u www-data cat >> ~www-data/.bashrc<< EOF
-    export PYENV_ROOT="$PYENV_ROOT"
-    command -v pyenv >/dev/null || export PATH="\$PYENV_ROOT/bin:\$PATH"
-    eval "\$(pyenv init -)"
+export PYENV_ROOT="$PYENV_ROOT"
+command -v pyenv >/dev/null || export PATH="\$PYENV_ROOT/bin:\$PATH"
+eval "\$(pyenv init -)"
 EOF
 fi
 echo 30 > "$PROGRESS_FILE"
-if [ ! -d "$PYENV_ROOT/versions/$PYENV_VERSION"]; then
+if [ ! -d "$PYENV_ROOT/versions/$PYENV_VERSION" ]; then
     echo "********************************************************"
     echo "*    Installation de python $PYENV_VERSION (dure longtemps)    *"
     echo "********************************************************"
