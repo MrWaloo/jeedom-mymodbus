@@ -30,10 +30,10 @@ if (!isConnect('admin')) {
 <div class="form-group">
     <label class="col-sm-4 control-label">{{Interface}}</label>
     <div class="col-sm-6">
-        <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqSerialInterface">
+        <select class="eqLogicAttr form-control" data-toggle="tooltip" data-placement="top" data-html="true" data-l1key="configuration" data-l2key="eqSerialInterface">
             <?php
             foreach (mymodbus::getTtyInterfaces() as $key => $value) {
-                echo '<option value="' . $value . '">' . $key . '</option>';
+                echo '<option title="' . $value . '" value="' . $value . '">' . $key . '</option>';
             }
             ?>
         </select>

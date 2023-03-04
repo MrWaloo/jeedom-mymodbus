@@ -177,11 +177,19 @@ class mymodbus extends eqLogic {
     // tty interfaces
     public static function getTtyInterfaces() {
         $interfaces = jeedom::getUsbMapping('', True);
-        $interfaces['/dev/ttyS'] = '/dev/ttyS';
         for ($i = 0; $i<10; $i++) {
             $tty = '/dev/ttyS' . strval($i);
             if (file_exists($tty))
                 $interfaces[$tty] = $tty;
+            else
+                break;
+        }
+        for ($i = 0; $i<10; $i++) {
+            $tty = '/dev/ttyUSB' . strval($i);
+            if (file_exists($tty))
+                $interfaces[$tty] = $tty;
+            else
+                break;
         }
         return $interfaces;
     }
