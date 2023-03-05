@@ -42,10 +42,6 @@ $('.bt_showExpressionTest').off('click').on('click', function () {
     $('#md_modal').dialog({title: "{{Testeur d'expression}}"});
     $("#md_modal").load('index.php?v=d&modal=expression.test').dialog('open');
 });
-$('.bt_showNoteManagement').off('click').on('click', function () {
-    $('#md_modal').dialog({title: "{{Notes}}"});
-    $("#md_modal").load('index.php?v=d&modal=note.manager').dialog('open');
-});
 //$('#bt_templatesmymodbus').on('click', function () {
 //    $('#md_modal').dialog({title: "{{Gestion des templates d'équipements mymobus}}"});
 //    $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=templates').dialog('open');
@@ -185,6 +181,83 @@ function addCmdToTable(_cmd) {
         var _cmd = {configuration: {}};
     if (!isset(_cmd.configuration))
         _cmd.configuration = {};
+    // Conversion from the old version of MyModbus
+    // ****************************************** info
+    if (init(_cmd.type) == 'info') {
+        if (isset(_cmd.configuration.location) && !isset(_cmd.configuration.cmdAddress))  {
+            _cmd.configuration.cmdAddress = _cmd.configuration.location;
+            delete _cmd.configuration.location;
+            modifyWithoutSave = true;
+        }
+        if (isset(_cmd.configuration.request) && !isset(_cmd.configuration.cmdOption))  {
+            _cmd.configuration.cmdoption = '#value# ' + _cmd.configuration.request;
+            delete _cmd.configuration.request;
+            modifyWithoutSave = true;
+        }
+        if (isset(_cmd.configuration.type) && init(_cmd.configuration.type) != '' &&
+                !isset(_cmd.configuration.cmdFctModbus) && !isset(_cmd.configuration.cmdFormat)) {
+            if (init(_cmd.configuration.type) == 'coils') {
+                _cmd.configuration.cmdFctModbus = '1';
+                _cmd.configuration.cmdFormat = 'bit';
+            } else if (init(_cmd.configuration.type) == 'discrete_inputs') {
+                _cmd.configuration.cmdFctModbus = '2';
+                _cmd.configuration.cmdFormat = 'bit';
+            } else if (init(_cmd.configuration.type) == 'holding_registers') {
+                _cmd.configuration.cmdFctModbus = '3';
+                _cmd.configuration.cmdFormat = 'uint16';
+            } else if (init(_cmd.configuration.type) == 'input_registers') {
+                _cmd.configuration.cmdFctModbus = '4';
+                _cmd.configuration.cmdFormat = 'uint16';
+            } else if (init(_cmd.configuration.type) == 'sign') {
+                _cmd.configuration.cmdFctModbus = '3';
+                _cmd.configuration.cmdFormat = 'int16';
+            } else if (init(_cmd.configuration.type) == 'virg') {
+                _cmd.configuration.cmdFctModbus = '3';
+                _cmd.configuration.cmdFormat = 'float32';
+            } else if (init(_cmd.configuration.type) == 'swapi32') {
+                _cmd.configuration.cmdFctModbus = '4';
+                _cmd.configuration.cmdFormat = 'float32';
+            }
+            
+            delete _cmd.configuration.type;
+        }
+        // was never used
+        delete _cmd.configuration.datatype;
+        modifyWithoutSave = true;
+        
+    // ****************************************** action
+    } else if (init(_cmd.type) == 'action') {
+        if (isset(_cmd.configuration.location) && !isset(_cmd.configuration.cmdAddress))  {
+            _cmd.configuration.cmdAddress = _cmd.configuration.location;
+            delete _cmd.configuration.location;
+            modifyWithoutSave = true;
+        }
+        if (isset(_cmd.configuration.request) && !isset(_cmd.configuration.cmdWriteValue))  {
+            _cmd.configuration.cmdWriteValue = _cmd.configuration.request;
+            delete _cmd.configuration.request;
+            modifyWithoutSave = true;
+        }
+        if (isset(_cmd.configuration.type) && init(_cmd.configuration.type) != '' &&
+                !isset(_cmd.configuration.cmdFctModbus) && !isset(_cmd.configuration.cmdFormat)) {
+            if (init(_cmd.configuration.type) == 'coils') {
+                _cmd.configuration.cmdFctModbus = '5';
+                _cmd.configuration.cmdFormat = 'bit';
+            } else if (init(_cmd.configuration.type) == 'holding_registers') {
+                _cmd.configuration.cmdFctModbus = '6';
+                _cmd.configuration.cmdFormat = 'uint16';
+            } else if (init(_cmd.configuration.type) == 'Write_Multiple_Holding') {
+                _cmd.configuration.cmdFctModbus = '16';
+                _cmd.configuration.cmdFormat = 'uint16';
+            }
+            
+            delete _cmd.configuration.type;
+        }
+        // was never used
+        delete _cmd.configuration.datatype;
+        modifyWithoutSave = true;
+        
+    }
+    
     // Default value for new added commands
     if (!isset(_cmd.id)) {
         _cmd.configuration.cmdSlave = '0';
