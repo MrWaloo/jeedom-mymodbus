@@ -330,28 +330,55 @@ class mymodbus extends eqLogic {
             // ne pas exporter la configuration si l'équipement n'est pas activé
             if (!$eqMymodbus->getIsEnable())
                 continue;
-            $eqConfig = $eqMymodbus->getConfiguration();
-            $eqConfig['id'] = $eqMymodbus->getId();
-            $eqConfig['name'] = $eqMymodbus->getName();
-            $eqConfig['cmds'] = array();
-            foreach ($eqMymodbus->getCmd() as $cmdMymodbus) { // boucle sur les commandes
-                $cmdConfig = array();
-                $cmdConfig['id'] = $cmdMymodbus->getId();
-                $cmdConfig['name'] = $cmdMymodbus->getName();
-                $cmdConfig['type'] = $cmdMymodbus->getType();
-                $cmdConfig['cmdSlave'] = $cmdMymodbus->getConfiguration('cmdSlave');
-                $cmdConfig['cmdFctModbus'] = $cmdMymodbus->getConfiguration('cmdFctModbus');
-                $cmdConfig['cmdFormat'] = $cmdMymodbus->getConfiguration('cmdFormat');
-                $cmdConfig['cmdAddress'] = $cmdMymodbus->getConfiguration('cmdAddress');
-                $cmdConfig['cmdFrequency'] = $cmdMymodbus->getConfiguration('cmdFrequency');
-                $cmdConfig['cmdInvertBytes'] = $cmdMymodbus->getConfiguration('cmdInvertBytes');
-                $cmdConfig['cmdInvertWords'] = $cmdMymodbus->getConfiguration('cmdInvertWords');
-                $eqConfig['cmds'][] = $cmdConfig;
-            }
-            $completeConfig[] = $eqConfig;
+            
+            $completeConfig[] = $eqMymodbus->getEqConfiguration();
         }
         log::add('mymodbus', 'debug', 'eqLogic mymodbus getCompleteConfiguration: ' . json_encode($completeConfig));
         return $completeConfig;
+    }
+    
+    // Retourne la configuration de l'équipement et de ses commandes
+    public function getEqConfiguration() {
+        $eqConfig = array();
+        $eqConfig['id'] = $this->getId();
+        $eqConfig['name'] = $this->getName();
+        $eqConfig['eqProtocol'] = $this->getConfiguration('eqProtocol');
+        $eqConfig['eqKeepopen'] = $this->getConfiguration('eqKeepopen');
+        $eqConfig['eqPolling'] = $this->getConfiguration('eqPolling');
+        if ($eqConfig['eqProtocol'] == 'serial') {
+            $eqConfig['eqSerialInterface'] = $this->getConfiguration('eqSerialInterface');
+            $eqConfig['eqSerialMethod'] = $this->getConfiguration('eqSerialMethod');
+            $eqConfig['eqSerialBaudrate'] = $this->getConfiguration('eqSerialBaudrate');
+            $eqConfig['eqSerialBytesize'] = $this->getConfiguration('eqSerialBytesize');
+            $eqConfig['eqSerialParity'] = $this->getConfiguration('eqSerialParity');
+            $eqConfig['eqSerialStopbits'] = $this->getConfiguration('eqSerialStopbits');
+            
+        } elseif ($eqConfig['eqProtocol'] == 'tcp') {
+            $eqConfig['eqTcpAddr'] = $this->getConfiguration('eqTcpAddr');
+            $eqConfig['eqTcpPort'] = $this->getConfiguration('eqTcpPort');
+            $eqConfig['eqTcpRtu'] = $this->getConfiguration('eqTcpRtu');
+            
+        } elseif  ($eqConfig['eqProtocol'] == 'udp') {
+            $eqConfig['eqUdpAddr'] = $this->getConfiguration('eqUdpAddr');
+            $eqConfig['eqUdpPort'] = $this->getConfiguration('eqUdpPort');
+            
+        }
+        $eqConfig['cmds'] = array();
+        foreach ($this->getCmd() as $cmdMymodbus) { // boucle sur les commandes
+            $cmdConfig = array();
+            $cmdConfig['id'] = $cmdMymodbus->getId();
+            $cmdConfig['name'] = $cmdMymodbus->getName();
+            $cmdConfig['type'] = $cmdMymodbus->getType();
+            $cmdConfig['cmdSlave'] = $cmdMymodbus->getConfiguration('cmdSlave');
+            $cmdConfig['cmdFctModbus'] = $cmdMymodbus->getConfiguration('cmdFctModbus');
+            $cmdConfig['cmdFormat'] = $cmdMymodbus->getConfiguration('cmdFormat');
+            $cmdConfig['cmdAddress'] = $cmdMymodbus->getConfiguration('cmdAddress');
+            $cmdConfig['cmdFrequency'] = $cmdMymodbus->getConfiguration('cmdFrequency');
+            $cmdConfig['cmdInvertBytes'] = $cmdMymodbus->getConfiguration('cmdInvertBytes');
+            $cmdConfig['cmdInvertWords'] = $cmdMymodbus->getConfiguration('cmdInvertWords');
+            $eqConfig['cmds'][] = $cmdConfig;
+        }
+        return $eqConfig;
     }
     
     public static function getDeamonState() {

@@ -19,7 +19,7 @@ import sys
 
 # Compatibility (pymodbus requires python >= 3.8)
 if (sys.version_info < (3, 8)):
-    print("Please install python V3.8 or newer and check the MyModbus dependencies", file=sys.stderr)
+    print("Please check the MyModbus dependencies or install python V3.8 or newer", file=sys.stderr)
     sys.exit(1)
 
 # -----------------------------------------------------------------------------

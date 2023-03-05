@@ -4,7 +4,7 @@ if [ ! -z $1 ]; then
 	PROGRESS_FILE=$1
 fi
 # Version of python into pyenv to install
-PYENV_VERSION="3.9.15"
+PYENV_VERSION="3.9.16"
 
 touch "$PROGRESS_FILE"
 echo 0 > "$PROGRESS_FILE"
@@ -40,7 +40,7 @@ chown -R www-data:www-data "$PYENV_ROOT"
 sudo -E -u www-data "$PYENV_ROOT"/bin/pyenv local "$PYENV_VERSION"
 sudo -E -u www-data "$PYENV_ROOT"/bin/pyenv exec pip install --upgrade pip setuptools
 chown -R www-data:www-data "$PYENV_ROOT"
-sudo -E -u www-data "$PYENV_ROOT"/bin/pyenv exec pip install --upgrade requests serial pyudev pymodbus
+sudo -E -u www-data "$PYENV_ROOT"/bin/pyenv exec pip install --upgrade requests pyserial pyudev pymodbus
 chown -R www-data:www-data "$PYENV_ROOT"
 echo 100 > "$PROGRESS_FILE"
 rm "$PROGRESS_FILE"
