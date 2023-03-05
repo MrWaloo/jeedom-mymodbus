@@ -23,12 +23,10 @@ import re
 from queue import (Empty, Full)
 
 from pymodbus.client import (AsyncModbusTcpClient, AsyncModbusUdpClient, AsyncModbusSerialClient)
-
 from pymodbus.framer.socket_framer import ModbusSocketFramer
 from pymodbus.framer.rtu_framer import ModbusRtuFramer
 from pymodbus.framer.ascii_framer import ModbusAsciiFramer
 from pymodbus.framer.binary_framer import ModbusBinaryFramer
-
 from pymodbus.payload import (BinaryPayloadDecoder, BinaryPayloadBuilder)
 from pymodbus.pdu import ExceptionResponse
 
@@ -63,8 +61,9 @@ class PyModbusClient():
         # Jeedom equipment id
         self.id = config['id']
         self.polling_config = float(config['eqPolling'])
-        self.polling = float(config['eqPolling'])
+        self.polling = float(config['eqPolling']) * 1.0
         self.keepopen = config['eqKeepopen'] == '1'
+        self.eqProtocol = config['eqProtocol']
         
         self.framer, self.client = PyModbusClient.get_framer_and_client(config)
         
@@ -318,7 +317,8 @@ class PyModbusClient():
                 else:
                     logging.error('PyModbusClient: Something went wrong while reading ' + request['name'] + ' (command id ' + cmd_id + ')')
                 
-                await asyncio.sleep(0.05)
+                if self.eqProtocol == 'serial':
+                    await asyncio.sleep(0.05)
                 
             #    # Send results to jeedom if len(json) > 400 (arbitrary length)
             #    if len(json.dumps(read_results)) > 400:
@@ -425,6 +425,9 @@ class PyModbusClient():
                             if not request_ok:
                                 logging.error('PyModbusClient: Something went wrong while writing ' + request['name'] + ' (command id ' + cmd_id + ')')
                     
+                if self.eqProtocol == 'serial':
+                    await asyncio.sleep(0.05)
+                    
             # After all the action requests
             # Keep the connection open or not...
             if not self.keepopen:
@@ -447,6 +450,7 @@ class PyModbusClient():
             await self.client.close()
         except:
             pass
+        self.shutdown()
         
     def signal_handler(self, signum=None, frame=None):
         self.shutdown()
