@@ -1,79 +1,91 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# TCP/IP
-from pyModbusTCP.client import ModbusClient
+"""
+Code : Write Mymobus
+date: 27/02/2021
+Auteur: @Bebel27
+Version: b2.0
+"""
+
+from pymodbus.compat import IS_PYTHON3, PYTHON_VERSION
+if IS_PYTHON3 and PYTHON_VERSION >= (3, 4):
+    print("Version de python ok")
+    
+else:
+    sys.stderr("merci d'installer Python 3 ou de relancer les dépendances Mymodbus")
+    sys.exit(1)
 
 import time
 import sys
-import getopt
+import argparse
 import os
 import subprocess
 
-try:
-    opts, args = getopt.getopt(sys.argv[1:], "h:p:P", ["help","unit_id=","wsc=","wsr=","value="])
-except getopt.GetoptError, err:
-    print str(err)
-    usage()
-    sys.exit()
+parser = argparse.ArgumentParser(description='Mymodbus Write')
+#-----------Générale---------------------------------------------------------------------
+parser.add_argument("--verbosity", help="mode debug")
+parser.add_argument("--protocol", type=str ,help="Choix protocole Modbus" ,required=True)
+parser.add_argument("--host", type=str ,help="Choix de l'adresse host")
+parser.add_argument("--port", type=str ,help="Choix du port", required=True)
+parser.add_argument("--unid", type=int ,help="choix Unit Id", required=True)
+parser.add_argument("--eqid", type=int ,help="Numero equipement Jeedom")
+#------------RTU-----------------------------------------------------------
+parser.add_argument("--baudrate", type=int ,help="vitesse de com en bauds")
+parser.add_argument("--stopbits", type=int ,help="bit de stop 1 ou 2")
+parser.add_argument("--parity", type=int ,help="parity oui ou non ")
+parser.add_argument("--bytesize", type=int ,help="Taile du mot 7 ou 8 ")
+#-----------Fonctions---------------------------------------------
+parser.add_argument("--wsc", type=int ,help="Write single Coil")
+parser.add_argument("--whr", type=int, help="Write holding register")
+parser.add_argument("--wmhr", type=int ,help="Write multiple holdings registers")
+parser.add_argument("--value", type=int ,help="value")
+#------------------------------------------------------------------
+# Options demandées
+#---------------------
+#parser.add_argument("--virg", type=str ,help="Holding à virgules")
+#parser.add_argument("--swapi32", type=str ,help="inverse 32bit")
+#parser.add_argument("--sign", type=str ,help="valeurs signées")
 
-for o, a in opts:
-    if o == "-h":
-        host = str(a)
-    elif o == "-p":
-        port = a
-    elif o == "--unit_id":
-        unit_id = int(a)
-    elif o in ("-h", "--help"):
-        usage()
-        sys.exit()
-    elif o == "--wsc":
-        write_single_coil = int(a)
-    elif o == "--wsr":
-        write_single_register = int(a)
-    elif o == "--value":
-        value = int(a)
-    else:
-        usage()
-        sys.exit()    
+args = parser.parse_args()
 
-#SERVER_HOST = "localhost"
-#SERVER_PORT = 502
+#if args.verbosity:
+#    print("verbosity turned on")
+    
+if args.protocol == 'rtu':
+    from pymodbus.client.sync import ModbusSerialClient as ModbusClient
+    #client = ModbusClient(method='rtu', port=args.port, timeout=1,baudrate=38400)
+    client = ModbusClient(method='rtu', port=args.port, timeout=1,stopbits = 1, bytesize = 8, parity = 'N', baudrate= args.baudrate)
+    
+if args.protocol == 'tcpip':
+    from pymodbus.client.sync import ModbusTcpClient as ModbusClient
+    client = ModbusClient(host=args.host, port=args.port,retries=3, retry_on_empty=True)
+    
+if args.protocol == 'rtuovertcp':
+    from pymodbus.client.sync import ModbusTcpClient as ModbusClient
+    from pymodbus.transaction import ModbusRtuFramer as ModbusFramer
+    client = ModbusClient(host=args.host, port=args.port, framer=ModbusFramer)
 
-c = ModbusClient()
-#c = ModbusClient(host=host, port=port, unit_id=unit_id, debug=False)
-# uncomment this line to see debug message
-#c.debug(True)
 
-# define modbus server host, port , unit_id
-c.host(host)
-c.port(port)
-c.unit_id(unit_id)
-#if 'unit_id' in globals() :
-#	slave_id = unit_id[0]
-if 'write_single_coil' in globals() and value == 1:
-    val = True
-elif 'write_single_coil' in globals() and value == 0:
-    val = False
+    
+#if not client.connect():
+#    print("unable to connect to "+host+":"+str(port))
 
-if not c.open():
-    print("unable to connect to "+host+":"+str(port))
+client.connect()
 
-if c.is_open():
-    print("")
-    print("write bits")
-    print("----------")
-    print("")
-    if 'write_single_coil' in globals() :
-        is_ok = c.write_single_coil(write_single_coil, val)
-        if is_ok:
-            print("bit #" + str(write_single_coil) + ": write to " + str(val))
-        else:
-            print("bit #" + str(write_single_coil) + ": unable to write " + str(val))
-    if 'write_single_register' in globals() :
-        is_ok = c.write_single_register(write_single_register, value)
-        if is_ok:
-            print("bit #" + str(write_single_register) + ": write to " + str(value))
-        else:
-            print("bit #" + str(write_single_register) + ": unable to write " + str(value))
-    c.close()
+if (args.wsc) != None :
+    if (args.value) == 1:
+        val = True
+    if (args.value) == 0 :
+        val = False
+    rq = client.write_coil(args.wsc, val, unit=args.unid)
+    assert(not rq.isError())     # test that we are not an error
+        
+if (args.whr) != None :
+    rq = client.write_register(args.whr, args.value, unit=args.unid)
+    assert(not rq.isError())     # test that we are not an error
+        
+if (args.wmhr) != None :
+    rq = client.write_registers(args.wmhr, args.value, unit=args.unid)
+        
+client.close()

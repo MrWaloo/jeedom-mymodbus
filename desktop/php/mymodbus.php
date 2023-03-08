@@ -8,7 +8,7 @@ $eqLogics = eqLogic::byType($plugin->getId());
 
 $deamonRunning = mymodbus::deamon_info();
     if ($deamonRunning['state'] != 'ok') {
-        echo '<div class="alert alert-danger">ATTENTION LE DEMON DE MYMODBUS NE TOURNE PAS , Avant de le lancer il faut toujours toujours avoir un équipement MyModbus de céer ! </div>';
+        echo '<div class="alert alert-danger">ATTENTION LE DEMON MYMODBUS NE TOURNE PAS , Avant de le lancer il faut toujours avoir un équipement MyModbus de céer ! </div>';
     }
 	
 ?>
@@ -18,24 +18,34 @@ $deamonRunning = mymodbus::deamon_info();
   <legend><i class="fas fa-cog"></i>  {{Gestion}}</legend>
   <div class="eqLogicThumbnailContainer">
       <div class="cursor eqLogicAction logoPrimary" data-action="add">
-        <i class="fas fa-plus-circle"style="font-size : 6em;color:#0000c8;"></i>
+        <i class="fas fa-plus-circle"style="font-size : 6em;color:#0F9DE8;"></i>
         <br>
         <span>{{Ajouter}}</span>
     </div>
       <div class="cursor eqLogicAction logoSecondary" data-action="gotoPluginConf">
-      <i class="fas fa-wrench"style="font-size : 6em;color:#0000c8;"></i>
+      <i class="fas fa-wrench"style="font-size : 6em;color:#0F9DE8;"></i>
     <br>
     <span>{{Configuration}}</span>
   </div>
   <div class="cursor eqLogicAction logoSecondary" data-action="bt_docSpecific" >
-		<i class="fas fa-book"style="font-size : 6em;color:#0000c8;"></i>
+		<i class="fas fa-book"style="font-size : 6em;color:#0F9DE8;"></i>
  		<br>
 		<span>{{Documentation}}</span>
 		</div>
+  <div class="cursor pluginAction" data-action="openLink" data-location="https://community.jeedom.com/t/plugin-<?=$plugin->getId()?>/9395" >
+         <i class="fas fa-comments" style="font-size : 6em;color:#0F9DE8;"></i>
+         <br>
+         <span>{{Commmunity}}</span>
+        </div>
   <div class="cursor logoSecondary" id="bt_healthmymodbus">
-				<i class="fas fa-medkit"style="font-size : 6em;color:#0000c8;"></i>
+				<i class="fas fa-medkit"style="font-size : 6em;color:#0F9DE8;"></i>
 				<br/>
 				<span>{{Santé}}</span>
+			</div>
+	<div class="cursor logoSecondary" id="bt_templatesmymodbus">
+				<i class="fas fa-cubes"style="font-size : 6em;color:#0F9DE8;"></i>
+				<br/>
+				<span>{{Templates}}</span>
 			</div>
   </div>
   <legend><i class="fas fa-table"></i> {{Mes équipements}}</legend>
@@ -46,8 +56,8 @@ foreach ($eqLogics as $eqLogic) {
 	$opacity = ($eqLogic->getIsEnable()) ? '' : 'disableCard';
 	echo '<div class="eqLogicDisplayCard cursor '.$opacity.'" data-eqLogic_id="' . $eqLogic->getId() . '">';
 	$alternateImg = $eqLogic->getConfiguration('protocol');
-	if (file_exists(dirname(__FILE__) . '/../../ressources/images/' . $alternateImg ._icon . '.png')) {
-		echo '<img class="lazy" src="plugins/mymodbus/ressources/images/' . $alternateImg ._icon . '.png"/>';
+	if (file_exists(dirname(__FILE__) . '/../../desktop/images/' . $alternateImg .'_icon.png')) {
+		echo '<img class="lazy" src="plugins/mymodbus/desktop/images/' . $alternateImg .'_icon.png"/>';
 	} else {	
 	echo '<img src="' . $plugin->getPathImgIcon() . '"/>';
 	}
@@ -62,7 +72,7 @@ foreach ($eqLogics as $eqLogic) {
 <div class="col-xs-12 eqLogic" style="display: none;">
 		<div class="input-group pull-right" style="display:inline-flex">
 			<span class="input-group-btn">
-				<a class="btn btn-default btn-sm eqLogicAction roundedLeft" data-action="configure"><i class="fa fa-cogs"></i> {{Configuration avancée}}</a><a class="btn btn-default btn-sm eqLogicAction" data-action="copy"><i class="fas fa-copy"></i> {{Dupliquer}}</a><a class="btn btn-sm btn-success eqLogicAction" data-action="save"><i class="fas fa-check-circle"></i> {{Sauvegarder}}</a><a class="btn btn-danger btn-sm eqLogicAction roundedRight" data-action="remove"><i class="fas fa-minus-circle"></i> {{Supprimer}}</a>
+				<a class="btn btn-primary btn-sm bt_showNoteManagement roundedLeft"><i class="fas fa-file"></i> {{Notes}}</a><a class="btn btn-primary btn-sm bt_showExpressionTest roundedLeft"><i class="fas fa-check"></i> {{Expression}}</a><a <a class="btn btn-default btn-sm eqLogicAction" data-action="configure"><i class="fas fa-cogs"></i> {{Configuration avancée}}</a><a class="btn btn-default btn-sm eqLogicAction" data-action="copy"><i class="fas fa-copy"></i> {{Dupliquer}}</a><a class="btn btn-sm btn-success eqLogicAction" data-action="save"><i class="fas fa-check-circle"></i> {{Sauvegarder}}</a><a class="btn btn-danger btn-sm eqLogicAction roundedRight" data-action="remove"><i class="fas fa-minus-circle"></i> {{Supprimer}}</a>
 			</span>
 		</div>
   <ul class="nav nav-tabs" role="tablist">
@@ -117,19 +127,20 @@ foreach (jeeObject::all() as $object) {
 		<legend><i class="fa fa-list-alt"></i> {{Configuration :}}</legend>
 		<!--   ***********************************  -->
 	</div>
-	   <div class="form-group">
+	<div class="form-group">
          <label class="col-sm-3 control-label">{{Mode de connection}}</label>
             <div class="col-sm-3">
                 <select id="mode" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="protocol">
 					<option disabled selected value>-- {{Choisir un mode de connection}} --</option>
 					<?php
-foreach (mymodbus::supportedProtocol() as $protocol) {
-    echo '<option value="' . $protocol . '">' . $protocol . '</option>';
-  }
-?>
+					foreach (mymodbus::supportedProtocol() as $protocol) {
+					echo '<option value="' . $protocol . '">' . $protocol . '</option>';
+					}
+					?>
 				</select>
-               </div>
-           </div>
+            </div>
+    </div>
+
        </fieldset>
 <div>
       
@@ -159,7 +170,6 @@ foreach (mymodbus::supportedProtocol() as $protocol) {
     </tbody>
 </table>
 
-</div>
 </div>
 
 </div>

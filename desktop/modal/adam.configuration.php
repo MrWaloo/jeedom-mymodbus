@@ -21,7 +21,7 @@ if (!isConnect('admin')) {
 ?>
 <div class="form-group">
 	<div class="col-sm-3 form-group">
-		<img class="img_device" src="plugins/mymodbus/desktop/images/wago_icon.png" style="margin-left:20px;height : 100px;" />
+		<img class="img_device" src="plugins/mymodbus/desktop/images/adam_icon.png" style="margin-left:20px;height : 100px;" />
 	</div>
 </div>
 
@@ -49,4 +49,13 @@ if (!isConnect('admin')) {
 		<div class="col-sm-9">
 			<label class="checkbox-inline"><input type="checkbox" id="keepopen" class="eqLogicAttr" data-l1key="configuration" data-l2key="keepopen"/>{{Activer}}</label>
 	    </div>
+</div>
+<div class="form-group">
+	<label class="col-sm-3 control-label">{{Création auto des commandes}}</label>
+		<div class="col-sm-9">
+			<label class="checkbox-inline"><input type="checkbox" id="mheure" class="eqLogicAttr" data-l1key="configuration" data-l2key="auto_cmd"/>{{Activer}}</label>
+	    </div>
+</div>
+<div class="alert alert-info">{{Information concernant la création auto des commandes :<br>
+					- commandes testés pour un Adam modèle 6050 <br>}}
 </div>

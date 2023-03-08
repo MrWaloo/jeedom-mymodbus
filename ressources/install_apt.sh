@@ -1,6 +1,6 @@
 echo "++++++++++++++++++++++++++++++++++++++"
 echo "+  MyModbus Install dependancies"
-echo "+  v1.3"
+echo "+  v1.5"
 echo "+  By Bebel27"
 echo "++++++++++++++++++++++++++++++++++++++"
 
@@ -24,15 +24,17 @@ echo "-"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "Installation dependance  python-pip"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-sudo apt-get -y install python3-pip
+#sudo apt-get -y install python-pip
+sudo apt-get -y install python3-pip python3-setuptools
 
 echo 40 > ${PROGRESS_FILE}
 echo "-"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-echo "Installation dependance  pypModbusTCP"
+echo "Installation dependance  pypModbus"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-sudo pip install pyModbus
-sudo pip install pyModbusTCP
+sudo pip3 install pyModbus==2.5.3
+#sudo pip3 install pyModbus==2.4.0
+#sudo pip3 install pyserial==3.3
 echo 70 > ${PROGRESS_FILE}
 echo "-"
 #echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
@@ -53,31 +55,20 @@ sudo apt-get -y install git
 echo 90 > ${PROGRESS_FILE}
 echo "-"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-echo "Clonage de mbtget"
+echo "Clonage de rien"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-#
-#    git clone https://github.com/sourceperl/mbtget.git
-#    cd mbtget
-#    perl Makefile.PL
-#    make
-#    sudo make install
-
-echo 100 > ${PROGRESS_FILE}
 echo "-"
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+echo "Controle version..."
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+echo " Version de python"
+sudo python3 --version
+echo " Version de PIP "
+sudo pip3 --version
+echo 100 > ${PROGRESS_FILE}
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "Fin de l'installation des dependances MyModbus..."
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-echo " Version de python"
-sudo python --version
-echo " Version de PIP "
-sudo pip --version
-echo "-- test install --"
-if [ ! -d "/usr/local/lib/python2.7/dist-packages/pymodbus" ];
-then
-echo "pymodbus non installé , lancement installation en local";
-sudo unzip /var/www/html/plugins/mymodbus/ressources/Biblio.zip -d /usr/local/lib/python2.7/dist-packages/
-else
-echo "OK"
-fi
+
 sudo chmod -R 755 ${PROGRESS_FILE}
 rm ${PROGRESS_FILE}
