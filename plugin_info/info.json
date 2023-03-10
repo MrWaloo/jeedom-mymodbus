@@ -1,19 +1,20 @@
 {
 	"id" : "mymodbus",
 	"name" : "MyModbus",
-	"description" : "Plugin pour la gestion de matériel qui ont le protocol ModBus",
+	"description" : {
+		"fr_FR": "Lecture et écriture en Modbus"
+	},
 	"licence" : "AGPL",
 	"author" : "Bebel27",
-	"require" : "3.3",
+	"require" : "4.2",
 	"category" : "automation protocol",
-	"hasDependency" : 1,
-	"hasOwnDeamon" : 1,
-	"maxDependancyInstallTime" : 5,
+	"hasDependency" : true,
+	"hasOwnDeamon" : true,
+	"maxDependancyInstallTime" : 45,
 	"changelog" : "https://bebel27a.github.io/jeedom-mymobdus.github.io/#language#/changelog",
 	"documentation" : "https://bebel27a.github.io/jeedom-mymobdus.github.io/#language#/",
 	"link" : {
-		"forum":"https://community.jeedom.com/t/plugin-mymodbus/9395",
-		"video" : "Lien vers une video"
+		"forum":"https://community.jeedom.com/t/plugin-mymodbus/9395"
 	},
 	"language" : ["fr_FR"],
 	"compatibility" : ["miniplus","smart","rpi","docker","diy","mobile"]

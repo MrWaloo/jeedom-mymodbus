@@ -18,46 +18,12 @@
 
 require_once dirname(__FILE__) . '/../../../core/php/core.inc.php';
 
-function mymodbus_install() {
-	
-    $cron = cron::byClassAndFunction('mymodbus', 'cronDaily');
-    if (!is_object($cron)) {
-        $cron = new cron();
-        $cron->setClass('mymodbus');
-        $cron->setFunction('cronDaily');
-        $cron->setEnable(1);
-        $cron->setDeamon(0);
-        $cron->setSchedule('30 0 * * *');
-        $cron->save();
-    }
-}
-    
-
-
-function mymodbus_update() {
-	
-    $cron = cron::byClassAndFunction('mymodbus', 'cronDaily');
-    if (!is_object($cron)) {
-        $cron = new cron();
-        $cron->setClass('mymodbus');
-        $cron->setFunction('cronDaily');
-        $cron->setEnable(1);
-        $cron->setDeamon(0);
-        $cron->setSchedule('30 0 * * *');
-        $cron->save();
-    }
-    $cron->stop();
-}
-    
-
-
-function mymodbus_remove() {
-	
-	$cron = cron::byClassAndFunction('mymodbus', 'cronDaily');
-    if (is_object($cron)) {
-        $cron->remove();
-    }
-    
-}
+/*
+    function mymodbus_install() {}
+        
+    function mymodbus_update() {}
+        
+    function mymodbus_remove() {}
+ */
 
 ?>
