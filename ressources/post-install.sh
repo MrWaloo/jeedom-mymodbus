@@ -9,6 +9,82 @@ PYENV_VERSION="3.9.16"
 touch "$PROGRESS_FILE"
 echo 0 > "$PROGRESS_FILE"
 echo "********************************************************"
+echo "*            Nettoyage de l'ancienne version           *"
+echo "********************************************************"
+if [ -f ../../plugins/mymodbus/core/php/mymodbus.inc.php ]; then
+    rm ../../plugins/mymodbus/core/php/mymodbus.inc.php
+fi
+if [ -f ../../plugins/mymodbus/desktop/images/adam_icon.png ]; then
+    rm ../../plugins/mymodbus/desktop/images/adam_icon.png
+fi
+if [ -f ../../plugins/mymodbus/desktop/images/crouzet_m3_icon.png ]; then
+    rm ../../plugins/mymodbus/desktop/images/crouzet_m3_icon.png
+fi
+if [ -f ../../plugins/mymodbus/desktop/images/logo_icon.png ]; then
+    rm ../../plugins/mymodbus/desktop/images/logo_icon.png
+fi
+if [ -f ../../plugins/mymodbus/desktop/images/rtu_icon.png ]; then
+    rm ../../plugins/mymodbus/desktop/images/rtu_icon.png
+fi
+if [ -f ../../plugins/mymodbus/desktop/images/rtuovertcp_icon.png ]; then
+    rm ../../plugins/mymodbus/desktop/images/rtuovertcp_icon.png
+fi
+if [ -f ../../plugins/mymodbus/desktop/images/tcpip_icon.png ]; then
+    rm ../../plugins/mymodbus/desktop/images/tcpip_icon.png
+fi
+if [ -f ../../plugins/mymodbus/desktop/images/wago_icon.png ]; then
+    rm ../../plugins/mymodbus/desktop/images/wago_icon.png
+fi
+if [ -f ../../plugins/mymodbus/desktop/modal/adam.configuration.php ]; then
+    rm ../../plugins/mymodbus/desktop/modal/adam.configuration.php
+fi
+if [ -f ../../plugins/mymodbus/desktop/modal/crouzet_m3.configuration.php ]; then
+    rm ../../plugins/mymodbus/desktop/modal/crouzet_m3.configuration.php
+fi
+if [ -f ../../plugins/mymodbus/desktop/modal/logo.configuration.php ]; then
+    rm ../../plugins/mymodbus/desktop/modal/logo.configuration.php
+fi
+if [ -f ../../plugins/mymodbus/desktop/modal/rtu.configuration.php ]; then
+    rm ../../plugins/mymodbus/desktop/modal/rtu.configuration.php
+fi
+if [ -f ../../plugins/mymodbus/desktop/modal/rtuovertcp.configuration.php ]; then
+    rm ../../plugins/mymodbus/desktop/modal/rtuovertcp.configuration.php
+fi
+if [ -f ../../plugins/mymodbus/desktop/modal/tcpip.configuration.php ]; then
+    rm ../../plugins/mymodbus/desktop/modal/tcpip.configuration.php
+fi
+if [ -f ../../plugins/mymodbus/desktop/modal/templates.php ]; then
+    rm ../../plugins/mymodbus/desktop/modal/templates.php
+fi
+if [ -f ../../plugins/mymodbus/desktop/modal/wago.configuration.php ]; then
+    rm ../../plugins/mymodbus/desktop/modal/wago.configuration.php
+fi
+if [ -f ../../plugins/mymodbus/ressources/global.py ]; then
+    rm ../../plugins/mymodbus/ressources/global.py
+fi
+if [ -f ../../plugins/mymodbus/ressources/install_apt.sh ]; then
+    rm ../../plugins/mymodbus/ressources/install_apt.sh
+fi
+if [ -f ../../plugins/mymodbus/ressources/mymodbus_demond.py ]; then
+    rm ../../plugins/mymodbus/ressources/mymodbus_demond.py
+fi
+if [ -f ../../plugins/mymodbus/ressources/mymodbus_serv.py ]; then
+    rm ../../plugins/mymodbus/ressources/mymodbus_serv.py
+fi
+if [ -f ../../plugins/mymodbus/ressources/mymodbus_write.py ]; then
+    rm ../../plugins/mymodbus/ressources/mymodbus_write.py
+fi
+if [ -d ../../plugins/mymodbus/ressources/__pycache__ ]; then
+    rm -rf ../../plugins/mymodbus/ressources/__pycache__
+fi
+if [ -d ../../plugins/mymodbus/ressources/demond ]; then
+    rm -rf ../../plugins/mymodbus/ressources/demond
+fi
+if [ -d ../../plugins/mymodbus/ressources/jeedom ]; then
+    rm -rf ../../plugins/mymodbus/ressources/jeedom
+fi
+echo 5 > "$PROGRESS_FILE"
+echo "********************************************************"
 echo "*               Installation de pyenv                  *"
 echo "********************************************************"
 echo $(date)
