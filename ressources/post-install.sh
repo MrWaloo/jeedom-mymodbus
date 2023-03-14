@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+# post-install script for Jeedom plugin MyModbus
 PROGRESS_FILE=/tmp/post-install_mymodbus_in_progress
 if [ ! -z $1 ]; then
 	PROGRESS_FILE=$1
@@ -59,11 +59,23 @@ fi
 if [ -f ../../plugins/mymodbus/desktop/modal/wago.configuration.php ]; then
     rm ../../plugins/mymodbus/desktop/modal/wago.configuration.php
 fi
+if [ -f ../../plugins/mymodbus/ressources/Biblio.zip ]; then
+    rm ../../plugins/mymodbus/ressources/Biblio.zip
+fi
+if [ -f ../../plugins/mymodbus/ressources/demon.py ]; then
+    rm ../../plugins/mymodbus/ressources/demon.py
+fi
 if [ -f ../../plugins/mymodbus/ressources/global.py ]; then
     rm ../../plugins/mymodbus/ressources/global.py
 fi
+if [ -f ../../plugins/mymodbus/ressources/globals.py ]; then
+    rm ../../plugins/mymodbus/ressources/globals.py
+fi
 if [ -f ../../plugins/mymodbus/ressources/install_apt.sh ]; then
     rm ../../plugins/mymodbus/ressources/install_apt.sh
+fi
+if [ -f ../../plugins/mymodbus/ressources/install.sh ]; then
+    rm ../../plugins/mymodbus/ressources/install.sh
 fi
 if [ -f ../../plugins/mymodbus/ressources/mymodbus_demond.py ]; then
     rm ../../plugins/mymodbus/ressources/mymodbus_demond.py
@@ -79,6 +91,9 @@ if [ -d ../../plugins/mymodbus/ressources/__pycache__ ]; then
 fi
 if [ -d ../../plugins/mymodbus/ressources/demond ]; then
     rm -rf ../../plugins/mymodbus/ressources/demond
+fi
+if [ -d ../../plugins/mymodbus/ressources/images ]; then
+    rm -rf ../../plugins/mymodbus/ressources/images
 fi
 if [ -d ../../plugins/mymodbus/ressources/jeedom ]; then
     rm -rf ../../plugins/mymodbus/ressources/jeedom
