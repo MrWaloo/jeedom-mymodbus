@@ -4,6 +4,7 @@ if [ ! -z $1 ]; then
 	PROGRESS_FILE=$1
 fi
 cd ../../plugins/mymodbus
+TMP_FILE=/tmp/post-install_mymodbus_bashrc
 PYENV_ROOT="$(realpath ressources)/_pyenv"
 PYENV_VERSION="3.9.16"
 
@@ -107,14 +108,22 @@ echo $(date)
 if [ ! -d "$PYENV_ROOT" ]; then
     sudo -E -u www-data curl https://pyenv.run | bash
     echo 20 > "$PROGRESS_FILE"
-    echo "****  Configuration de pyenv..."
-    sudo -E -u www-data grep -vi pyenv ~www-data/.bashrc > ~www-data/.bashrc 2>/dev/null
-    sudo -E -u www-data cat >> ~www-data/.bashrc<< EOF
+fi
+echo "****  Configuration de pyenv..."
+grep -vi pyenv ~/.bashrc > "$TMP_FILE"
+cat "$TMP_FILE" > ~/.bashrc
+cat >> ~/.bashrc<< EOF
 export PYENV_ROOT="$PYENV_ROOT"
 command -v pyenv >/dev/null || export PATH="\$PYENV_ROOT/bin:\$PATH"
 eval "\$(pyenv init -)"
 EOF
-fi
+sudo -E -u www-data grep -vi pyenv ~www-data/.bashrc > "$TMP_FILE"
+cat "$TMP_FILE" > ~www-data/.bashrc
+sudo -E -u www-data cat >> ~www-data/.bashrc<< EOF
+export PYENV_ROOT="$PYENV_ROOT"
+command -v pyenv >/dev/null || export PATH="\$PYENV_ROOT/bin:\$PATH"
+eval "\$(pyenv init -)"
+EOF
 echo 30 > "$PROGRESS_FILE"
 if [ ! -d "$PYENV_ROOT/versions/$PYENV_VERSION" ]; then
     echo "********************************************************"
@@ -127,6 +136,9 @@ echo 95 > "$PROGRESS_FILE"
 echo "********************************************************"
 echo "*      Configuration de pyenv avec python $PYENV_VERSION       *"
 echo "********************************************************"
+export PYENV_ROOT="$PYENV_ROOT"
+command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
 cd ressources/mymodbusd
 chown -R www-data:www-data "$PYENV_ROOT"
 sudo -E -u www-data "$PYENV_ROOT"/bin/pyenv local "$PYENV_VERSION"
@@ -136,6 +148,7 @@ sudo -E -u www-data "$PYENV_ROOT"/bin/pyenv exec pip install --upgrade requests 
 chown -R www-data:www-data "$PYENV_ROOT"
 echo 100 > "$PROGRESS_FILE"
 rm "$PROGRESS_FILE"
+rm "$TMP_FILE"
 echo "********************************************************"
 echo "*             Installation terminée                    *"
 echo "********************************************************"
