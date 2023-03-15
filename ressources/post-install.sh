@@ -136,7 +136,6 @@ echo 95 > "$PROGRESS_FILE"
 echo "********************************************************"
 echo "*      Configuration de pyenv avec python $PYENV_VERSION       *"
 echo "********************************************************"
-export PYENV_ROOT="$PYENV_ROOT"
 command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init -)"
 cd ressources/mymodbusd
