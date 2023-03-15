@@ -5,7 +5,7 @@ if [ ! -z $1 ]; then
 fi
 cd ../../plugins/mymodbus
 TMP_FILE=/tmp/post-install_mymodbus_bashrc
-PYENV_ROOT="$(realpath ressources)/_pyenv"
+export PYENV_ROOT="$(realpath ressources)/_pyenv"
 PYENV_VERSION="3.9.16"
 
 touch "$PROGRESS_FILE"
