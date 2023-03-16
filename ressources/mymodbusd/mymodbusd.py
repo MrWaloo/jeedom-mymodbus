@@ -33,14 +33,14 @@ from optparse import OptionParser
 import json
 import argparse
 import threading
-import multiprocessing
+import multiprocessing as mp
 from queue import Empty, Full
 import socket
 import asyncio
 
 from mymodbus import PyModbusClient
 
-from jeedom.jeedom import jeedom_utils, jeedom_com
+from jeedom.jeedom import (jeedom_utils, jeedom_com)
 
 # -----------------------------------------------------------------------------
 
@@ -218,9 +218,9 @@ class Main():
         self.config = json.loads(self._json)
         for eqConfig in self.config:
             eqId = eqConfig['id']
-            self.queues[eqId] = multiprocessing.Queue()
-            self.pymodbus_clients[eqId] = PyModbusClient(eqConfig, self.jcom)
-            self.sub_process[eqId] = multiprocessing.Process(target=self.pymodbus_clients[eqId].run, args=(self.queues[eqId], ), name=eqConfig['name'], daemon=True)
+            self.queues[eqId] = mp.Queue()
+            self.pymodbus_clients[eqId] = PyModbusClient(eqConfig, self.jcom, jeedom_utils.convert_log_level(self._log_level))
+            self.sub_process[eqId] = mp.Process(target=self.pymodbus_clients[eqId].run, args=(self.queues[eqId], ), name=eqConfig['name'], daemon=True)
             self.sub_process[eqId].start()
             time.sleep(1)
         
@@ -238,7 +238,7 @@ class Main():
                 pass
             
             # Test if child process are defunk
-            for process in multiprocessing.active_children():
+            for process in mp.active_children():
                 eqLogic_id = process.name
                 kill_process = False
                 try:
@@ -253,19 +253,19 @@ class Main():
                     except:
                         pass
             
-            if len(multiprocessing.active_children()) < len(self.pymodbus_clients):
-                logging.debug("mymodbusd: active_children: " + str(len(multiprocessing.active_children())))
+            if len(mp.active_children()) < len(self.pymodbus_clients):
+                logging.debug("mymodbusd: active_children: " + str(len(mp.active_children())))
                 for eqId, process in self.sub_process.items():
-                    if process not in multiprocessing.active_children():
+                    if process not in mp.active_children():
                         for eqConfig in self.config:
                             if eqId == eqConfig['id']:
                                 logging.warning("mymodbusd: process re-run: " + process.name)
-                                self.sub_process[eqId] = multiprocessing.Process(target=self.pymodbus_clients[eqId].run, args=(self.queues[eqId], ), name=eqConfig['name'], daemon=True)
+                                self.sub_process[eqId] = mp.Process(target=self.pymodbus_clients[eqId].run, args=(self.queues[eqId], ), name=eqConfig['name'], daemon=True)
                                 self.sub_process[eqId].start()
                                 break
             
         # Stop all communication threads properly
-        for process in multiprocessing.active_children():
+        for process in mp.active_children():
             process.terminate()
         
         self.clear_to_leave.set()
@@ -280,7 +280,7 @@ class Main():
         self.clear_to_leave.wait(timeout=4)
         
         # Stop all communication threads forced (kill)
-        for process in multiprocessing.active_children():
+        for process in mp.active_children():
             logging.debug("mymodbusd: Process: " + process.name)
             if process.is_alive():
                 logging.debug("mymodbusd: Process: " + process.name + ' is killed')

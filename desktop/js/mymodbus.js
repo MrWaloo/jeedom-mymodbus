@@ -42,8 +42,8 @@ $('.bt_showExpressionTest').off('click').on('click', function () {
     $('#md_modal').dialog({title: "{{Testeur d'expression}}"});
     $("#md_modal").load('index.php?v=d&modal=expression.test').dialog('open');
 });
-//$('#bt_templatesmymodbus').on('click', function () {
-//    $('#md_modal').dialog({title: "{{Gestion des templates d'équipements mymobus}}"});
+//$('#bt_templatesMymodbus').on('click', function () {
+//    $('#md_modal').dialog({title: "{{Gestion des templates d'équipements MyMobus}}"});
 //    $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=templates').dialog('open');
 //});
 
@@ -271,13 +271,20 @@ function addCmdToTable(_cmd) {
         _cmd.configuration.cmdFrequency = '1';
     }
     
-    // Command info or action
+    // id
     var tr = '<tr class="cmd" data-cmd_id="' + init(_cmd.id) + '">';
+    tr += ' <td class="hidden-xs">'
+    tr += '     <span class="cmdAttr" data-l1key="id"></span>'
+    tr += ' </td>'
     // Nom
     tr += ' <td class="name">';
     tr += '     <input class="cmdAttr form-control input-sm" data-l1key="id" disabled style="display:none;">';
     tr += '     <input class="cmdAttr form-control input-sm" data-l1key="name">';
     tr += ' </td>';
+    // Valeur
+    tr += ' <td>';
+    tr += '     <span class="cmdAttr" data-l1key="htmlstate"></span>';
+    tr += ' </td>';  
     // Type
     tr += ' <td>';
     tr += '     <span class="type" id="' + init(_cmd.type) + '" type="' + init(_cmd.type) + '">' + jeedom.cmd.availableType() + '</span>';
@@ -356,14 +363,10 @@ function addCmdToTable(_cmd) {
     tr += '             <input class="cmdAttr form-inline input-sm roundedLeft readFunction" style="width:70px;" data-l1key="configuration" data-l2key="cmdFrequency" placeholder="{{1 par défaut}}"/>';
     tr += '         </label>';
     tr += '     </div>';
-    tr += '     <div class="input-group">';
-    tr += '         <input class="cmdAttr form-control input-sm roundedLeft writeFunction" style="width:100%;" data-l1key="configuration" data-l2key="cmdWriteValue" placeholder="{{Valeur}}"/>';
+    tr += '     <div class="input-group" style="width:100%;">';
+    tr += '         <input class="cmdAttr form-control input-sm roundedLeft writeFunction" data-l1key="configuration" data-l2key="cmdWriteValue" placeholder="{{Valeur}}"/>';
     tr += '     </div>';
-    tr += ' </td>';
-    // Etat
-    tr += ' <td>';
-    tr += '     <span class="cmdAttr" data-l1key="htmlstate"></span>';
-    tr += ' </td>';        
+    tr += ' </td>';      
     // Options
     tr += ' <td>';
     if (is_numeric(_cmd.id)) {

@@ -30,6 +30,8 @@ from pymodbus.framer.binary_framer import ModbusBinaryFramer
 from pymodbus.payload import (BinaryPayloadDecoder, BinaryPayloadBuilder)
 from pymodbus.pdu import ExceptionResponse
 
+from jeedom.jeedom import jeedom_utils
+
 from mymodbuslib import *
 
 """
@@ -49,7 +51,7 @@ bar = PyModbusClient(config[1])
 # -----------------------------------------------------------------------------
 
 class PyModbusClient():
-    def __init__(self, config, jcom=None):
+    def __init__(self, config, jcom=None, log_level=logging.DEBUG):
         """ For pymodbus client
         """
         # Handle Run & Shutdown
@@ -57,6 +59,7 @@ class PyModbusClient():
         self.should_stop.clear()
         
         self.jcom = jcom
+        jeedom_utils.set_log_level(log_level)
         
         self.polling_config = float(config['eqPolling'])
         self.polling = float(config['eqPolling']) * 1.0
@@ -182,7 +185,7 @@ class PyModbusClient():
             else:
                 logging.info('PyModbusClient: read_results:' + json.dumps(results))
         
-    def check_queue(self, timeout=0.1):
+    def check_queue(self, timeout=0.01):
         try:
             write_cmd = self.queue.get(block=True, timeout=timeout)
         except Empty:
@@ -212,20 +215,28 @@ class PyModbusClient():
     async def run_loop(self):
         self.framer, self.client = PyModbusClient.get_framer_and_client(self.eqConfig)
         
+        connected = False
+        
+        try:
+            await self.client.connect()
+            connected = True
+        except:
+            logging.error('PyModbusClient: Something went wrong while connecting to equipment id ' + self.eqConfig['id'])
+        
         # Polling loop
         while not self.should_stop.is_set():
             # for time measuring
             t_begin = time.time()
             
             # Connect
-            try:
-                await self.client.connect()
-            except:
-                logging.error('PyModbusClient: Something went wrong while connecting to equipment id ' + self.eqConfig['id'])
+            if not connected and self.eqConfig['eqKeepopen'] == '0':
+                try:
+                    await self.client.connect()
+                    connected = True
+                except:
+                    logging.error('PyModbusClient: Something went wrong while connecting to equipment id ' + self.eqConfig['id'])
             
-            #----------------------------------------------------------------------
-            # Read requests
-            #----------------------------------------------------------------------
+            exception = None
             read_results = {}
             self.cycle += 1
             for cmd_id, request in self.requests.items():
@@ -251,8 +262,9 @@ class PyModbusClient():
                         
                         request_ok = PyModbusClient.check_response(response)
                     
-                    except:
+                    except Exception as e:
                         request_ok = False
+                        exception = repr(e)
                         
                     if request_ok:
                         value = response.bits[0]
@@ -271,8 +283,9 @@ class PyModbusClient():
                         
                         request_ok = PyModbusClient.check_response(response)
                         
-                    except:
+                    except Exception as e:
                         request_ok = False
+                        exception = repr(e)
                         
                     if request_ok:
                         decoder = BinaryPayloadDecoder.fromRegisters(response.registers, request['byteorder'], request['wordorder'])
@@ -320,124 +333,33 @@ class PyModbusClient():
                     self.requests[cmd_id]['last_value'] = read_results[cmd_id]
                     logging.debug('PyModbusClient: read value for ' + request['name'] + ' (command id ' + cmd_id + '): ' + str(value))
                 else:
-                    logging.error('PyModbusClient: Something went wrong while reading ' + request['name'] + ' (command id ' + cmd_id + ')')
+                    error_log = 'PyModbusClient: Something went wrong while reading ' + request['name'] + ' (command id ' + cmd_id + ')'
+                    if exception:
+                        logging.error(error_log + ': ' + exception)
+                    else:
+                        logging.error(error_log)
                 
+                # Small pause if serial
                 if self.eqConfig['eqProtocol'] == 'serial':
                     await asyncio.sleep(0.05)
                 
-            #    # Send results to jeedom if len(json) > 400 (arbitrary length)
-            #    if len(json.dumps(read_results)) > 400:
-            #        self.send_results_to_jeedom(read_results)
-            #        read_results = {}
+                # Checking write commands
+                if not self.queue.empty():
+                    self.check_queue()
+                
+                ##################################################
+                await self.execute_write_requests()
+                ##################################################
                 
             # After all the info requests
             # Send results to jeedom
             self.send_results_to_jeedom(read_results)
             
-            if not self.queue.empty():
-                self.check_queue()
-            
-            #----------------------------------------------------------------------
-            # Write requests
-            #----------------------------------------------------------------------
-            while len(self.write_cmds) > 0:
-                write_cmd = self.write_cmds.pop(0)
-                request = self.requests[write_cmd['cmdId']]
-                
-                logging.debug('PyModbusClient: *-*-*-*-*-*-*-*-*-*-*-**-*-*-*-*-* request ' + repr(request))
-                
-                request_ok = True
-                
-                # Write single coil (code 0x05) || Write coils (code 0x0F)
-                if request['fct_modbus'] in ('5', '15'):
-                    value = not (write_cmd['cmdWriteValue'] == '0' or write_cmd['cmdWriteValue'].lower() == 'false') # anything else than '0' or 'false' will be True
-                    
-                    if request['data_type'] == 'bin-inv':
-                            value = not value
-                    
-                    try:
-                        if request['fct_modbus'] == '5':
-                            response = await self.client.write_coil(address=request['addr'], value=value, slave=request['slave'])
-                        elif request['fct_modbus'] == '15':
-                            values = []
-                            values.append(value)
-                            response = await self.client.write_coils(address=request['addr'], values=values, slave=request['slave'])
-                        
-                        request_ok = PyModbusClient.check_response(response)
-                    
-                    except:
-                        request_ok = False
-                        
-                    if not request_ok:
-                        logging.error('PyModbusClient: Something went wrong while writing ' + request['name'] + ' (command id ' + cmd_id + ')')
-                    
-                # Write register (code 0x06) || Write registers (code 0x10)
-                elif request['fct_modbus'] in ('6', '16'):
-                    normal_number, count, sp_sf = PyModbusClient.request_info(request)
-                    
-                    builder = BinaryPayloadBuilder(byteorder=request['byteorder'], wordorder=request['wordorder'])
-                    
-                    try:
-                        # Type: Byte
-                        if '8' in request['data_type']:
-                            pass # ignore this command that should not be received...
-                            
-                        # Type: Word (16bit) || Dword (32bit) || Double Dword (64bit)
-                        elif normal_number:
-                            value = float(write_cmd['cmdWriteValue']) if request['data_type'][:-2] == 'float' else int(write_cmd['cmdWriteValue'])
-                            getattr(builder, 'add_' + request['data_type'][-2:] + 'bit_' + request['data_type'][:-2])(value)
-                            
-                        # string
-                        elif request['data_type'] == 'string':
-                            value = write_cmd['cmdWriteValue'][:request['strlen']]
-                            builder.add_string(value)
-                            
-                        #---------------
-                        # Special cases
-                        # SunSpec scale factor
-                        elif sp_sf:
-                            sp_pf_data_type = request['data_type'][:-5]
-                            offset = 1
-                            if sp_pf_data_type[-2:] == '32':
-                                offset = 2
-                            
-                            if count == offset + 1:
-                                value, sf = value_to_sf(float(write_cmd['cmdWriteValue']))
-                                getattr(builder, 'add_' + sp_pf_data_type[-2:] + 'bit_' + sp_pf_data_type[:-2])(value)
-                                builder.add_16bit_int(sf)
-                                
-                            else:
-                                logging.warning('PyModbusClient: Cannot write ' + request['name'] + ' (command id ' + cmd_id + '), the registers aren\'t consecutive.')
-                        
-                    except:
-                        logging.error('PyModbusClient: Something went wrong while building the write request for ' + request['name'] + ' (command id ' + cmd_id + ')')
-                        
-                    else:
-                        # build registers
-                        registers = builder.to_registers()
-                        if len(registers):
-                            try:
-                                if request['fct_modbus'] == '6':
-                                    response = await self.client.write_register(address=request['addr'], value=registers, slave=request['slave'])
-                                elif request['fct_modbus'] == '16':
-                                    response = await self.client.write_registers(address=request['addr'], values=registers, slave=request['slave'])
-                                
-                                request_ok = PyModbusClient.check_response(response)
-                            
-                            except:
-                                request_ok = False
-                                
-                            if not request_ok:
-                                logging.error('PyModbusClient: Something went wrong while writing ' + request['name'] + ' (command id ' + cmd_id + ')')
-                    
-                if self.eqConfig['eqProtocol'] == 'serial':
-                    await asyncio.sleep(0.05)
-                    
-            # After all the action requests
             # Keep the connection open or not...
             if self.eqConfig['eqKeepopen'] == '0':
                 try:
                     await self.client.close()
+                    connected = False
                 except:
                     logging.error('PyModbusClient: Something went wront while closing connection to equipment id ' + self.eqConfig['id'])
             
@@ -448,6 +370,7 @@ class PyModbusClient():
                 logging.warning('PyModbusClient: the polling time is too short, setting it to ' + str(self.polling) + ' s.')
             while self.polling - elapsed_time > 0:
                 self.check_queue(self.polling - elapsed_time)
+                await self.execute_write_requests(connect=True)
                 elapsed_time = time.time() - t_begin
             
         # The loop has exited (should never happend)
@@ -456,6 +379,139 @@ class PyModbusClient():
         except:
             pass
         self.shutdown()
+        
+    async def execute_write_requests(self, connect=False):
+        re_pause = re.compile(r"(.*)\s*?pause\s*?(\d+([\.\,]\d+)?)\s*?$", re.IGNORECASE)
+        
+        if connect and self.eqConfig['eqKeepopen'] == '0':
+            try:
+                await self.client.connect()
+            except:
+                logging.error('PyModbusClient: Something went wrong while connecting to equipment id ' + self.eqConfig['id'])
+        
+        while len(self.write_cmds) > 0:
+            write_cmd = self.write_cmds.pop(0)
+            request = self.requests[write_cmd['cmdId']]
+            
+            logging.debug('PyModbusClient: *-*-*-*-*-*-*-*-*-*-*-**-*-*-*-*-* request ' + repr(request))
+            
+            re_match = re_pause.match(str(write_cmd['cmdWriteValue']))
+            pause = None
+            if re_match:
+                value_to_write = re_match.group(1)
+                pause = float(re_match.group(2).replace(',', '.'))
+            else:
+                value_to_write = write_cmd['cmdWriteValue']
+            
+            request_ok = True
+            exception = None
+            
+            # Write single coil (code 0x05) || Write coils (code 0x0F)
+            if request['fct_modbus'] in ('5', '15'):
+                value = not (value_to_write == '0' or value_to_write.lower() == 'false') # anything else than '0' or 'false' will be True
+                
+                if request['data_type'] == 'bin-inv':
+                    value = not value
+                
+                try:
+                    if request['fct_modbus'] == '5':
+                        response = await self.client.write_coil(address=request['addr'], value=value, slave=request['slave'])
+                    elif request['fct_modbus'] == '15':
+                        values = []
+                        values.append(value)
+                        response = await self.client.write_coils(address=request['addr'], values=values, slave=request['slave'])
+                    
+                    request_ok = PyModbusClient.check_response(response)
+                
+                except Exception as e:
+                    request_ok = False
+                    exception = repr(e)
+                    
+                if not request_ok:
+                    error_log = 'PyModbusClient: Something went wrong while writing ' + request['name'] + ' (command id ' + write_cmd['cmdId'] + ')'
+                    if exception:
+                        logging.error(error_log + ': ' + exception)
+                    else:
+                        logging.error(error_log)
+                
+            # Write register (code 0x06) || Write registers (code 0x10)
+            elif request['fct_modbus'] in ('6', '16'):
+                normal_number, count, sp_sf = PyModbusClient.request_info(request)
+                
+                builder = BinaryPayloadBuilder(byteorder=request['byteorder'], wordorder=request['wordorder'])
+                
+                try:
+                    # Type: Byte
+                    if '8' in request['data_type']:
+                        pass # ignore this command that should not be received...
+                        
+                    # Type: Word (16bit) || Dword (32bit) || Double Dword (64bit)
+                    elif normal_number:
+                        value = float(value_to_write) if request['data_type'][:-2] == 'float' else int(value_to_write)
+                        getattr(builder, 'add_' + request['data_type'][-2:] + 'bit_' + request['data_type'][:-2])(value)
+                        
+                    # string
+                    elif request['data_type'] == 'string':
+                        value = value_to_write[:request['strlen']]
+                        builder.add_string(value)
+                        
+                    #---------------
+                    # Special cases
+                    # SunSpec scale factor
+                    elif sp_sf:
+                        sp_pf_data_type = request['data_type'][:-5]
+                        offset = 1
+                        if sp_pf_data_type[-2:] == '32':
+                            offset = 2
+                        
+                        if count == offset + 1:
+                            value, sf = value_to_sf(float(value_to_write))
+                            getattr(builder, 'add_' + sp_pf_data_type[-2:] + 'bit_' + sp_pf_data_type[:-2])(value)
+                            builder.add_16bit_int(sf)
+                            
+                        else:
+                            logging.warning('PyModbusClient: Cannot write ' + request['name'] + ' (command id ' + write_cmd['cmdId'] + '), the registers aren\'t consecutive.')
+                    
+                except Exception as e:
+                    logging.error('PyModbusClient: Something went wrong while building the write request for ' + request['name'] + ' (command id ' + write_cmd['cmdId'] + '): ' + repr(e))
+                    
+                else:
+                    # build registers
+                    registers = builder.to_registers()
+                    if len(registers):
+                        try:
+                            if request['fct_modbus'] == '6':
+                                response = await self.client.write_register(address=request['addr'], value=registers, slave=request['slave'])
+                            elif request['fct_modbus'] == '16':
+                                response = await self.client.write_registers(address=request['addr'], values=registers, slave=request['slave'])
+                            
+                            request_ok = PyModbusClient.check_response(response)
+                        
+                        except Exception as e:
+                            request_ok = False
+                            exception = repr(e)
+                            
+                        if not request_ok:
+                            error_log = 'PyModbusClient: Something went wrong while writing ' + request['name'] + ' (command id ' + write_cmd['cmdId'] + ')'
+                            if exception:
+                                logging.error(error_log + ': ' + exception)
+                            else:
+                                logging.error(error_log)
+                
+            if self.eqConfig['eqProtocol'] == 'serial':
+                await asyncio.sleep(0.05)
+            
+            if pause:
+                await asyncio.sleep(pause)
+            
+        # After all the requests
+        # Keep the connection open or not...
+        if connect and self.eqConfig['eqKeepopen'] == '0':
+            try:
+                await self.client.close()
+            except:
+                logging.error('PyModbusClient: Something went wront while closing connection to equipment id ' + self.eqConfig['id'])
+        
         
     def signal_handler(self, signum=None, frame=None):
         self.shutdown()

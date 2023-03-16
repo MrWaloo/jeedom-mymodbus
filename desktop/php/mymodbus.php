@@ -29,23 +29,23 @@ $eqLogics = eqLogic::byType($plugin->getId());
                 <br>
                 <span>{{Documentation}}</span>
             </div>
+            <!--
             <div class="cursor pluginAction" data-action="openLink" data-location="https://community.jeedom.com/t/plugin-<?=$plugin->getId()?>/9395" >
                 <i class="fas fa-comments" style="font-size:6em;color:#0F9DE8;"></i>
                 <br>
                 <span>{{Commmunity}}</span>
             </div>
+            -->
             <div class="cursor logoSecondary" id="bt_healthmymodbus">
                 <i class="fas fa-medkit"style="font-size:6em;color:#0F9DE8;"></i>
                 <br/>
                 <span>{{Santé}}</span>
             </div>
-            <!--
-            <div class="cursor logoSecondary" id="bt_templatesmymodbus">
+            <div class="cursor logoSecondary" id="bt_templatesMymodbus">
                 <i class="fas fa-cubes"style="font-size:6em;color:#0F9DE8;"></i>
                 <br/>
                 <span>{{Templates}}</span>
             </div>
-            -->
         </div>
         <legend><i class="fas fa-table"></i> {{Mes équipements}}</legend>
         <?php
@@ -209,15 +209,16 @@ $eqLogics = eqLogic::byType($plugin->getId());
                     <table id="table_cmd" class="table table-bordered table-condensed">
                         <thead>
                             <tr>
+                                <th class="hidden-xs" style="min-width:50px;width:70px;">ID</th>
                                 <th style="min-width:100px;width:300px;">{{Nom}}</th>
+                                <th style="min-width:80px;">{{Valeur}}</th>
                                 <th style="width:100px;">{{Type}}</th>
                                 <th style="min-width:80px;width:130px;">{{Adresse esclave}}
                                     <sup><i class="fas fa-question-circle tooltips" title="{{'0' si pas de bus série}}"></i></sup>
                                 </th>
                                 <th style="width:230px;">{{Fonction Modbus}}</th>
                                 <th style="min-width:120px;width:130px;">{{Adresse Modbus}}</th>
-                                <th>{{Paramètre(s)}}</th>
-                                <th style="min-width:80px;">{{Etat}}</th>
+                                <th>{{Paramètres}}</th>
                                 <th style="min-width:300px;width:310px;">{{Options}}</th>
                                 <th style="width:15px;">&nbsp;</th>
                             </tr>

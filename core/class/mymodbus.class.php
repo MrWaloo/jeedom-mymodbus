@@ -105,7 +105,7 @@ class mymodbus extends eqLogic {
         $jsonData = self::getCompleteConfiguration();
         
         $socketPort = is_numeric(config::byKey('socketport', __CLASS__, self::$_DEFAULT_SOCKET_PORT, True)) ? config::byKey('socketport', __CLASS__, self::$_DEFAULT_SOCKET_PORT) : self::$_DEFAULT_SOCKET_PORT;
-        $daemonLoglevel = escapeshellarg('debug');
+        $daemonLoglevel = escapeshellarg(log::convertLogLevel(log::getLogLevel(__CLASS__)));
         $daemonApikey = escapeshellarg(jeedom::getApiKey(__CLASS__));
         $daemonCallback = escapeshellarg(self::getCallbackUrl());
         $daemonJson = escapeshellarg(json_encode($jsonData));

@@ -1,9 +1,14 @@
 # post-install script for Jeedom plugin MyModbus
 PROGRESS_FILE=/tmp/post-install_mymodbus_in_progress
-if [ ! -z $1 ]; then
-	PROGRESS_FILE=$1
+if [ -n "$1" ]; then
+	PROGRESS_FILE="$1"
 fi
-cd ../../plugins/mymodbus
+if [ -d ../../plugins/mymodbus ]; then
+    cd ../../plugins/mymodbus
+else
+    echo "Ce script doit être appelé depuis .../core/data"
+    exit
+fi
 TMP_FILE=/tmp/post-install_mymodbus_bashrc
 export PYENV_ROOT="$(realpath ressources)/_pyenv"
 PYENV_VERSION="3.9.16"
@@ -13,6 +18,7 @@ echo 0 > "$PROGRESS_FILE"
 echo "********************************************************"
 echo "*            Nettoyage de l'ancienne version           *"
 echo "********************************************************"
+date
 if [ -f core/php/mymodbus.inc.php ]; then
     rm core/php/mymodbus.inc.php
 fi
@@ -104,7 +110,7 @@ echo 5 > "$PROGRESS_FILE"
 echo "********************************************************"
 echo "*               Installation de pyenv                  *"
 echo "********************************************************"
-echo $(date)
+date
 if [ ! -d "$PYENV_ROOT" ]; then
     sudo -E -u www-data curl https://pyenv.run | bash
     echo 20 > "$PROGRESS_FILE"
@@ -129,6 +135,7 @@ if [ ! -d "$PYENV_ROOT/versions/$PYENV_VERSION" ]; then
     echo "********************************************************"
     echo "*    Installation de python $PYENV_VERSION (dure longtemps)    *"
     echo "********************************************************"
+    date
     chown -R www-data:www-data "$PYENV_ROOT"
     sudo -E -u www-data "$PYENV_ROOT"/bin/pyenv install "$PYENV_VERSION"
 fi
@@ -136,6 +143,7 @@ echo 95 > "$PROGRESS_FILE"
 echo "********************************************************"
 echo "*      Configuration de pyenv avec python $PYENV_VERSION       *"
 echo "********************************************************"
+date
 command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init -)"
 cd ressources/mymodbusd
@@ -151,3 +159,4 @@ rm "$TMP_FILE"
 echo "********************************************************"
 echo "*             Installation terminée                    *"
 echo "********************************************************"
+date
