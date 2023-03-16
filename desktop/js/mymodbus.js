@@ -274,11 +274,10 @@ function addCmdToTable(_cmd) {
     // id
     var tr = '<tr class="cmd" data-cmd_id="' + init(_cmd.id) + '">';
     tr += ' <td class="hidden-xs">'
-    tr += '     <span class="cmdAttr" data-l1key="id"></span>'
+    tr += '     <span class="cmdAttr" data-l1key="id" disabled></span>'
     tr += ' </td>'
     // Nom
     tr += ' <td class="name">';
-    tr += '     <input class="cmdAttr form-control input-sm" data-l1key="id" disabled style="display:none;">';
     tr += '     <input class="cmdAttr form-control input-sm" data-l1key="name">';
     tr += ' </td>';
     // Valeur
