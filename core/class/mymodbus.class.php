@@ -232,46 +232,46 @@ class mymodbus extends eqLogic {
         if (!in_array('eqProtocol', $configKeys) && !in_array('eqKeepopen', $configKeys) && !in_array('eqPolling', $configKeys))
             return True;
         if (!in_array('eqProtocol', $configKeys) || !in_array('eqKeepopen', $configKeys) || !in_array('eqPolling', $configKeys))
-            throw new Exception($this->getName() . __('&nbsp;:</br>Veuillez définir la configuration de base de l\'équipement', __FILE__));
+            throw new Exception($this->getName() . '&nbsp;:</br>' . __('Veuillez définir la configuration de base de l\'équipement', __FILE__));
         
         $eqProtocol = $this->getConfiguration('eqProtocol');
         $eqPolling = $this->getConfiguration('eqPolling');
         if (!in_array($eqProtocol, self::supportedProtocols()))
-            throw new Exception($this->getName() . __('&nbsp;:</br>Le protocol n\'est pas défini correctement.', __FILE__));
+            throw new Exception($this->getName() . '&nbsp;:</br>' . __('Le protocol n\'est pas défini correctement.', __FILE__));
         if (!is_numeric($eqPolling))
-            throw new Exception($this->getName() . __('&nbsp;:</br>Le paramètre "Polling" doit être un nombre.', __FILE__));
+            throw new Exception($this->getName() . '&nbsp;:</br>' . __('Le paramètre "Polling" doit être un nombre.', __FILE__));
         if ($eqPolling < 10)
-            throw new Exception($this->getName() . __('&nbsp;:</br>Le paramètre "Polling" doit être au moins à 10 secondes', __FILE__));
+            throw new Exception($this->getName() . '&nbsp;:</br>' . __('Le paramètre "Polling" doit être au moins à 10 secondes', __FILE__));
         
         if ($eqProtocol == 'tcp') {
             // Vérification du paramétrage d'une connexion TCP
             if (!in_array('eqTcpAddr', $configKeys) && !in_array('eqTcpPort', $configKeys) && !in_array('eqTcpRtu', $configKeys)) {
-                throw new Exception($this->getName() . __('&nbsp;:</br>Veuillez définir la configuration TCP de l\'équipement', __FILE__));
+                throw new Exception($this->getName() . '&nbsp;:</br>' . __('Veuillez définir la configuration TCP de l\'équipement', __FILE__));
             }
             $eqTcpAddr = $this->getConfiguration('eqTcpAddr');
             $eqTcpPort = $this->getConfiguration('eqTcpPort');
             if (!filter_var($eqTcpAddr, FILTER_VALIDATE_IP))
-                throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse IP n\'est pas valide', __FILE__));
+                throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse IP n\'est pas valide', __FILE__));
             if (!is_numeric($eqTcpPort))
-                throw new Exception($this->getName() . __('&nbsp;:</br>Le port doit être un nombre.', __FILE__));
+                throw new Exception($this->getName() . '&nbsp;:</br>' . __('Le port doit être un nombre.', __FILE__));
             
         } elseif ($eqProtocol == 'udp') {
             // Vérification du paramétrage d'une connexion UDP
             if (!in_array('eqUdpAddr', $configKeys) && !in_array('eqUdpPort', $configKeys) && !in_array('eqUdpRtu', $configKeys))
-                throw new Exception($this->getName() . __('&nbsp;:</br>Veuillez définir la configuration UDP de l\'équipement', __FILE__));
+                throw new Exception($this->getName() . '&nbsp;:</br>' . __('Veuillez définir la configuration UDP de l\'équipement', __FILE__));
             $eqUdpAddr = $this->getConfiguration('eqUdpAddr');
             $eqUdpPort = $this->getConfiguration('eqUdpPort');
             if (!filter_var($eqUdpAddr, FILTER_VALIDATE_IP))
-                throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse IP n\'est pas valide', __FILE__));
+                throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse IP n\'est pas valide', __FILE__));
             if (!is_numeric($eqUdpPort))
-                throw new Exception($this->getName() . __('&nbsp;:</br>Le port doit être un nombre.', __FILE__));
+                throw new Exception($this->getName() . '&nbsp;:</br>' . __('Le port doit être un nombre.', __FILE__));
             
         } elseif ($eqProtocol == 'serial') {
             // Vérification du paramétrage d'une connexion série
             if (!in_array('eqSerialInterface', $configKeys) || !in_array('eqSerialMethod', $configKeys) ||
                     !in_array('eqSerialBaudrate', $configKeys) || !in_array('eqSerialBytesize', $configKeys) ||
                     !in_array('eqSerialParity', $configKeys) || !in_array('eqSerialStopbits', $configKeys))
-                throw new Exception($this->getName() . __('&nbsp;:</br>Veuillez définir la configuration série de l\'équipement', __FILE__));
+                throw new Exception($this->getName() . '&nbsp;:</br>' . __('Veuillez définir la configuration série de l\'équipement', __FILE__));
             $eqSerialInterface = $this->getConfiguration('eqSerialInterface');
             $eqSerialMethod = $this->getConfiguration('eqSerialMethod');
             $eqSerialBaudrate = $this->getConfiguration('eqSerialBaudrate');
@@ -279,17 +279,17 @@ class mymodbus extends eqLogic {
             $eqSerialParity = $this->getConfiguration('eqSerialParity');
             $eqSerialStopbits = $this->getConfiguration('eqSerialStopbits');
             if ($eqSerialInterface == '')
-                throw new Exception($this->getName() . __('&nbsp;:</br>L\'interface doit être définie correctement.', __FILE__));
+                throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'interface doit être définie correctement.', __FILE__));
             if (!in_array($eqSerialMethod, array('rtu', 'ascii', 'binary')))
-                throw new Exception($this->getName() . __('&nbsp;:</br>La méthode de transport n\'est pas définie correctement.', __FILE__));
+                throw new Exception($this->getName() . '&nbsp;:</br>' . __('La méthode de transport n\'est pas définie correctement.', __FILE__));
             if (!is_numeric($eqSerialBaudrate))
-                throw new Exception($this->getName() . __('&nbsp;:</br>La vitesse de transmission Modbus doit être un nombre.', __FILE__));
+                throw new Exception($this->getName() . '&nbsp;:</br>' . __('La vitesse de transmission Modbus doit être un nombre.', __FILE__));
             if (!in_array($eqSerialBytesize, array('7', '8')))
-                throw new Exception($this->getName() . __('&nbsp;:</br>Le nombre de bits par octet n\'est pas défini correctement.', __FILE__));
+                throw new Exception($this->getName() . '&nbsp;:</br>' . __('Le nombre de bits par octet n\'est pas défini correctement.', __FILE__));
             if (!in_array($eqSerialParity, array('E', 'O', 'N')))
-                throw new Exception($this->getName() . __('&nbsp;:</br>La parité n\'est pas définie correctement.', __FILE__));
+                throw new Exception($this->getName() . '&nbsp;:</br>' . __('La parité n\'est pas définie correctement.', __FILE__));
             if (!in_array($eqSerialStopbits, array('0', '1', '2')))
-                throw new Exception($this->getName() . __('&nbsp;:</br>Le nombre de bits de stop n\'est pas défini correctement.', __FILE__));
+                throw new Exception($this->getName() . '&nbsp;:</br>' . __('Le nombre de bits de stop n\'est pas défini correctement.', __FILE__));
         }
         //log::add('mymodbus', 'debug', 'Validation de la configuration pour l\'équipement *' . $this->getName() . '* : OK');
     }
@@ -436,7 +436,7 @@ class mymodbusCmd extends cmd {
         
         $cmdFormat = $this->getConfiguration('cmdFormat');
         
-        if (strstr($cmdFormat, '8') || in_array($this->getSubType(), array('color', 'select')))
+        if (strstr($cmdFormat, '8') || $cmdFormat == 'blob' || in_array($this->getSubType(), array('color', 'select')))
             return;
         
         $eqMymodbus = $this->getEqLogic();
@@ -482,28 +482,63 @@ class mymodbusCmd extends cmd {
             $this->setConfiguration('cmdSlave', $cmdSlave);
         }
         if (!is_numeric($cmdSlave))
-            throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse esclave doit être un nombre.</br>\'0\' si pas de bus série.', __FILE__));
+            throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse esclave doit être un nombre.</br>\'0\' si pas de bus série.', __FILE__));
         if ($this->getType() == 'info' && $cmdFrequency == '') {
             $cmdFrequency = '1';
             $this->setConfiguration('cmdFrequency', $cmdFrequency);
         }
-        if ($this->getType() == 'info' && !is_numeric($cmdFrequency))
-            throw new Exception($this->getName() . __('&nbsp;:</br>La configuration \'Lecture 1x sur\' doit être un nombre.', __FILE__));
-        if (!is_numeric($cmdAddress) && $cmdFormat != 'string' && !strstr($cmdFormat, 'sp-sf'))
-            throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse Modbus doit être un nombre.', __FILE__));
-        if (strstr($cmdFormat, 'string') && !preg_match('/\d+\s*?[\(\[\{]\s*?\d+\s*?[\)\]\}]/', $cmdAddress))
-            throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse Modbus d\'une chaine de caractère doit être de la forme</br>adresse[longueur]', __FILE__));
-        if (strstr($cmdFormat, 'sp-sf') && !preg_match('/\d+\s*?sf\s*?\d+/i', $cmdAddress))
-            throw new Exception($this->getName() . __('&nbsp;:</br>L\'adresse Modbus d\'un scale factor doit être de la forme&nbsp;:</br><i>adresse_valeur</i> sf <i>adresse_scale_factor</i>', __FILE__));
-        if ($cmdOption != '' && (!strstr($cmdOption, '#value#') || strstr($cmdOption, ';')))
-            throw new Exception($this->getName() . __('&nbsp;:</br>Le paramètre \'Option\' doit contenir \'#value#\' et aucun \';\'.', __FILE__));
-        if ($this->getType() == 'action') {
-            if ($cmdFctModbus == '6' && (strstr($cmdFormat, '32') || strstr($cmdFormat, '64')))
-                throw new Exception($this->getName() . __('&nbsp;:</br>La fonction "[0x06] Write register" ne permet pas d\'écrire une variable de cette longueur.', __FILE__));
-            if (strstr($cmdFormat, '8') || in_array($this->getSubType(), array('color', 'select')))
-                log::add('mymodbus', 'warning', $this->getName() . __('&nbsp;:</br>L\'écriture sera ignorée.', __FILE__));
+        if ($cmdFctModbus == 'fromBlob') {
+            if ($cmdFormat == 'blob')
+                throw new Exception($this->getName() . '&nbsp;:</br>' . __('On ne peut pas extraire une plage de registres d\'une plage de registres.', __FILE__));
+            if ($cmdFormat != 'string' && !strstr($cmdFormat, 'sp-sf') && !preg_match('/.*?\s*\[\s*\d+\s*\]/', $cmdAddress))
+                throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse Modbus d\'un extrait d\'une plage de registres doit être de la forme</br>nom_commande_plage[index]', __FILE__));
+            if ($cmdFormat == 'string' && !preg_match('/.*?\s*\[\s*\d+\s*\]\s*\[\s*\d+\s*\]/', $cmdAddress))
+                throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse Modbus d\'une chaîne de cartères extraite d\'une plage de registres doit être de la forme</br>nom_commande_plage[index][longueur]', __FILE__));
+            if (strstr($cmdFormat, 'sp-sf') && !preg_match('/(.*?)\s*\[\s*(\d+)\s*\]\s*sf\s*\[\s*(\d+)\s*\]/i', $cmdAddress))
+                throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse Modbus d\'un scale factor extrait d\'une plage de registres doit être de la forme</br>nom_commande_plage[adresse_valeur] </i>sf<i> [adresse_scale_factor]</i>', __FILE__));
+            $blobs = $this->getBlobs($this->getSubType() == 'binary');
+            $ok = false;
+            foreach ($blobs as $blobName) {
+                if (strstr($cmdAddress, $blobName)) {
+                    $ok = true;
+                    break;
+                }
+            }
+            if (!$ok)
+                throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse Modbus d\'un extrait d\'une plage de registres doit commencer par le nom de la plage de registre du même sous-type.', __FILE__));
+        } else {
+            if ($this->getType() == 'info' && !is_numeric($cmdFrequency))
+                throw new Exception($this->getName() . '&nbsp;:</br>' . __('La configuration \'Lecture 1x sur\' doit être un nombre.', __FILE__));
+            if (!is_numeric($cmdAddress) && $cmdFormat != 'string' && $cmdFormat != 'blob' && !strstr($cmdFormat, 'sp-sf'))
+                throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse Modbus doit être un nombre.', __FILE__));
+            if ($cmdFormat == 'string' && !preg_match('/\d+\s*\[\s*\d+\s*\]/', $cmdAddress))
+                throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse Modbus d\'une chaine de caractère doit être de la forme</br>adresse[longueur]', __FILE__));
+            if ($cmdFormat == 'blob' && !preg_match('/\d+\s*\[\s*\d+\s*\]/', $cmdAddress))
+                throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse Modbus d\'une plage de registres doit être de la forme</br>adresse[longueur]', __FILE__));
+            if (strstr($cmdFormat, 'sp-sf') && !preg_match('/\d+\s*sf\s*\d+/i', $cmdAddress))
+                throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse Modbus d\'un scale factor doit être de la forme&nbsp;:</br><i>adresse_valeur </i>sf<i> adresse_scale_factor</i>', __FILE__));
+            if ($cmdOption != '' && (!strstr($cmdOption, '#value#') || strstr($cmdOption, ';')))
+                throw new Exception($this->getName() . '&nbsp;:</br>' . __('Le paramètre \'Option\' doit contenir \'#value#\' et aucun \';\'.', __FILE__));
+            if ($this->getType() == 'action') {
+                if ($cmdFctModbus == '6' && (strstr($cmdFormat, '32') || strstr($cmdFormat, '64')))
+                    throw new Exception($this->getName() . '&nbsp;:</br>' . __('La fonction "[0x06] Write register" ne permet pas d\'écrire une variable de cette longueur.', __FILE__));
+                if (strstr($cmdFormat, '8') || $cmdFormat == 'blob' || $cmdFctModbus == 'fromBlob' || in_array($this->getSubType(), array('color', 'select')))
+                    log::add('mymodbus', 'warning', $this->getName() . '&nbsp;:</br>' . __('L\'écriture sera ignorée.', __FILE__));
+            }
         }
         //log::add('mymodbus', 'debug', 'Validation de la configuration pour la commande *' . $this->getName() . '* : OK');
+    }
+    
+    public function getBlobs($binarySubType=false) {
+        $eqMymodbus = $this->getEqLogic();
+        $blobs = array();
+        foreach ($eqMymodbus->getCmd('info') as $cmd) {
+            if ($cmd->getConfiguration('cmdFormat') == 'blob') {
+                if ($binarySubType && $cmd->getSubType() == 'binary' or !$binarySubType && $cmd->getSubType() != 'binary')
+                    $blobs[] = $cmd->getName();
+            }
+        }
+        return $blobs;
     }
 
 

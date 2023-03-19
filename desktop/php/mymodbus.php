@@ -217,7 +217,7 @@ $eqLogics = eqLogic::byType($plugin->getId());
                                     <sup><i class="fas fa-question-circle tooltips" title="{{'0' si pas de bus série}}"></i></sup>
                                 </th>
                                 <th style="width:230px;">{{Fonction Modbus}}</th>
-                                <th style="min-width:120px;width:130px;">{{Adresse Modbus}}</th>
+                                <th style="min-width:120px;width:320px;">{{Adresse Modbus}}</th>
                                 <th>{{Paramètres}}</th>
                                 <th style="min-width:300px;width:310px;">{{Options}}</th>
                                 <th style="width:15px;">&nbsp;</th>

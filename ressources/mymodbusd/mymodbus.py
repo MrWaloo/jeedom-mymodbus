@@ -70,10 +70,10 @@ class PyModbusClient():
             if k != 'cmds':
                 self.eqConfig[k] = v
         
-        
         self.requests = PyModbusClient.get_requests(config['cmds'])
         self.framer = None
         self.client = None
+        self.blobs = {}
         self.write_cmds = []
         
         self.cycle = 0
@@ -107,35 +107,60 @@ class PyModbusClient():
         
     @staticmethod
     def get_requests(cmds):
-        re_string_address = re.compile(r"(\d+)\s*?[\(\[\{]\s*?(\d+)\s*?[\)\]\}]")
+        re_array = re.compile(r"(\d+)\s*\[\s*(\d+)\s*\]")
         re_sf = re.compile(r"(\d+)\s*?sf\s*?(\d+)", re.IGNORECASE)
+        re_from_blob = re.compile(r"(.*?)\s*\[\s*(\d+)\s*\](\s*\[\s*(\d+)\s*\])?")
+        re_from_blob_sp_sf = re.compile(r"(.*?)\s*\[\s*(\d+)\s*\]\s*sf\s*\[\s*(\d+)\s*\]", re.IGNORECASE)
         requests = {}
         for req_config in cmds:
             request = {}
             request['last_value'] = None
             request['type'] = req_config['type']
-            request['name'] = req_config['name']
+            request['name'] = req_config['name'].rstrip()
             request['slave'] = int(req_config['cmdSlave'])
             request['fct_modbus'] = req_config['cmdFctModbus']
             request['data_type'] = req_config['cmdFormat']
             # address according to data type
+            # blob part
+            if request['fct_modbus'] == 'fromBlob':
+                request['freq'] = 1
+                re_match = re_from_blob.match(req_config['cmdAddress'])
+                if re_match:
+                    request['blob'] = re_match.group(1)
+                    request['index'] = int(re_match.group(2))
+                    if re_match.group(4):
+                        request['strlen'] = int(re_match.group(4))
+                re_match = re_from_blob_sp_sf.match(req_config['cmdAddress'])
+                if re_match:
+                    request['blob'] = re_match.group(1)
+                    request['addr'] = int(re_match.group(2))
+                    request['sf'] = int(re_match.group(3))
+                
             # string
-            if request['data_type'] == 'string':
-                re_match = re_string_address.match(req_config['cmdAddress'])
+            elif request['data_type'] == 'string':
+                re_match = re_array.match(req_config['cmdAddress'])
                 if re_match:
                     request['addr'] = int(re_match.group(1))
                     request['strlen'] = int(re_match.group(2))
-                    
+                
+            # blob
+            elif request['data_type'] == 'blob':
+                re_match = re_array.match(req_config['cmdAddress'])
+                if re_match:
+                    request['addr'] = int(re_match.group(1))
+                    request['count'] = int(re_match.group(2))
+                
             # SunSpec scale factor
             elif request['data_type'].endswith('sp-sf'):
                 re_match = re_sf.match(req_config['cmdAddress'])
                 if re_match:
                     request['addr'] = int(re_match.group(1))
                     request['sf'] = int(re_match.group(2))
-                    
+                
             else:
                 request['addr'] = int(req_config['cmdAddress'])
-            if request['type'] == 'info':
+            
+            if request['type'] == 'info' and request['fct_modbus'] != 'fromBlob':
                 request['freq'] = int(req_config['cmdFrequency'])
             # Endianess
             request['byteorder'] = '>' if req_config['cmdInvertBytes'] == '0' else '<'
@@ -171,6 +196,8 @@ class PyModbusClient():
             if request['strlen'] % 2 == 1:
                 request['strlen'] -= 1
             count = int(request['strlen'] / 2)
+        elif request['data_type'] == 'blob':
+            count = int(request['count'])
         elif sp_sf:
             count = request['sf'] - request['addr'] + 1
         
@@ -192,6 +219,57 @@ class PyModbusClient():
             pass
         else:
             self.write_cmds.append(write_cmd)
+        
+    def get_value(self, request):
+        registers = self.blobs[request['blob']]
+        
+        # binary
+        if 'bit' in request['data_type']:
+            value = registers[request['index']]
+            if request['data_type'] == 'bin-inv':
+                value = not value
+            return value
+        
+        # else
+        normal_number, count, sp_sf = PyModbusClient.request_info(request)
+        
+        decoder = BinaryPayloadDecoder.fromRegisters(registers, request['byteorder'], request['wordorder'])
+        
+        # Type: Byte
+        if '8' in request['data_type']:
+            decoder.skip_bytes(request['index'] * 2)
+            if request['data_type'].endswith('-lsb'):
+                decoder.skip_bytes(1)
+            
+            if request['data_type'].startswith('int8'):
+                value = decoder.decode_8bit_int()
+            elif request['data_type'].startswith('uint8'):
+                value = decoder.decode_8bit_uint()
+            
+        # Type: Word (16bit) || Dword (32bit) || Double Dword (64bit)
+        elif normal_number:
+            decoder.skip_bytes(request['index'] * 2)
+            value = getattr(decoder, 'decode_' + request['data_type'][-2:] + 'bit_' + request['data_type'][:-2])()
+            
+        # string
+        elif request['data_type'] == 'string':
+            decoder.skip_bytes(request['index'] * 2)
+            value = decoder.decode_string(request['strlen'])
+            
+        #---------------
+        # Special cases
+        # SunSpec scale factor
+        elif sp_sf:
+            sp_pf_data_type = request['data_type'][:-5]
+            decoder.skip_bytes(request['addr'] * 2)
+            value = getattr(decoder, 'decode_' + sp_pf_data_type[-2:] + 'bit_' + sp_pf_data_type[:-2])()
+            
+            decoder.reset()
+            decoder.skip_bytes(request['sf'] * 2)
+            sf = decoder.decode_16bit_int()
+            value = value * 10 ** sf
+        
+        return value
         
     def run(self, queue):
         self.queue = queue
@@ -249,10 +327,13 @@ class PyModbusClient():
                     continue
                 
                 request_ok = True
+                value = None
                 
                 # Read coils (code 0x01) || Read discrete inputs (code 0x02)
                 if request['fct_modbus'] in ('1', '2'):
                     count = 1
+                    if request['data_type'] == 'blob':
+                        count = int(request['count'])
                     
                     try:
                         if request['fct_modbus'] == '1':
@@ -270,6 +351,10 @@ class PyModbusClient():
                         value = response.bits[0]
                         if request['data_type'] == 'bin-inv':
                             value = not value
+                            
+                        elif request['data_type'] == 'blob':
+                            value = True
+                            self.blobs[request['name']] = response.bits
                         
                 # Read holding registers (code 0x03) || Read input registers (code 0x04)
                 elif request['fct_modbus'] in ('3', '4'):
@@ -308,6 +393,11 @@ class PyModbusClient():
                         elif request['data_type'] == 'string':
                             value = decoder.decode_string(request['strlen'])
                             
+                        # blob
+                        elif request['data_type'] == 'blob':
+                            value = 1
+                            self.blobs[request['name']] = response.registers
+                            
                         #---------------
                         # Special cases
                         # SunSpec scale factor
@@ -322,6 +412,10 @@ class PyModbusClient():
                             sf = decoder.decode_16bit_int()
                             value = value * 10 ** sf
                         
+                # blob part
+                elif request['fct_modbus'] == 'fromBlob':
+                    value = self.get_value(request)
+                    
                 # Save the result of this request
                 if request_ok:
                     read_results[cmd_id] = value
@@ -340,7 +434,7 @@ class PyModbusClient():
                         logging.error(error_log)
                 
                 # Small pause if serial
-                if self.eqConfig['eqProtocol'] == 'serial':
+                if self.eqConfig['eqProtocol'] == 'serial' and request['fct_modbus'] != 'fromBlob':
                     await asyncio.sleep(0.05)
                 
                 # Checking write commands
@@ -393,6 +487,10 @@ class PyModbusClient():
             write_cmd = self.write_cmds.pop(0)
             request = self.requests[write_cmd['cmdId']]
             
+            # Type: Byte or blob
+            if request['fct_modbus'] == 'fromBlob' or '8' in request['data_type'] or request['data_type'] == 'blob':
+                continue # ignore this command that should not be received...
+            
             logging.debug('PyModbusClient: *-*-*-*-*-*-*-*-*-*-*-**-*-*-*-*-* request ' + repr(request))
             
             re_match = re_pause.match(str(write_cmd['cmdWriteValue']))
@@ -441,12 +539,8 @@ class PyModbusClient():
                 builder = BinaryPayloadBuilder(byteorder=request['byteorder'], wordorder=request['wordorder'])
                 
                 try:
-                    # Type: Byte
-                    if '8' in request['data_type']:
-                        pass # ignore this command that should not be received...
-                        
                     # Type: Word (16bit) || Dword (32bit) || Double Dword (64bit)
-                    elif normal_number:
+                    if normal_number:
                         value = float(value_to_write) if request['data_type'][:-2] == 'float' else int(value_to_write)
                         getattr(builder, 'add_' + request['data_type'][-2:] + 'bit_' + request['data_type'][:-2])(value)
                         

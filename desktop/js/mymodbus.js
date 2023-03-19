@@ -108,7 +108,7 @@ $("#table_cmd").delegate(".paramFiltre", 'click', function () {
         title: "{{Ajout d'un filtre}}",
         message: message,
         buttons: {
-            "{{Ne rien mettre}}": {
+            "{{Annuler}}": {
                 className: "btn-default",
                 callback: function () {
                     return;
@@ -143,9 +143,12 @@ function actualise_visible(me) {
     var cmdType = $(me).closest('tr').find('.cmdAttr[data-l1key=type]').value();
     var subType = $(me).closest('tr').find('.cmdAttr[data-l1key=subType]').value();
     var cmdFctModbus = $(me).closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=cmdFctModbus]').value();
+    var cmdFormat = $(me).closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=cmdFormat]').value();
     
     $(me).closest('tr').find('.formatNum').hide();
     $(me).closest('tr').find('.formatBin').hide();
+    $(me).closest('tr').find('.notModusBlob').hide();
+    $(me).closest('tr').find('.notFormatBlob').hide();
     $(me).closest('tr').find('.readFunction').hide();
     $(me).closest('tr').find('.writeFunction').hide();
     $(me).closest('tr').find('.readBin').hide();
@@ -160,6 +163,10 @@ function actualise_visible(me) {
             $(me).closest('tr').find('.readNum').show();
             $(me).closest('tr').find('.formatNum').show();
         }
+        if (cmdFctModbus != 'fromBlob')
+            $(me).closest('tr').find('.notModusBlob').show();
+        if (cmdFormat != 'blob')
+            $(me).closest('tr').find('.notFormatBlob').show();
     } else { // action
         $(me).closest('tr').find('.writeFunction').show();
         if (cmdFctModbus == '5' || cmdFctModbus == '15') {
@@ -303,6 +310,7 @@ function addCmdToTable(_cmd) {
     tr += '             <option class="writeFunction" value="15">[0x0F] Write coils</option>';
     tr += '             <option class="writeFunction" value="6">[0x06] Write register</option>';
     tr += '             <option class="writeFunction" value="16">[0x10] Write registers</option>';
+    tr += '             <option class="readFunction" value="fromBlob">{{Depuis une plage de registres}}</option>';
     tr += '         </select>';
     tr += '     </div>';
     tr += '     <div class="input-group">';
@@ -330,7 +338,8 @@ function addCmdToTable(_cmd) {
     tr += '                 <option class="formatNum" value="uint64">uint64 (0 ... 18e18)</option>';
     tr += '                 <option class="formatNum" value="float64">float64 (Real 64bit)</option>';
     tr += '             </optgroup>';
-    tr += '             <option class="formatNum" class="" value="string">{{Chaine de caractères}}</option>';
+    tr += '             <option class="formatNum" value="string">{{Chaine de caractères}}</option>';
+    tr += '             <option class="notModusBlob" value="blob">{{Plage de registres}}</option>';
     tr += '             <optgroup class="formatNum" label="{{Spécial}}">';
     tr += '                 <option class="formatNum" value="int16sp-sf">{{SunSpec scale factor int16}}</option>';
     tr += '                 <option class="formatNum" value="uint16sp-sf">{{SunSpec scale factor uint16}}</option>';
@@ -342,10 +351,10 @@ function addCmdToTable(_cmd) {
     // Adresse Modbus
     tr += ' <td>';
     tr += '     <input class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="cmdAddress">';
-    tr += '     <label class="checkbox-inline">';
+    tr += '     <label class="checkbox-inline notFormatBlob">';
     tr += '         <input type="checkbox" class="cmdAttr checkbox-inline tooltips" title="{{\'Little endian\' si coché}}" data-l1key="configuration" data-l2key="cmdInvertBytes"/>{{Inverser octets}}';
     tr += '     </label></br>';
-    tr += '     <label class="checkbox-inline">';
+    tr += '     <label class="checkbox-inline notFormatBlob">';
     tr += '         <input type="checkbox" class="cmdAttr checkbox-inline tooltips" title="{{\'Little endian\' si coché}}" data-l1key="configuration" data-l2key="cmdInvertWords"/>{{Inverser mots}}</label></br>';
     tr += '     </label></br>';
     tr += ' </td>';
@@ -357,9 +366,9 @@ function addCmdToTable(_cmd) {
     tr += '             <a class="btn btn-default btn-sm cursor paramFiltre roundedRight readFunction" data-input="configuration"><i class="fa fa-list-alt"></i></a>';
     tr += '         </span>';
     tr += '     </div>';
-    tr += '     <div class="input-group">';
-    tr += '         <label class="label readFunction">{{Lecture 1x sur&nbsp;:}}&nbsp;';
-    tr += '             <input class="cmdAttr form-inline input-sm roundedLeft readFunction" style="width:70px;" data-l1key="configuration" data-l2key="cmdFrequency" placeholder="{{1 par défaut}}"/>';
+    tr += '     <div class="input-group notModusBlob">';
+    tr += '         <label class="label">{{Lecture 1x sur&nbsp;:}}&nbsp;';
+    tr += '             <input class="cmdAttr form-inline input-sm roundedLeft" style="width:70px;" data-l1key="configuration" data-l2key="cmdFrequency" placeholder="{{1 par défaut}}"/>';
     tr += '         </label>';
     tr += '     </div>';
     tr += '     <div class="input-group" style="width:100%;">';
