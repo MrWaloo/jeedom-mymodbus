@@ -368,6 +368,8 @@ class mymodbus extends eqLogic {
             $cmdConfig['type'] = $cmdMymodbus->getType();
             $cmdConfig['cmdSlave'] = $cmdMymodbus->getConfiguration('cmdSlave');
             $cmdConfig['cmdFctModbus'] = $cmdMymodbus->getConfiguration('cmdFctModbus');
+            if ($cmdConfig['cmdFctModbus'] == 'fromBlob')
+                $cmdConfig['cmdSourceBlob'] = $cmdMymodbus->getConfiguration('cmdSourceBlob');
             $cmdConfig['cmdFormat'] = $cmdMymodbus->getConfiguration('cmdFormat');
             $cmdConfig['cmdAddress'] = $cmdMymodbus->getConfiguration('cmdAddress');
             $cmdConfig['cmdFrequency'] = $cmdMymodbus->getConfiguration('cmdFrequency');
@@ -488,43 +490,37 @@ class mymodbusCmd extends cmd {
             $this->setConfiguration('cmdFrequency', $cmdFrequency);
         }
         if ($cmdFctModbus == 'fromBlob') {
+            $cmdSourceBlob = $this->getConfiguration('cmdSourceBlob');
             if ($cmdFormat == 'blob')
                 throw new Exception($this->getName() . '&nbsp;:</br>' . __('On ne peut pas extraire une plage de registres d\'une plage de registres.', __FILE__));
-            if ($cmdFormat != 'string' && !strstr($cmdFormat, 'sp-sf') && !preg_match('/.*?\s*\[\s*\d+\s*\]/', $cmdAddress))
-                throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse Modbus d\'un extrait d\'une plage de registres doit être de la forme</br>nom_commande_plage[index]', __FILE__));
-            if ($cmdFormat == 'string' && !preg_match('/.*?\s*\[\s*\d+\s*\]\s*\[\s*\d+\s*\]/', $cmdAddress))
-                throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse Modbus d\'une chaîne de cartères extraite d\'une plage de registres doit être de la forme</br>nom_commande_plage[index][longueur]', __FILE__));
-            if (strstr($cmdFormat, 'sp-sf') && !preg_match('/(.*?)\s*\[\s*(\d+)\s*\]\s*sf\s*\[\s*(\d+)\s*\]/i', $cmdAddress))
-                throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse Modbus d\'un scale factor extrait d\'une plage de registres doit être de la forme</br>nom_commande_plage[adresse_valeur] </i>sf<i> [adresse_scale_factor]</i>', __FILE__));
             $blobs = $this->getBlobs($this->getSubType() == 'binary');
             $ok = false;
             foreach ($blobs as $blobName) {
-                if (strstr($cmdAddress, $blobName)) {
+                if (strstr($cmdSourceBlob, $blobName)) {
                     $ok = true;
                     break;
                 }
             }
             if (!$ok)
-                throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse Modbus d\'un extrait d\'une plage de registres doit commencer par le nom de la plage de registre du même sous-type.', __FILE__));
-        } else {
-            if ($this->getType() == 'info' && !is_numeric($cmdFrequency))
-                throw new Exception($this->getName() . '&nbsp;:</br>' . __('La configuration \'Lecture 1x sur\' doit être un nombre.', __FILE__));
-            if (!is_numeric($cmdAddress) && $cmdFormat != 'string' && $cmdFormat != 'blob' && !strstr($cmdFormat, 'sp-sf'))
-                throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse Modbus doit être un nombre.', __FILE__));
-            if ($cmdFormat == 'string' && !preg_match('/\d+\s*\[\s*\d+\s*\]/', $cmdAddress))
-                throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse Modbus d\'une chaine de caractère doit être de la forme</br>adresse[longueur]', __FILE__));
-            if ($cmdFormat == 'blob' && !preg_match('/\d+\s*\[\s*\d+\s*\]/', $cmdAddress))
-                throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse Modbus d\'une plage de registres doit être de la forme</br>adresse[longueur]', __FILE__));
-            if (strstr($cmdFormat, 'sp-sf') && !preg_match('/\d+\s*sf\s*\d+/i', $cmdAddress))
-                throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse Modbus d\'un scale factor doit être de la forme&nbsp;:</br><i>adresse_valeur </i>sf<i> adresse_scale_factor</i>', __FILE__));
-            if ($cmdOption != '' && (!strstr($cmdOption, '#value#') || strstr($cmdOption, ';')))
-                throw new Exception($this->getName() . '&nbsp;:</br>' . __('Le paramètre \'Option\' doit contenir \'#value#\' et aucun \';\'.', __FILE__));
-            if ($this->getType() == 'action') {
-                if ($cmdFctModbus == '6' && (strstr($cmdFormat, '32') || strstr($cmdFormat, '64')))
-                    throw new Exception($this->getName() . '&nbsp;:</br>' . __('La fonction "[0x06] Write register" ne permet pas d\'écrire une variable de cette longueur.', __FILE__));
-                if (strstr($cmdFormat, '8') || $cmdFormat == 'blob' || $cmdFctModbus == 'fromBlob' || in_array($this->getSubType(), array('color', 'select')))
-                    log::add('mymodbus', 'warning', $this->getName() . '&nbsp;:</br>' . __('L\'écriture sera ignorée.', __FILE__));
-            }
+                throw new Exception($this->getName() . '&nbsp;:</br>' . __('La plage de registre doit exister et la plage de registres et la commande doivent être du même sous-type.', __FILE__));
+        }
+        if ($this->getType() == 'info' && !is_numeric($cmdFrequency))
+            throw new Exception($this->getName() . '&nbsp;:</br>' . __('La configuration \'Lecture 1x sur\' doit être un nombre.', __FILE__));
+        if (!is_numeric($cmdAddress) && $cmdFormat != 'string' && $cmdFormat != 'blob' && !strstr($cmdFormat, 'sp-sf'))
+            throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse Modbus doit être un nombre.', __FILE__));
+        if ($cmdFormat == 'string' && !preg_match('/\d+\s*\[\s*\d+\s*\]/', $cmdAddress))
+            throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse Modbus d\'une chaine de caractère doit être de la forme</br>adresse[longueur]', __FILE__));
+        if ($cmdFormat == 'blob' && !preg_match('/\d+\s*\[\s*\d+\s*\]/', $cmdAddress))
+            throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse Modbus d\'une plage de registres doit être de la forme</br>adresse[longueur]', __FILE__));
+        if (strstr($cmdFormat, 'sp-sf') && !preg_match('/\d+\s*sf\s*\d+/i', $cmdAddress))
+            throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse Modbus d\'un scale factor doit être de la forme&nbsp;:</br><i>adresse_valeur </i>sf<i> adresse_scale_factor</i>', __FILE__));
+        if ($cmdOption != '' && (!strstr($cmdOption, '#value#') || strstr($cmdOption, ';')))
+            throw new Exception($this->getName() . '&nbsp;:</br>' . __('Le paramètre \'Option\' doit contenir \'#value#\' et aucun \';\'.', __FILE__));
+        if ($this->getType() == 'action') {
+            if ($cmdFctModbus == '6' && (strstr($cmdFormat, '32') || strstr($cmdFormat, '64')))
+                throw new Exception($this->getName() . '&nbsp;:</br>' . __('La fonction "[0x06] Write register" ne permet pas d\'écrire une variable de cette longueur.', __FILE__));
+            if (strstr($cmdFormat, '8') || $cmdFormat == 'blob' || $cmdFctModbus == 'fromBlob' || in_array($this->getSubType(), array('color', 'select')))
+                log::add('mymodbus', 'warning', $this->getName() . '&nbsp;:</br>' . __('L\'écriture sera ignorée.', __FILE__));
         }
         //log::add('mymodbus', 'debug', 'Validation de la configuration pour la commande *' . $this->getName() . '* : OK');
     }
@@ -535,7 +531,7 @@ class mymodbusCmd extends cmd {
         foreach ($eqMymodbus->getCmd('info') as $cmd) {
             if ($cmd->getConfiguration('cmdFormat') == 'blob') {
                 if ($binarySubType && $cmd->getSubType() == 'binary' or !$binarySubType && $cmd->getSubType() != 'binary')
-                    $blobs[] = $cmd->getName();
+                    $blobs[ $cmd->getId()] = $cmd->getName();
             }
         }
         return $blobs;

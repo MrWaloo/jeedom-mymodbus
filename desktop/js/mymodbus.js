@@ -147,7 +147,8 @@ function actualise_visible(me) {
     
     $(me).closest('tr').find('.formatNum').hide();
     $(me).closest('tr').find('.formatBin').hide();
-    $(me).closest('tr').find('.notModusBlob').hide();
+    $(me).closest('tr').find('.FctBlob').hide();
+    $(me).closest('tr').find('.notFctBlob').hide();
     $(me).closest('tr').find('.notFormatBlob').hide();
     $(me).closest('tr').find('.readFunction').hide();
     $(me).closest('tr').find('.writeFunction').hide();
@@ -163,8 +164,11 @@ function actualise_visible(me) {
             $(me).closest('tr').find('.readNum').show();
             $(me).closest('tr').find('.formatNum').show();
         }
-        if (cmdFctModbus != 'fromBlob')
-            $(me).closest('tr').find('.notModusBlob').show();
+        if (cmdFctModbus != 'fromBlob') {
+            $(me).closest('tr').find('.notFctBlob').show();
+        } else {
+            $(me).closest('tr').find('.FctBlob').show();
+        }
         if (cmdFormat != 'blob')
             $(me).closest('tr').find('.notFormatBlob').show();
     } else { // action
@@ -278,6 +282,8 @@ function addCmdToTable(_cmd) {
         _cmd.configuration.cmdFrequency = '1';
     }
     
+    //console.log('CMD - ' + init(JSON.stringify(_cmd)));
+    
     // id
     var tr = '<tr class="cmd" data-cmd_id="' + init(_cmd.id) + '">';
     tr += ' <td class="hidden-xs">'
@@ -339,7 +345,7 @@ function addCmdToTable(_cmd) {
     tr += '                 <option class="formatNum" value="float64">float64 (Real 64bit)</option>';
     tr += '             </optgroup>';
     tr += '             <option class="formatNum" value="string">{{Chaine de caractères}}</option>';
-    tr += '             <option class="notModusBlob" value="blob">{{Plage de registres}}</option>';
+    tr += '             <option class="notFctBlob" value="blob">{{Plage de registres}}</option>';
     tr += '             <optgroup class="formatNum" label="{{Spécial}}">';
     tr += '                 <option class="formatNum" value="int16sp-sf">{{SunSpec scale factor int16}}</option>';
     tr += '                 <option class="formatNum" value="uint16sp-sf">{{SunSpec scale factor uint16}}</option>';
@@ -350,7 +356,18 @@ function addCmdToTable(_cmd) {
     tr += ' </td>';
     // Adresse Modbus
     tr += ' <td>';
-    tr += '     <input class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="cmdAddress">';
+    //tr += '     <div class="input-group" style="margin-bottom:5px;">';
+    //tr += '         <select class="cmdAttr form-control input-sm" style="width:230px;" data-l1key="configuration" data-l2key="cmdBlob">';
+    //for (var i = _eqLogic.cmd.length - 1; i >= 0; i--) {
+	//	if (_eqLogic.cmd[i].cmdFormat == "") {
+	//		_eqLogic.cmd.splice(i, 1);
+	//	}
+	//}
+    //tr += '             <option class="readBin" value="1">[0x01] Read coils</option>';
+    //tr += '         </select>';
+    //tr += '     </div>';
+    tr += '     <input class="cmdAttr form-control input-sm FctBlob" data-l1key="configuration" data-l2key="cmdSourceBlob" placeholder="{{Nom de la commande source}}" style="margin-bottom:5px;"/>';
+    tr += '     <input class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="cmdAddress"/>';
     tr += '     <label class="checkbox-inline notFormatBlob">';
     tr += '         <input type="checkbox" class="cmdAttr checkbox-inline tooltips" title="{{\'Little endian\' si coché}}" data-l1key="configuration" data-l2key="cmdInvertBytes"/>{{Inverser octets}}';
     tr += '     </label></br>';
@@ -366,7 +383,7 @@ function addCmdToTable(_cmd) {
     tr += '             <a class="btn btn-default btn-sm cursor paramFiltre roundedRight readFunction" data-input="configuration"><i class="fa fa-list-alt"></i></a>';
     tr += '         </span>';
     tr += '     </div>';
-    tr += '     <div class="input-group notModusBlob">';
+    tr += '     <div class="input-group notFctBlob">';
     tr += '         <label class="label">{{Lecture 1x sur&nbsp;:}}&nbsp;';
     tr += '             <input class="cmdAttr form-inline input-sm roundedLeft" style="width:70px;" data-l1key="configuration" data-l2key="cmdFrequency" placeholder="{{1 par défaut}}"/>';
     tr += '         </label>';
@@ -379,15 +396,15 @@ function addCmdToTable(_cmd) {
     tr += ' <td>';
     if (is_numeric(_cmd.id)) {
         tr += '     <a class="btn btn-default btn-xs cmdAction" data-action="configure" title="{{Configuration de la commande}}""><i class="fas fa-cogs"></i></a>';
-        tr += '     <a class="btn btn-default btn-xs cmdAction" data-action="test" title="Tester"><i class="fas fa-rss"></i> </a>';
-        tr += '     <a class="btn btn-default btn-xs cmdAction" data-action="copy" title="Dupliquer"><i class="far fa-clone"></i></a>';
+        tr += '     <a class="btn btn-default btn-xs cmdAction" data-action="test" title="{{Tester}}"><i class="fas fa-rss"></i></a>';
+        tr += '     <a class="btn btn-default btn-xs cmdAction" data-action="copy" title="{{Dupliquer}}"><i class="far fa-clone"></i></a>';
     }
     tr += '     <label class="checkbox-inline"><input type="checkbox" class="cmdAttr checkbox-inline" data-l1key="isVisible" checked/>{{Afficher}}</label>';
     tr += '     <label class="checkbox-inline"><input type="checkbox" class="cmdAttr" data-l1key="isHistorized" data-size="mini"/>{{Historiser}}</label>';
     tr += '     <div style="margin-top:7px;">';
-    tr += '         <input class="tooltips cmdAttr form-control input-sm expertModeVisible" data-l1key="configuration" data-l2key="minValue" placeholder="{{Min}}" title="{{Min}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;">';
-    tr += '         <input class="tooltips cmdAttr form-control input-sm expertModeVisible" data-l1key="configuration" data-l2key="maxValue" placeholder="{{Max}}" title="{{Max}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;">';
-    tr += '         <input class="tooltips cmdAttr form-control input-sm" data-l1key="unite" placeholder="{{Unité}}" title="{{Unité}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;">';
+    tr += '         <input class="tooltips cmdAttr form-control input-sm expertModeVisible" data-l1key="configuration" data-l2key="minValue" placeholder="{{Min}}" title="{{Min}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;"/>';
+    tr += '         <input class="tooltips cmdAttr form-control input-sm expertModeVisible" data-l1key="configuration" data-l2key="maxValue" placeholder="{{Max}}" title="{{Max}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;"/>';
+    tr += '         <input class="tooltips cmdAttr form-control input-sm" data-l1key="unite" placeholder="{{Unité}}" title="{{Unité}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;"/>';
     tr += '     </div>';
     tr += ' </td>';
     // Delete button
@@ -397,14 +414,12 @@ function addCmdToTable(_cmd) {
     tr += '</tr>';
     $('#table_cmd tbody').append(tr);
     var tr = $('#table_cmd tbody tr:last');
-    jeedom.eqLogic.builSelectCmd({
+    jeedom.eqLogic.buildSelectCmd({
         id:  $('.eqLogicAttr[data-l1key=id]').value(),
-        filter: {type: 'info'},
         error: function (error) {
             $('#div_alert').showAlert({message: error.message, level: 'danger'});
         },
         success: function (result) {
-            tr.find('.cmdAttr[data-l1key=value]').append(result);
             tr.setValues(_cmd, '.cmdAttr');
             jeedom.cmd.changeType(tr, init(_cmd.subType));
         }
