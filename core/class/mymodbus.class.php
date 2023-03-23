@@ -529,7 +529,7 @@ class mymodbusCmd extends cmd {
                 if ($cmdAddress < $minAddr or $cmdAddress > $maxAddr)
                     throw new Exception($this->getName() . '&nbsp;:</br>' . __('Adresse Modbus en dehors de la plage de registres.', __FILE__));
             }
-            if ($cmdFormat != 'string') {
+            if ($cmdFormat == 'string') {
                 preg_match('/(\d+)\s*\[\s*(\d+)\s*\]/', $cmdAddress, $matches);
                 $startAddr = intval($matches[1]);
                 $endAddr = $startAddr + intval($matches[2]);
