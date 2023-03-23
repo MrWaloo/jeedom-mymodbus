@@ -368,8 +368,12 @@ class mymodbus extends eqLogic {
             $cmdConfig['type'] = $cmdMymodbus->getType();
             $cmdConfig['cmdSlave'] = $cmdMymodbus->getConfiguration('cmdSlave');
             $cmdConfig['cmdFctModbus'] = $cmdMymodbus->getConfiguration('cmdFctModbus');
-            if ($cmdConfig['cmdFctModbus'] == 'fromBlob')
-                $cmdConfig['cmdSourceBlob'] = $cmdMymodbus->getConfiguration('cmdSourceBlob');
+            if ($cmdConfig['cmdFctModbus'] == 'fromBlob') {
+                if ($cmdMymodbus->getSubType() == 'binary')
+                    $cmdConfig['cmdSourceBlob'] = $cmdMymodbus->getConfiguration('cmdSourceBlobBin');
+                else
+                    $cmdConfig['cmdSourceBlob'] = $cmdMymodbus->getConfiguration('cmdSourceBlobNum');
+            }
             $cmdConfig['cmdFormat'] = $cmdMymodbus->getConfiguration('cmdFormat');
             $cmdConfig['cmdAddress'] = $cmdMymodbus->getConfiguration('cmdAddress');
             $cmdConfig['cmdFrequency'] = $cmdMymodbus->getConfiguration('cmdFrequency');
@@ -489,21 +493,6 @@ class mymodbusCmd extends cmd {
             $cmdFrequency = '1';
             $this->setConfiguration('cmdFrequency', $cmdFrequency);
         }
-        if ($cmdFctModbus == 'fromBlob') {
-            $cmdSourceBlob = $this->getConfiguration('cmdSourceBlob');
-            if ($cmdFormat == 'blob')
-                throw new Exception($this->getName() . '&nbsp;:</br>' . __('On ne peut pas extraire une plage de registres d\'une plage de registres.', __FILE__));
-            $blobs = $this->getBlobs($this->getSubType() == 'binary');
-            $ok = false;
-            foreach ($blobs as $blobName) {
-                if (strstr($cmdSourceBlob, $blobName)) {
-                    $ok = true;
-                    break;
-                }
-            }
-            if (!$ok)
-                throw new Exception($this->getName() . '&nbsp;:</br>' . __('La plage de registre doit exister et la plage de registres et la commande doivent être du même sous-type.', __FILE__));
-        }
         if ($this->getType() == 'info' && !is_numeric($cmdFrequency))
             throw new Exception($this->getName() . '&nbsp;:</br>' . __('La configuration \'Lecture 1x sur\' doit être un nombre.', __FILE__));
         if (!is_numeric($cmdAddress) && $cmdFormat != 'string' && $cmdFormat != 'blob' && !strstr($cmdFormat, 'sp-sf'))
@@ -522,21 +511,42 @@ class mymodbusCmd extends cmd {
             if (strstr($cmdFormat, '8') || $cmdFormat == 'blob' || $cmdFctModbus == 'fromBlob' || in_array($this->getSubType(), array('color', 'select')))
                 log::add('mymodbus', 'warning', $this->getName() . '&nbsp;:</br>' . __('L\'écriture sera ignorée.', __FILE__));
         }
-        //log::add('mymodbus', 'debug', 'Validation de la configuration pour la commande *' . $this->getName() . '* : OK');
-    }
-    
-    public function getBlobs($binarySubType=false) {
-        $eqMymodbus = $this->getEqLogic();
-        $blobs = array();
-        foreach ($eqMymodbus->getCmd('info') as $cmd) {
-            if ($cmd->getConfiguration('cmdFormat') == 'blob') {
-                if ($binarySubType && $cmd->getSubType() == 'binary' or !$binarySubType && $cmd->getSubType() != 'binary')
-                    $blobs[ $cmd->getId()] = $cmd->getName();
+        if ($cmdFctModbus == 'fromBlob') {
+            if ($cmdFormat == 'blob')
+                throw new Exception($this->getName() . '&nbsp;:</br>' . __('On ne peut pas extraire une plage de registres d\'une plage de registres.', __FILE__));
+            if ($this->getSubtype() == 'binary')
+                $cmdSourceBlob = $this->getConfiguration('cmdSourceBlobBin');
+            else
+                $cmdSourceBlob = $this->getConfiguration('cmdSourceBlobNum');
+            $blobCmd = mymodbusCmd::byId($cmdSourceBlob);
+            $blobAddress = $blobCmd->getConfiguration('cmdAddress');
+            preg_match('/(\d+)\s*\[\s*(\d+)\s*\]/', $blobAddress, $matches);
+            $minAddr = intval($matches[1]);
+            $maxAddr = $minAddr + intval($matches[2]);
+            
+            if ($cmdFormat != 'string' && !strstr($cmdFormat, 'sp-sf')) {
+                $cmdAddress = intval($cmdAddress);
+                if ($cmdAddress < $minAddr or $cmdAddress > $maxAddr)
+                    throw new Exception($this->getName() . '&nbsp;:</br>' . __('Adresse Modbus en dehors de la plage de registres.', __FILE__));
+            }
+            if ($cmdFormat != 'string') {
+                preg_match('/(\d+)\s*\[\s*(\d+)\s*\]/', $cmdAddress, $matches);
+                $startAddr = intval($matches[1]);
+                $endAddr = $startAddr + intval($matches[2]);
+                if ($startAddr < $minAddr or $startAddr > $maxAddr or $endAddr < $minAddr or $endAddr > $maxAddr)
+                    throw new Exception($this->getName() . '&nbsp;:</br>' . __('Adresse Modbus en dehors de la plage de registres.', __FILE__));
+            }
+            if (strstr($cmdFormat, 'sp-sf')) {
+                preg_match('/(\d+)\s*sf\s*(\d+)/i', $cmdAddress, $matches);
+                $startAddr = intval($matches[1]);
+                $endAddr = intval($matches[2]);
+                if ($startAddr < $minAddr or $startAddr > $maxAddr or $endAddr < $minAddr or $endAddr > $maxAddr)
+                    throw new Exception($this->getName() . '&nbsp;:</br>' . __('Adresse Modbus en dehors de la plage de registres.', __FILE__));
+                
             }
         }
-        return $blobs;
+        //log::add('mymodbus', 'debug', 'Validation de la configuration pour la commande *' . $this->getName() . '* : OK');
     }
-
 
     /*     * **********************Getteur Setteur*************************** */
 }

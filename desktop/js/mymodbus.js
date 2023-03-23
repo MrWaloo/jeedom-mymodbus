@@ -126,6 +126,28 @@ $("#table_cmd").delegate(".paramFiltre", 'click', function () {
     });
 });
 
+// inspired from jeedom.eqLogic.buildSelectCmd
+listSourceBlobs = function(_params) {
+    jeedom.eqLogic.getCmd({
+        id: _params.id,
+        async: false,
+        success: function(cmds) {
+            var resultBin = '';
+            var resultNum = '';
+            for (var i in cmds) {
+                if (cmds[i].configuration.cmdFormat === 'blob') {
+                    if (cmds[i].subType === 'binary')
+                        resultBin += '<option value="' + cmds[i].id + '">' + cmds[i].name + '</option>';
+                    else
+                        resultNum += '<option value="' + cmds[i].id + '">' + cmds[i].name + '</option>';
+                }
+            }
+            if (typeof(_params.success) == 'function') {
+                _params.success(resultBin, resultNum);
+            }
+        }
+    });
+}
 
 $("#table_cmd tbody").delegate(".cmdAttr[data-l1key=type]", 'change', function (event) {
     actualise_visible($(this));
@@ -147,7 +169,8 @@ function actualise_visible(me) {
     
     $(me).closest('tr').find('.formatNum').hide();
     $(me).closest('tr').find('.formatBin').hide();
-    $(me).closest('tr').find('.FctBlob').hide();
+    $(me).closest('tr').find('.FctBlobBin').hide();
+    $(me).closest('tr').find('.FctBlobNum').hide();
     $(me).closest('tr').find('.notFctBlob').hide();
     $(me).closest('tr').find('.notFormatBlob').hide();
     $(me).closest('tr').find('.readFunction').hide();
@@ -167,7 +190,11 @@ function actualise_visible(me) {
         if (cmdFctModbus != 'fromBlob') {
             $(me).closest('tr').find('.notFctBlob').show();
         } else {
-            $(me).closest('tr').find('.FctBlob').show();
+            if (subType == 'binary') {
+                $(me).closest('tr').find('.FctBlobBin').show();
+            } else {
+                $(me).closest('tr').find('.FctBlobNum').show();
+            }
         }
         if (cmdFormat != 'blob')
             $(me).closest('tr').find('.notFormatBlob').show();
@@ -356,17 +383,12 @@ function addCmdToTable(_cmd) {
     tr += ' </td>';
     // Adresse Modbus
     tr += ' <td>';
-    //tr += '     <div class="input-group" style="margin-bottom:5px;">';
-    //tr += '         <select class="cmdAttr form-control input-sm" style="width:230px;" data-l1key="configuration" data-l2key="cmdBlob">';
-    //for (var i = _eqLogic.cmd.length - 1; i >= 0; i--) {
-	//	if (_eqLogic.cmd[i].cmdFormat == "") {
-	//		_eqLogic.cmd.splice(i, 1);
-	//	}
-	//}
-    //tr += '             <option class="readBin" value="1">[0x01] Read coils</option>';
-    //tr += '         </select>';
-    //tr += '     </div>';
-    tr += '     <input class="cmdAttr form-control input-sm FctBlob" data-l1key="configuration" data-l2key="cmdSourceBlob" placeholder="{{Nom de la commande source}}" style="margin-bottom:5px;"/>';
+    tr += '     <div class="input-group" style="margin-bottom:5px;">';
+    tr += '         <select class="cmdAttr form-control input-sm FctBlobBin" style="width:100%;" data-l1key="configuration" data-l2key="cmdSourceBlobBin">';
+    tr += '         </select>';
+    tr += '         <select class="cmdAttr form-control input-sm FctBlobNum" style="width:100%;" data-l1key="configuration" data-l2key="cmdSourceBlobNum">';
+    tr += '         </select>';
+    tr += '     </div>';
     tr += '     <input class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="cmdAddress"/>';
     tr += '     <label class="checkbox-inline notFormatBlob">';
     tr += '         <input type="checkbox" class="cmdAttr checkbox-inline tooltips" title="{{\'Little endian\' si coché}}" data-l1key="configuration" data-l2key="cmdInvertBytes"/>{{Inverser octets}}';
@@ -413,7 +435,18 @@ function addCmdToTable(_cmd) {
     tr += ' </td>';
     tr += '</tr>';
     $('#table_cmd tbody').append(tr);
+    
     var tr = $('#table_cmd tbody tr:last');
+    listSourceBlobs({
+        id:  $('.eqLogicAttr[data-l1key=id]').value(),
+        error: function (error) {
+            $('#div_alert').showAlert({message: error.message, level: 'danger'});
+        },
+        success: function (resultBin, resultNum) {
+            tr.find('.cmdAttr[data-l1key=configuration][data-l2key="cmdSourceBlobBin"]').append(resultBin);
+            tr.find('.cmdAttr[data-l1key=configuration][data-l2key="cmdSourceBlobNum"]').append(resultNum);
+        }
+    });
     jeedom.eqLogic.buildSelectCmd({
         id:  $('.eqLogicAttr[data-l1key=id]').value(),
         error: function (error) {

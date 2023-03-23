@@ -122,7 +122,7 @@ class PyModbusClient():
             # blob part
             if request['fct_modbus'] == 'fromBlob':
                 request['freq'] = 1
-                request['blob'] = req_config['cmdSourceBlob']
+                request['blobId'] = req_config['cmdSourceBlob']
                 
             # string
             if request['data_type'] == 'string':
@@ -211,16 +211,12 @@ class PyModbusClient():
     def get_value(self, cmd_id):
         request = self.requests[cmd_id]
         
-        blob_start_addr = None
-        registers = None
-        for _cmd_id, req in self.requests.items():
-            if req['name'] == request['blob']:
-                blob_start_addr = req['addr']
-                registers = self.blobs[_cmd_id]
-                break
-        
-        if blob_start_addr is None:
+        if request['blobId'] in self.requests.keys() and request['blobId'] in self.blobs.keys():
+            blob_start_addr = self.requests[request['blobId']]['addr']
+            registers = self.blobs[request['blobId']]
+        else: 
             return None
+        
         index = request['addr'] - blob_start_addr
         if index > len(registers):
             return None
@@ -350,6 +346,7 @@ class PyModbusClient():
                     except Exception as e:
                         request_ok = False
                         exception = repr(e)
+                        connected = False
                         
                     if request_ok:
                         value = response.bits[0]
@@ -375,6 +372,7 @@ class PyModbusClient():
                     except Exception as e:
                         request_ok = False
                         exception = repr(e)
+                        connected = False
                         
                     if request_ok:
                         decoder = BinaryPayloadDecoder.fromRegisters(response.registers, request['byteorder'], request['wordorder'])
