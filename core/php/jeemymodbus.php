@@ -31,14 +31,17 @@ log::add('mymodbus', 'debug', 'jeemymodbus.php: $result *' . json_encode($result
 if (!is_array($result))
     die();
 
-if (isset($result['state'])) {
-    // TODO
-    //log::add('mymodbus', 'debug', 'jeemymodbus.php: state: *' . $result['state'] . '*');
+if (isset($result['heartbeat_request'])) {
+    $message = array();
+    $message['CMD'] = 'heartbeat_answer';
+    $message['answer'] = $result['heartbeat_request'];
+    mymodbus::sendToDaemon($message);
     
 } elseif (isset($result['values'])) {
     $names = '';
+    $eqlogic = mymodbus::byId($result['eqId']);
     foreach ($result['values'] as $cmd_id => $new_value) {
-        $cmd = cmd::byid($cmd_id);
+        $cmd = mymodbusCmd::byid($cmd_id);
         //$old_value = $cmd->execCmd();
         
         $cmdOption = $cmd->getConfiguration('cmdOption');
@@ -54,7 +57,6 @@ if (isset($result['state'])) {
         
         log::add('mymodbus', 'debug', 'jeemodbus.php: Mise à jour cmd ' . $cmd->getName() . ' -> new value: ' . $new_value, 'config');
         
-        $eqlogic = $cmd->getEqLogic();
         $eqlogic->checkAndUpdateCmd($cmd, $new_value);
         
         $names .= ' \'' . $cmd->getName() . '\'';

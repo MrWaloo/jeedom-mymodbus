@@ -185,12 +185,12 @@ class Main():
             logging.error("mymodbusd: Received data without CMD: " + str(message))
             return
         else:
-            # quit
+            # Quit
             if message['CMD'] == 'quit':
                 logging.info("mymodbusd: Command 'quit' received from jeedom: exiting")
                 self.should_stop.set()
                 return
-            # write
+            # Write
             elif message['CMD'] == 'write':
                 if 'write_cmd' not in message:
                     logging.error("mymodbusd: Received CMD=write without write_cmd: " + str(message))
@@ -198,6 +198,9 @@ class Main():
                 logging.info("mymodbusd: Command 'write' received from jeedom: sending the command to the daemon")
                 self.send_write_cmd(message['write_cmd'])
                 return
+            # Heartbeat
+            elif message['CMD'] == 'heartbeat_answer':
+                self.hb_recv_time = (time.time(), int(message['answer']))
         
     def send_write_cmd(self, write_cmd):
         if self.clear_to_leave.is_set() or self.should_stop.is_set():
@@ -223,6 +226,10 @@ class Main():
             self.sub_process[eqId] = mp.Process(target=self.pymodbus_clients[eqId].run, args=(self.queues[eqId], ), name=eqConfig['name'], daemon=True)
             self.sub_process[eqId].start()
             time.sleep(1)
+        
+        start_time = time.time()
+        hb_send_time = start_time
+        self.hb_recv_time = (start_time + 0.1, int(start_time))
         
         # Incoming communication from php
         self.jsock.listen()
@@ -263,6 +270,20 @@ class Main():
                                 self.sub_process[eqId] = mp.Process(target=self.pymodbus_clients[eqId].run, args=(self.queues[eqId], ), name=eqConfig['name'], daemon=True)
                                 self.sub_process[eqId].start()
                                 break
+            
+            # Send heartbeat echo
+            now = time.time()
+            if self.hb_recv_time[0] < hb_send_time:
+                if now - hb_send_time > 15:
+                    self.should_stop.set()
+                    logging.error("mymodbusd: Stopping pid " + str(os.getpid()) + ": heartbeat timeout")
+            elif self.hb_recv_time[1] != int(hb_send_time):
+                self.should_stop.set()
+                logging.error("mymodbusd: Stopping pid " + str(os.getpid()) + ": wrong heartbeat received")
+                
+            if now - hb_send_time > 60:
+                self.jcom.send_change_immediate({'heartbeat_request': int(now)})
+                hb_send_time = now
             
         # Stop all communication threads properly
         for process in mp.active_children():

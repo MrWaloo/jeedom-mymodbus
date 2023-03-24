@@ -96,26 +96,26 @@ class mymodbus extends eqLogic {
         if (!plugin::byId('mymodbus')->isActive())
             throw new Exception(__('Le plugin Mymodbus n\'est pas actif.', __FILE__));
         
+        $eqConfig = self::getCompleteConfiguration();
+        
         // Pas de démarrage si ce n'est pas possible
-        if (self::getDeamonLaunchable() != 'ok') {
+        if (self::getDeamonLaunchable($eqConfig) != 'ok') {
             log::add('mymodbus', 'error', __('Démarrage du démon impossible, veuillez vérifier la configuration de MyModbus', __FILE__));
             return true;
         }
-        
-        $jsonData = self::getCompleteConfiguration();
         
         $socketPort = is_numeric(config::byKey('socketport', __CLASS__, self::$_DEFAULT_SOCKET_PORT, True)) ? config::byKey('socketport', __CLASS__, self::$_DEFAULT_SOCKET_PORT) : self::$_DEFAULT_SOCKET_PORT;
         $daemonLoglevel = escapeshellarg(log::convertLogLevel(log::getLogLevel(__CLASS__)));
         $daemonApikey = escapeshellarg(jeedom::getApiKey(__CLASS__));
         $daemonCallback = escapeshellarg(self::getCallbackUrl());
-        $daemonJson = escapeshellarg(json_encode($jsonData));
+        $jsonEqConfig = escapeshellarg(json_encode($eqConfig));
         
         log::add('mymodbus', 'debug', 'deamon_start socketport *' . $socketPort . '*');
         log::add('mymodbus', 'debug', 'deamon_start API-key *' . $daemonApikey . '*');
         log::add('mymodbus', 'debug', 'deamon_start callbackURL *' . $daemonCallback . '*');
-        log::add('mymodbus', 'debug', 'deamon_start config *' . $daemonJson . '*');
+        log::add('mymodbus', 'debug', 'deamon_start config *' . $jsonEqConfig . '*');
         
-        $request = ' --socketport ' . $socketPort . ' --loglevel ' . $daemonLoglevel . ' --apikey ' . $daemonApikey . ' --callback ' . $daemonCallback . ' --json ' . $daemonJson;
+        $request = ' --socketport ' . $socketPort . ' --loglevel ' . $daemonLoglevel . ' --apikey ' . $daemonApikey . ' --callback ' . $daemonCallback . ' --json ' . $jsonEqConfig;
         
         $mymodbus_path = realpath(dirname(__FILE__) . '/../../ressources/mymodbusd');
         $pyenv_path = realpath(dirname(__FILE__) . '/../../ressources/_pyenv');
@@ -236,12 +236,17 @@ class mymodbus extends eqLogic {
         
         $eqProtocol = $this->getConfiguration('eqProtocol');
         $eqPolling = $this->getConfiguration('eqPolling');
+        $eqFirstDelay = $this->getConfiguration('eqFirstDelay');
         if (!in_array($eqProtocol, self::supportedProtocols()))
             throw new Exception($this->getName() . '&nbsp;:</br>' . __('Le protocol n\'est pas défini correctement.', __FILE__));
         if (!is_numeric($eqPolling))
             throw new Exception($this->getName() . '&nbsp;:</br>' . __('Le paramètre "Polling" doit être un nombre.', __FILE__));
         if ($eqPolling < 10)
             throw new Exception($this->getName() . '&nbsp;:</br>' . __('Le paramètre "Polling" doit être au moins à 10 secondes', __FILE__));
+        if (!is_numeric($eqFirstDelay))
+            throw new Exception($this->getName() . '&nbsp;:</br>' . __('Le paramètre "Temps entre la connexion et la première requête" doit être un nombre.', __FILE__));
+        if ($eqFirstDelay < 0)
+            throw new Exception($this->getName() . '&nbsp;:</br>' . __('Le paramètre "Temps entre la connexion et la première requête" doit être positif.', __FILE__));
         
         if ($eqProtocol == 'tcp') {
             // Vérification du paramétrage d'une connexion TCP
@@ -342,6 +347,7 @@ class mymodbus extends eqLogic {
         $eqConfig['eqProtocol'] = $this->getConfiguration('eqProtocol');
         $eqConfig['eqKeepopen'] = $this->getConfiguration('eqKeepopen');
         $eqConfig['eqPolling'] = $this->getConfiguration('eqPolling');
+        $eqConfig['eqFirstDelay'] = $this->getConfiguration('eqFirstDelay');
         if ($eqConfig['eqProtocol'] == 'serial') {
             $eqConfig['eqSerialInterface'] = $this->getConfiguration('eqSerialInterface');
             $eqConfig['eqSerialMethod'] = $this->getConfiguration('eqSerialMethod');
@@ -396,16 +402,43 @@ class mymodbus extends eqLogic {
             return 'nok';
     }
     
-    public static function getDeamonLaunchable() {
+    public static function getDeamonLaunchable($eqConfig='') {
+        // Si 2 équipements utilisent la même connexion -> nok
+        if ($eqConfig != '') {
+            $serialIntf = array();
+            $tcpIp = array();
+            $udpIp = array();
+            foreach ($eqConfig as $config) {
+                if ($config['eqProtocol'] == 'serial') {
+                    $intf = $config['eqSerialInterface'];
+                    if (in_array($intf, $serialIntf))
+                        return 'nok';
+                    $serialIntf[] = $intf;
+                } elseif ($config['eqProtocol'] == 'tcp') {
+                    $ip = $config['eqTcpAddr'];
+                    if (in_array($ip, $tcpIp))
+                        return 'nok';
+                    $tcpIp[] = $ip;
+                } elseif ($config['eqProtocol'] == 'udp') {
+                    $ip = $config['eqUdpAddr'];
+                    if (in_array($ip, $udpIp))
+                        return 'nok';
+                    $udpIp[] = $ip;
+                }
+            }
+        }
+        
+        $ret = 'nok';
         foreach (self::byType('mymodbus') as $eqMymodbus) { // boucle sur les équipements
             if ($eqMymodbus->getIsEnable()) {
                 foreach ($eqMymodbus->getCmd('info') as $cmd) {
                     // Au moins une commande enregistrée, donc la configuration est validée par preSave()
-                    return 'ok';
+                    $ret = 'ok';
                 }
             }
         }
-        return 'nok';
+        
+        return $ret;
     }
     
     public static function getCallbackUrl() {
@@ -522,7 +555,7 @@ class mymodbusCmd extends cmd {
             $blobAddress = $blobCmd->getConfiguration('cmdAddress');
             preg_match('/(\d+)\s*\[\s*(\d+)\s*\]/', $blobAddress, $matches);
             $minAddr = intval($matches[1]);
-            $maxAddr = $minAddr + intval($matches[2]);
+            $maxAddr = $minAddr + intval($matches[2]) - 1;
             
             if ($cmdFormat != 'string' && !strstr($cmdFormat, 'sp-sf')) {
                 $cmdAddress = intval($cmdAddress);
@@ -542,7 +575,6 @@ class mymodbusCmd extends cmd {
                 $endAddr = intval($matches[2]);
                 if ($startAddr < $minAddr or $startAddr > $maxAddr or $endAddr < $minAddr or $endAddr > $maxAddr)
                     throw new Exception($this->getName() . '&nbsp;:</br>' . __('Adresse Modbus en dehors de la plage de registres.', __FILE__));
-                
             }
         }
         //log::add('mymodbus', 'debug', 'Validation de la configuration pour la commande *' . $this->getName() . '* : OK');

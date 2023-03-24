@@ -177,6 +177,12 @@ $eqLogics = eqLogic::byType($plugin->getId());
                                     <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqPolling" placeholder="60"/>
                                 </div>
                             </div>
+                            <div class="form-group">
+                                <label class="col-sm-4 control-label">{{Temps entre la connexion et la première requête}}</label>
+                                <div class="col-sm-6">
+                                    <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqFirstDelay" placeholder="0"/>
+                                </div>
+                            </div>
                             
                             <!-- Paramètres propres au protocol "desktop/modal/configuration.*.php" -->
                             <div id="div_protocolParameters"></div>
