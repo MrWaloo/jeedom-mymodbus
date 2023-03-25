@@ -29,6 +29,7 @@ from pymodbus.framer.ascii_framer import ModbusAsciiFramer
 from pymodbus.framer.binary_framer import ModbusBinaryFramer
 from pymodbus.payload import (BinaryPayloadDecoder, BinaryPayloadBuilder)
 from pymodbus.pdu import ExceptionResponse
+from pymodbus.exceptions import ModbusException
 
 from jeedom.jeedom import jeedom_utils
 
@@ -458,7 +459,10 @@ class PyModbusClient():
                 else:
                     error_log = 'PyModbusClient: Something went wrong while reading ' + request['name'] + ' (command id ' + cmd_id + ')'
                     if exception:
-                        logging.error(error_log + ': ' + repr(exception) + ' - ' + exception.string)
+                        if isinstance(exception, ModbusException):
+                            logging.error(error_log + ': ' + repr(exception) + ' - ' + exception.string)
+                        else:
+                            logging.error(error_log + ': ' + repr(exception))
                     else:
                         logging.error(error_log)
                 
@@ -551,7 +555,10 @@ class PyModbusClient():
                 if not request_ok:
                     error_log = 'PyModbusClient: Something went wrong while writing ' + request['name'] + ' (command id ' + write_cmd['cmdId'] + ')'
                     if exception:
-                        logging.error(error_log + ': ' + repr(exception) + ' - ' + exception.string)
+                        if isinstance(exception, ModbusException):
+                            logging.error(error_log + ': ' + repr(exception) + ' - ' + exception.string)
+                        else:
+                            logging.error(error_log + ': ' + repr(exception))
                     else:
                         logging.error(error_log)
                 
@@ -612,7 +619,10 @@ class PyModbusClient():
                         if not request_ok:
                             error_log = 'PyModbusClient: Something went wrong while writing ' + request['name'] + ' (command id ' + write_cmd['cmdId'] + ')'
                             if exception:
-                                logging.error(error_log + ': ' + repr(exception) + ' - ' + exception.string)
+                                if isinstance(exception, ModbusException):
+                                    logging.error(error_log + ': ' + repr(exception) + ' - ' + exception.string)
+                                else:
+                                    logging.error(error_log + ': ' + repr(exception))
                             else:
                                 logging.error(error_log)
                 
