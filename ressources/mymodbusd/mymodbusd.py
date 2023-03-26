@@ -166,8 +166,10 @@ class Main():
         
         return True
         
-    def get_config(self, eqId):
-        for eqConfig in self.config:
+    def get_config(self, eqId, config=None):
+        if config == None:
+            config = self.config
+        for eqConfig in config:
             if eqConfig['id'] == eqId:
                 return eqConfig
         
@@ -263,11 +265,11 @@ class Main():
         for cgf in self.config:
             eqIds.append(cgf['id'])
         
-        # Step 1: terminate daemons of deleted equipments
+        # Step 1: terminate daemons of deleted or deactivated equipments
         for eqId in old_eqIds:
             if eqId not in eqIds:
                 [process, queue] = self.sub_process[eqId]
-                eqConfig = self.get_config(eqId)
+                eqConfig = self.get_config(eqId, old_config)
                 try:
                     queue.put({'stop': None}, True, float(eqConfig['eqPolling']) * 2)
                 except Full:

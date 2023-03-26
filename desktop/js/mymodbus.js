@@ -126,6 +126,14 @@ $("#table_cmd").delegate(".paramFiltre", 'click', function () {
     });
 });
 
+$("#table_cmd").delegate(".listEquipementInfo", 'click', function () {
+  var el = $(this)
+  jeedom.cmd.getSelectModal({ cmd: { type: 'info' } }, function (result) {
+    var calcul = el.closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=' + el.data('input') + ']')
+    calcul.atCaret('insert', result.human)
+  })
+})
+
 // inspired from jeedom.eqLogic.buildSelectCmd
 listSourceBlobs = function(_params) {
     jeedom.eqLogic.getCmd({
@@ -412,6 +420,9 @@ function addCmdToTable(_cmd) {
     tr += '     </div>';
     tr += '     <div class="input-group" style="width:100%;">';
     tr += '         <input class="cmdAttr form-control input-sm roundedLeft writeFunction" data-l1key="configuration" data-l2key="cmdWriteValue" placeholder="{{Valeur}}"/>';
+    tr += '         <span class="input-group-btn">'
+    tr += '             <a class="btn btn-default btn-sm listEquipementInfo roundedRight writeFunction" data-input="cmdWriteValue"><i class="fas fa-list-alt"></i></a>'
+    tr += '         </span>'
     tr += '     </div>';
     tr += ' </td>';      
     // Options

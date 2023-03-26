@@ -497,7 +497,7 @@ class PyModbusClient():
                         if isinstance(exception, ModbusException):
                             logging.error(error_log + ': ' + repr(exception) + ' - ' + exception.string)
                         else:
-                            logging.error(error_log + ': ' + repr(exception) + ' - ' + str(exception)
+                            logging.error(error_log + ': ' + repr(exception) + ' - ' + str(exception))
                     else:
                         logging.error(error_log)
                 
@@ -593,7 +593,7 @@ class PyModbusClient():
                         if isinstance(exception, ModbusException):
                             logging.error(error_log + ': ' + repr(exception) + ' - ' + exception.string)
                         else:
-                            logging.error(error_log + ': ' + repr(exception) + ' - ' + str(exception)
+                            logging.error(error_log + ': ' + repr(exception) + ' - ' + str(exception))
                     else:
                         logging.error(error_log)
                 
@@ -657,7 +657,7 @@ class PyModbusClient():
                                 if isinstance(exception, ModbusException):
                                     logging.error(error_log + ': ' + repr(exception) + ' - ' + exception.string)
                                 else:
-                                    logging.error(error_log + ': ' + repr(exception) + ' - ' + str(exception)
+                                    logging.error(error_log + ': ' + repr(exception) + ' - ' + str(exception))
                             else:
                                 logging.error(error_log)
                 

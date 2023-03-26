@@ -421,7 +421,7 @@ class mymodbus extends eqLogic {
                     if (in_array($intf, $serialIntf))
                         return 'nok';
                     $serialIntf[] = $intf;
-                } elseif ($config['eqProtocol'] == 'tcp') {
+                } /* elseif ($config['eqProtocol'] == 'tcp') {
                     $ip = $config['eqTcpAddr'];
                     if (in_array($ip, $tcpIp))
                         return 'nok';
@@ -431,21 +431,20 @@ class mymodbus extends eqLogic {
                     if (in_array($ip, $udpIp))
                         return 'nok';
                     $udpIp[] = $ip;
-                }
+                } */
             }
         }
         
-        $ret = 'nok';
         foreach (self::byType('mymodbus') as $eqMymodbus) { // boucle sur les équipements
             if ($eqMymodbus->getIsEnable()) {
                 foreach ($eqMymodbus->getCmd('info') as $cmd) {
                     // Au moins une commande enregistrée, donc la configuration est validée par preSave()
-                    $ret = 'ok';
+                    return 'ok';
                 }
             }
         }
         
-        return $ret;
+        return'nok';
     }
     
     public static function getCallbackUrl() {
@@ -490,19 +489,20 @@ class mymodbusCmd extends cmd {
         $write_cmd = array();
         $write_cmd['eqId'] = $eqMymodbus->getId();
         $write_cmd['cmdId'] = $this->getId();
+        $value = null;
         
         if (in_array($this->getSubtype(), array('other', 'message'))) {
             if (isset($command['message']))
-                $write_cmd['cmdWriteValue'] = $command['message'];
+                $value = $command['message'];
             else
-                $write_cmd['cmdWriteValue'] = $this->getConfiguration('cmdWriteValue');
+                $value = $this->getConfiguration('cmdWriteValue');
         } elseif ($this->getSubtype() == 'slider') {
-            $write_cmd['cmdWriteValue'] = 0;
             if (strstr($cmdFormat, 'int'))
-                $write_cmd['cmdWriteValue'] = intval($command['slider']);
+                $value = intval($command['slider']);
             else if (strstr($cmdFormat, 'float'))
-                $write_cmd['cmdWriteValue'] = floatval($command['slider']);
+                $value = floatval($command['slider']);
         }
+        $write_cmd['cmdWriteValue'] = jeedom::evaluateExpression($value);
         
         $message = array();
         $message['CMD'] = 'write';
