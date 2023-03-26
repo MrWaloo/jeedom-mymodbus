@@ -69,8 +69,6 @@ class Main():
         self.jcom = None
         
         self.config = None
-        self.queues = {}
-        self.pymodbus_clients = {}
         self.sub_process = {}
         
     def read_args(self):
@@ -168,6 +166,11 @@ class Main():
         
         return True
         
+    def get_config(self, eqId):
+        for eqConfig in self.config:
+            if eqConfig['id'] == eqId:
+                return eqConfig
+        
     def read_socket(self, data):
         '''Interprets the json received from the php
         '''
@@ -198,6 +201,22 @@ class Main():
                 logging.info("mymodbusd: Command 'write' received from jeedom: sending the command to the daemon")
                 self.send_write_cmd(message['write_cmd'])
                 return
+            # setLogLevel
+            elif message['CMD'] == 'setLogLevel':
+                if 'level' not in message:
+                    logging.error("mymodbusd: Received CMD=setLogLevel without level: " + str(message))
+                    return
+                logging.info("mymodbusd: Command 'setLogLevel' received from jeedom: sending the log level to the daemons")
+                self.send_log_level(message['level'])
+                return
+            # newDaemonConfig
+            elif message['CMD'] == 'newDaemonConfig':
+                if 'config' not in message:
+                    logging.error("mymodbusd: Received CMD=newDaemonConfig without config: " + str(message))
+                    return
+                logging.info("mymodbusd: Command 'newDaemonConfig' received from jeedom: sending the new config to the daemons")
+                self.send_new_config(message['config'])
+                return
             # Heartbeat
             elif message['CMD'] == 'heartbeat_answer':
                 self.hb_recv_time = (time.time(), int(message['answer']))
@@ -209,66 +228,133 @@ class Main():
             logging.error("mymodbusd: Received CMD=write: no 'eqId' write_cmd: " + str(write_cmd))
             return
         
-        eqId = write_cmd['eqId']
+        [process, queue] = self.sub_process[write_cmd['eqId']]
+        eqConfig = self.get_config(write_cmd['eqId'])
         try:
-            self.queues[eqId].put(write_cmd, True, self.pymodbus_clients[eqId].polling * 2)
+            queue.put({'write_cmd': write_cmd}, True, float(eqConfig['eqPolling']) * 2)
         except Full:
-            logging.debug("mymodbusd: send_write_cmd: Full/Timeout !!!!")
+            logging.error("mymodbusd: send_write_cmd: Full/Timeout !!!!")
+        
+    def send_log_level(self, level):
+        if self.clear_to_leave.is_set() or self.should_stop.is_set():
+            return
+        
+        self._log_level = level
+        log = logging.getLogger()
+        for hdlr in log.handlers[:]:
+            log.removeHandler(hdlr)
+        jeedom_utils.set_log_level(level)
+        for eqId, [process, queue] in self.sub_process.items():
+            eqConfig = self.get_config(eqId)
+            try:
+                queue.put({'log_level': level}, True, float(eqConfig['eqPolling']) * 2)
+            except Full:
+                logging.error("mymodbusd: send_log_level: Full/Timeout !!!!")
+        
+    def send_new_config(self, config):
+        if self.clear_to_leave.is_set() or self.should_stop.is_set():
+            return
+        
+        old_config = self.config
+        self.config = config
+        old_eqIds, eqIds = [], []
+        for cgf in old_config:
+            old_eqIds.append(cgf['id'])
+        for cgf in self.config:
+            eqIds.append(cgf['id'])
+        
+        # Step 1: terminate daemons of deleted equipments
+        for eqId in old_eqIds:
+            if eqId not in eqIds:
+                [process, queue] = self.sub_process[eqId]
+                eqConfig = self.get_config(eqId)
+                try:
+                    queue.put({'stop': None}, True, float(eqConfig['eqPolling']) * 2)
+                except Full:
+                    process.kill()
+                process.join()
+                del self.sub_process[eqId]
+        
+        # Step 2: actualize the config of running daemons
+        for eqId in old_eqIds:
+            if eqId in eqIds:
+                [process, queue] = self.sub_process[eqId]
+                eqConfig = self.get_config(eqId)
+                try:
+                    queue.put({'new_config': eqConfig}, True, float(eqConfig['eqPolling']) * 2)
+                except Full:
+                    logging.error("mymodbusd: send_new_config: Full/Timeout !!!!")
+                
+        # Step 3: run new daemons
+        for eqId in eqIds:
+            if eqId not in old_eqIds:
+                eqConfig = self.get_config(eqId)
+                self.start_sub_process(eqConfig)
+        
+    def start_sub_process(self, eqConfig):
+        if eqConfig['id'] in self.sub_process.keys():
+            [process, queue] = self.sub_process[eqConfig['id']]
+            try:
+                queue.put({'stop': None}, True, float(eqConfig['eqPolling']) * 2)
+            except Full:
+                process.kill()
+            process.join()
+        
+        pymodbus_client = PyModbusClient(eqConfig, self.jcom, jeedom_utils.convert_log_level(self._log_level))
+        queue = mp.Queue()
+        process = mp.Process(target=pymodbus_client.run, args=(queue, ), name=eqConfig['name'], daemon=True)
+        process.start()
+        self.sub_process[eqConfig['id']] = [process, queue]
+        time.sleep(1)
         
     def run(self):
         self.clear_to_leave.clear()
         
         self.config = json.loads(self._json)
         for eqConfig in self.config:
-            eqId = eqConfig['id']
-            self.queues[eqId] = mp.Queue()
-            self.pymodbus_clients[eqId] = PyModbusClient(eqConfig, self.jcom, jeedom_utils.convert_log_level(self._log_level))
-            self.sub_process[eqId] = mp.Process(target=self.pymodbus_clients[eqId].run, args=(self.queues[eqId], ), name=eqConfig['name'], daemon=True)
-            self.sub_process[eqId].start()
-            time.sleep(1)
+            self.start_sub_process(eqConfig)
         
+        # heartbeat variables
         start_time = time.time()
         hb_send_time = start_time
-        self.hb_recv_time = (start_time + 0.1, int(start_time))
+        self.hb_recv_time = (start_time, int(start_time))
         
         # Incoming communication from php
         self.jsock.listen()
         self.jsock.settimeout(self._cycle)
         while not self.should_stop.is_set():
+            data = b''
             try:
                 conn, addr = self.jsock.accept()
-                data = conn.recv(1024)
+                while True:
+                    buffer = conn.recv(8192)
+                    if not buffer:
+                        break
+                    data += buffer
                 if data and addr[0] == '127.0.0.1':
                     self.read_socket(data)
                 conn.close()
             except socket.timeout:
-                pass
+                if data != b'':
+                    logging.debug("mymodbusd: SOCKET: socket.timeout avec des données" + str(data))
+                #pass
             
-            # Test if child process are defunk
+            # Kill defunk children
             for process in mp.active_children():
-                eqLogic_id = process.name
-                kill_process = False
                 try:
                     process.join(0.1)
                 except BrokenProcessPool:
-                    kill_process = True
-                    
-                # if so, kill the process
-                if kill_process:
-                    try:
-                        process.kill()
-                    except:
-                        pass
+                    process.kill()
+                    process.join()
             
-            if len(mp.active_children()) < len(self.pymodbus_clients):
+            if len(mp.active_children()) < len(self.sub_process):
                 logging.debug("mymodbusd: active_children: " + str(len(mp.active_children())))
-                for eqId, process in self.sub_process.items():
+                for eqId, [process, queue] in self.sub_process.items():
                     if process not in mp.active_children():
                         for eqConfig in self.config:
                             if eqId == eqConfig['id']:
                                 logging.warning("mymodbusd: process re-run: " + process.name)
-                                self.sub_process[eqId] = mp.Process(target=self.pymodbus_clients[eqId].run, args=(self.queues[eqId], ), name=eqConfig['name'], daemon=True)
-                                self.sub_process[eqId].start()
+                                self.start_sub_process(eqConfig)
                                 break
             
             # Send heartbeat echo
@@ -285,9 +371,19 @@ class Main():
                 self.jcom.send_change_immediate({'heartbeat_request': int(now)})
                 hb_send_time = now
             
-        # Stop all communication threads properly
-        for process in mp.active_children():
-            process.terminate()
+        # Stop all daemons properly
+        for eqId, [process, queue] in self.sub_process.items():
+            logging.debug("mymodbusd: Stopping " + process.name)
+            eqConfig = self.get_config(eqId)
+            try:
+                queue.put({'stop': None}, True, float(eqConfig['eqPolling']) * 2)
+            except Full:
+                process.kill()
+            
+        for eqId, [process, queue] in self.sub_process.items():
+            logging.debug("mymodbusd: Waiting for " + process.name + "...")
+            process.join()
+            logging.debug("mymodbusd: " + process.name + " joined")
         
         self.clear_to_leave.set()
         
@@ -302,10 +398,11 @@ class Main():
         
         # Stop all communication threads forced (kill)
         for process in mp.active_children():
-            logging.debug("mymodbusd: Process: " + process.name)
             if process.is_alive():
-                logging.debug("mymodbusd: Process: " + process.name + ' is killed')
+                logging.debug("mymodbusd: Process: " + process.name + " still alive")
                 process.kill()
+                process.join()
+                logging.debug("mymodbusd: Process: " + process.name + " has been killed")
         
         logging.debug("mymodbusd: Removing PID file " + self._pidfile)
         try:
@@ -325,7 +422,7 @@ if __name__ == '__main__':
     # Interrupt handler
     def signal_handler(signum=None, frame=None):
         logging.debug("mymodbusd: Signal %d caught, exiting...", signum)
-        should_stop.set()
+        m.should_stop.set()
     
     # Connect the signals to the handler
     signal.signal(signal.SIGINT, signal_handler)

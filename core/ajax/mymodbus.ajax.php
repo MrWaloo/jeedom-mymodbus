@@ -28,9 +28,16 @@ try {
     En V4 : autoriser l'exécution d'une méthode 'action' en GET en indiquant le(s) nom(s) de(s) action(s) dans un tableau en argument
   */
     ajax::init();
-
-
-
+    
+    if (init('action') == 'changeLogLevel') {
+        $level = init('level');
+        $level_config = $level['log::level::mymodbus'];
+        foreach ($level_config as $log_level => $value) {
+            if ($value == '1')
+                ajax::success(mymodbus::changeLogLevel($log_level));
+        }
+    }
+    
     throw new Exception(__('Aucune méthode correspondante à : ', __FILE__) . init('action'));
     /*     * *********Catch exeption*************** */
 }

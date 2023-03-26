@@ -17,7 +17,7 @@ import signal
 import json
 import logging
 import time
-import threading
+import multiprocessing as mp
 import asyncio
 import re
 from queue import (Empty, Full)
@@ -52,25 +52,22 @@ bar = PyModbusClient(config[1])
 # -----------------------------------------------------------------------------
 
 class PyModbusClient():
-    def __init__(self, config, jcom=None, log_level=logging.DEBUG):
+    def __init__(self, config, jcom=None, log_level='debug'):
         """ For pymodbus client
         """
-        # Handle Run & Shutdown
-        self.should_stop = threading.Event()
+        self.should_stop = mp.Event()
         self.should_stop.clear()
         
         self.jcom = jcom
         jeedom_utils.set_log_level(log_level)
         
-        self.polling_config = float(config['eqPolling'])
-        self.polling = float(config['eqPolling']) * 1.0
+        self.new_config = config
+        self.polling_config = None
+        self.polling = None
         
-        self.eqConfig = {}
-        for k, v in config.items():
-            if k != 'cmds':
-                self.eqConfig[k] = v
+        self.eqConfig = None
         
-        self.requests = PyModbusClient.get_requests(config['cmds'])
+        self.requests = None
         self.framer = None
         self.client = None
         self.blobs = {}
@@ -201,11 +198,41 @@ class PyModbusClient():
         
     def check_queue(self, timeout=0.01):
         try:
-            write_cmd = self.queue.get(block=True, timeout=timeout)
+            daemon_cmd = self.queue.get(block=True, timeout=timeout)
         except Empty:
             pass
         else:
-            self.write_cmds.append(write_cmd)
+            logging.debug('PyModbusClient: check_queue - daemon_cmd: ' + json.dumps(daemon_cmd))
+            if 'write_cmd' in daemon_cmd.keys():
+                self.write_cmds.append(daemon_cmd['write_cmd'])
+                
+            elif 'log_level' in daemon_cmd.keys():
+                log = logging.getLogger()
+                for hdlr in log.handlers[:]:
+                    log.removeHandler(hdlr)
+                jeedom_utils.set_log_level(daemon_cmd['log_level'])
+                
+            elif 'new_config' in daemon_cmd.keys():
+                self.new_config = daemon_cmd['new_config']
+                
+            elif 'stop' in daemon_cmd.keys():
+                self.should_stop.set()
+        
+    def apply_new_config(self):
+        self.polling_config = float(self.new_config['eqPolling'])
+        self.polling = float(self.new_config['eqPolling']) * 1.0
+        
+        self.eqConfig = {}
+        for k, v in self.new_config.items():
+            if k != 'cmds':
+                self.eqConfig[k] = v
+        
+        self.requests = PyModbusClient.get_requests(self.new_config['cmds'])
+        self.framer, self.client = PyModbusClient.get_framer_and_client(self.eqConfig)
+        self.blobs = {}
+        self.cycle = 0
+        
+        self.new_config = None
         
     def get_value(self, cmd_id):
         request = self.requests[cmd_id]
@@ -278,8 +305,9 @@ class PyModbusClient():
         # SIGTERM catcher
         logging.getLogger('asyncio').setLevel(logging.WARNING)
         self.loop = asyncio.get_event_loop()
-        self.loop.add_signal_handler(signal.SIGINT, self.signal_handler)
-        self.loop.add_signal_handler(signal.SIGTERM, self.signal_handler)
+        
+        if self.new_config is not None:
+            self.apply_new_config()
         
         # Don't do anything if there is no info command (read)
         for cmd_id, request in self.requests.items():
@@ -314,15 +342,15 @@ class PyModbusClient():
         return False
         
     async def run_loop(self):
-        self.framer, self.client = PyModbusClient.get_framer_and_client(self.eqConfig)
         connected = False
-        
-        connected = await self.connect()
         
         # Polling loop
         while not self.should_stop.is_set():
             # for time measuring
             t_begin = time.time()
+            
+            if self.new_config is not None:
+                self.apply_new_config()
             
             # Connect
             if not connected or not self.client.connected:
@@ -443,6 +471,13 @@ class PyModbusClient():
                         
                 # blob part
                 elif request['fct_modbus'] == 'fromBlob':
+                    # Read once every n cycles
+                    if request['blobId'] in self.requests.keys():
+                        if self.cycle % self.requests[request['blobId']]['freq'] != 0:
+                            continue
+                    else: 
+                        continue
+                    
                     value = self.get_value(cmd_id)
                     if value is None:
                         request_ok = False
@@ -462,7 +497,7 @@ class PyModbusClient():
                         if isinstance(exception, ModbusException):
                             logging.error(error_log + ': ' + repr(exception) + ' - ' + exception.string)
                         else:
-                            logging.error(error_log + ': ' + repr(exception))
+                            logging.error(error_log + ': ' + repr(exception) + ' - ' + str(exception)
                     else:
                         logging.error(error_log)
                 
@@ -474,9 +509,9 @@ class PyModbusClient():
                 if not self.queue.empty():
                     self.check_queue()
                 
-                ##################################################
+                ###################################################
                 await self.execute_write_requests(False, connected)
-                ##################################################
+                ###################################################
                 
             # After all the info requests
             # Send results to jeedom
@@ -491,12 +526,12 @@ class PyModbusClient():
             if elapsed_time >= self.polling:
                 self.polling = (elapsed_time // self.polling_config + 1) * self.polling_config
                 logging.warning('PyModbusClient: the polling time is too short, setting it to ' + str(self.polling) + ' s.')
-            while self.polling - elapsed_time > 0:
+            while self.polling - elapsed_time > 0 and not self.should_stop.is_set():
                 self.check_queue(self.polling - elapsed_time)
                 await self.execute_write_requests(True, connected)
                 elapsed_time = time.time() - t_begin
             
-        # The loop has exited (should never happend)
+        # The loop has exited
         connected = await self.disconnect()
         self.shutdown()
         
@@ -519,7 +554,7 @@ class PyModbusClient():
             if request['fct_modbus'] == 'fromBlob' or '8' in request['data_type'] or request['data_type'] == 'blob':
                 continue # ignore this command that should not be received...
             
-            logging.debug('PyModbusClient: *-*-*-*-*-*-*-*-*-*-*-**-*-*-*-*-* request ' + repr(request))
+            logging.debug('PyModbusClient: write_request ' + repr(request))
             
             re_match = re_pause.match(str(write_cmd['cmdWriteValue']))
             pause = None
@@ -558,7 +593,7 @@ class PyModbusClient():
                         if isinstance(exception, ModbusException):
                             logging.error(error_log + ': ' + repr(exception) + ' - ' + exception.string)
                         else:
-                            logging.error(error_log + ': ' + repr(exception))
+                            logging.error(error_log + ': ' + repr(exception) + ' - ' + str(exception)
                     else:
                         logging.error(error_log)
                 
@@ -605,7 +640,7 @@ class PyModbusClient():
                     if len(registers):
                         try:
                             if request['fct_modbus'] == '6':
-                                response = await self.client.write_register(address=request['addr'], value=registers, slave=request['slave'])
+                                response = await self.client.write_register(address=request['addr'], value=registers[0], slave=request['slave'])
                             elif request['fct_modbus'] == '16':
                                 response = await self.client.write_registers(address=request['addr'], values=registers, slave=request['slave'])
                             
@@ -622,7 +657,7 @@ class PyModbusClient():
                                 if isinstance(exception, ModbusException):
                                     logging.error(error_log + ': ' + repr(exception) + ' - ' + exception.string)
                                 else:
-                                    logging.error(error_log + ': ' + repr(exception))
+                                    logging.error(error_log + ': ' + repr(exception) + ' - ' + str(exception)
                             else:
                                 logging.error(error_log)
                 
@@ -638,14 +673,7 @@ class PyModbusClient():
             logging.debug('PyModbusClient: disconnect after write')
             write_connected = await self.disconnect()
         
-    def signal_handler(self, signum=None, frame=None):
-        self.shutdown()
-        
     def shutdown(self):
-        self.should_stop.set()
+        logging.info('PyModbusClient: shutdown called')
         self.loop.stop()
-        try:
-            self.client.close()
-        except:
-            pass
         

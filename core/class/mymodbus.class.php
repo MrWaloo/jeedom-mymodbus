@@ -165,6 +165,16 @@ class mymodbus extends eqLogic {
         }
         socket_close($socket);
     }
+
+    public function sendNewConfig() {
+        if (self::getDeamonState() != 'ok')
+            return True;
+        
+        $message = array();
+        $message['CMD'] = 'newDaemonConfig';
+        $message['config'] = self::getCompleteConfiguration();
+        self::sendToDaemon($message);
+    }
     
     // Supported protocols are in desktop/modal/configuration.[protocol].php
     public static function supportedProtocols() {
@@ -194,32 +204,29 @@ class mymodbus extends eqLogic {
         }
         return $interfaces;
     }
-
+    
+    public static function changeLogLevel($level=null) {
+		$message = array();
+        $message['CMD'] = 'setLogLevel';
+		$message['level'] = is_null($level) ? log::getLogLevel(__class__) : $level;
+		if (is_numeric($message['level'])) // Replace numeric log level with text level
+			$message['level'] = log::convertLogLevel($message['level']);
+		self::sendToDaemon($message);
+	}
+    
     /*     * *********************Méthodes d'instance************************* */
-
+    
     // Fonction exécutée automatiquement avant la suppression de l'équipement
-    public function preRemove() {
-        if ($this->getIsEnable())
-            self::deamon_stop();
-    }
+    //public function preRemove() {}
 
     // Fonction exécutée automatiquement après la suppression de l'équipement
     public function postRemove() {
-        if (self::getDeamonState() != 'ok')
-            self::deamon_start();
+        self::sendNewConfig();
     }
     
     // Fonction exécutée automatiquement avant la sauvegarde de l'équipement (création ou mise à jour)
     // La levée d'une exception invalide la sauvegarde
     public function preSave() {
-        // ----------------------------------
-        // A supprimer dans quelques temps
-        $cron = cron::byClassAndFunction('mymodbus', 'cronDaily');
-        if (is_object($cron)) {
-            $cron->remove();
-        }
-        // ----------------------------------
-        
         $configKeys = array();
         foreach ($this->getConfiguration() as $key => $value) {
             $configKeys[] = $key;
@@ -305,7 +312,7 @@ class mymodbus extends eqLogic {
     */
 
     public function postAjax() {
-        self::deamon_start();
+        self::sendNewConfig();
     }
 
    /*
