@@ -559,7 +559,7 @@ class PyModbusClient():
             re_match = re_pause.match(str(write_cmd['cmdWriteValue']))
             pause = None
             if re_match:
-                value_to_write = re_match.group(1)
+                value_to_write = eval(re_match.group(1))
                 pause = float(re_match.group(2).replace(',', '.'))
             else:
                 value_to_write = write_cmd['cmdWriteValue']
@@ -569,7 +569,7 @@ class PyModbusClient():
             
             # Write single coil (code 0x05) || Write coils (code 0x0F)
             if request['fct_modbus'] in ('5', '15'):
-                value = not (value_to_write == '0' or value_to_write.lower() == 'false') # anything else than '0' or 'false' will be True
+                value = not (str(value_to_write) == '0' or str(value_to_write).lower() == 'false') # anything else than '0' or 'false' will be True
                 
                 if request['data_type'] == 'bin-inv':
                     value = not value
