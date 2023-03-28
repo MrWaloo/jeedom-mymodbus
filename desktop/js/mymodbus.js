@@ -185,6 +185,10 @@ function actualise_visible(me) {
     $(me).closest('tr').find('.writeFunction').hide();
     $(me).closest('tr').find('.readBin').hide();
     $(me).closest('tr').find('.readNum').hide();
+    $(me).closest('tr').find('.withSlave').hide();
+    
+    if (cmdFctModbus != 'fromBlob')
+        $(me).closest('tr').find('.withSlave').show();
     
     if (cmdType == 'info') {
         $(me).closest('tr').find('.readFunction').show();
@@ -338,7 +342,7 @@ function addCmdToTable(_cmd) {
     tr += '     <span class="subType" subType="' + init(_cmd.subType) + '"></span>';
     tr += ' </td>';
     // Adresse esclave
-    tr += ' <td><input class="cmdAttr form-control input-sm notFctBlob" data-l1key="configuration" data-l2key="cmdSlave"></td>';
+    tr += ' <td><input class="cmdAttr form-control input-sm withSlave" data-l1key="configuration" data-l2key="cmdSlave"></td>';
     // Modbus function / Data format
     tr += ' <td>';
     tr += '     <div class="input-group" style="margin-bottom:5px;">';
