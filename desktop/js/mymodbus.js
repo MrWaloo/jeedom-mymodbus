@@ -220,8 +220,8 @@ $("#table_cmd tbody").delegate(".cmdAttr[data-l1key=configuration][data-l2key=cm
 
 
 function actualise_visible(me, source) {
-    var cmdName = $(me).closest('tr').find('.cmdAttr[data-l1key=name]').value();
-    console.log(cmdName + ' *-*-*-*-*-*-*-*-*-* ' + source);
+    //var cmdName = $(me).closest('tr').find('.cmdAttr[data-l1key=name]').value();
+    //console.log(cmdName + ' *-*-*-*-*-*-*-*-*-* ' + source);
     var cmdLogicalId = $(me).closest('tr').find('.cmdAttr[data-l1key=logicalId]').value();
     var cmdType = $(me).closest('tr').find('.cmdAttr[data-l1key=type]').value();
     var subType = $(me).closest('tr').find('.cmdAttr[data-l1key=subType]').value();
