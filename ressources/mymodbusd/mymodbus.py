@@ -20,6 +20,7 @@ import time
 import multiprocessing as mp
 import asyncio
 import re
+from statistics import fmean
 from queue import (Empty, Full)
 
 from pymodbus.client import (AsyncModbusTcpClient, AsyncModbusUdpClient, AsyncModbusSerialClient)
@@ -57,6 +58,8 @@ class PyModbusClient():
         """
         self.should_stop = mp.Event()
         self.should_stop.clear()
+        self.read_cmd = mp.Event()
+        self.read_cmd.clear()
         
         self.jcom = jcom
         jeedom_utils.set_log_level(log_level)
@@ -72,8 +75,10 @@ class PyModbusClient():
         self.client = None
         self.blobs = {}
         self.write_cmds = []
+        self.next_write_time = time.time()
         
         self.cycle = 0
+        self.cycle_times = [None, None, None, None, None]
         
     @staticmethod
     def get_framer_and_client(config):
@@ -109,6 +114,7 @@ class PyModbusClient():
         requests = {}
         for req_config in cmds:
             request = {}
+            request['last_value'] = None
             request['name'] = req_config['name'].rstrip()
             request['type'] = req_config['type']
             request['slave'] = int(req_config['cmdSlave'])
@@ -196,7 +202,10 @@ class PyModbusClient():
             else:
                 logging.info('PyModbusClient: read_results:' + json.dumps(results))
         
-    def check_queue(self, timeout=0.01):
+    def check_queue(self, timeout=None):
+        if timeout is None or float(timeout) < float(self.eqConfig['eqWriteCmdCheckTimeout']):
+            timeout = float(self.eqConfig['eqWriteCmdCheckTimeout'])
+        
         try:
             daemon_cmd = self.queue.get(block=True, timeout=timeout)
         except Empty:
@@ -205,6 +214,9 @@ class PyModbusClient():
             logging.debug('PyModbusClient: check_queue - daemon_cmd: ' + json.dumps(daemon_cmd))
             if 'write_cmd' in daemon_cmd.keys():
                 self.write_cmds.append(daemon_cmd['write_cmd'])
+                
+            elif 'read_cmd' in daemon_cmd.keys():
+                self.read_cmd.set()
                 
             elif 'log_level' in daemon_cmd.keys():
                 log = logging.getLogger()
@@ -222,6 +234,12 @@ class PyModbusClient():
         self.polling_config = float(self.new_config['eqPolling'])
         self.polling = float(self.new_config['eqPolling']) * 1.0
         
+        # if the refresh mode is different -> exit, this process will be restarted from the daemon
+        if self.eqConfig and self.eqConfig['eqRefreshMode'] != self.new_config['eqRefreshMode']:
+            self.should_stop.set()
+            self.new_config = None
+            return
+        
         self.eqConfig = {}
         for k, v in self.new_config.items():
             if k != 'cmds':
@@ -231,6 +249,7 @@ class PyModbusClient():
         self.framer, self.client = PyModbusClient.get_framer_and_client(self.eqConfig)
         self.blobs = {}
         self.cycle = 0
+        self.cycle_times = [None, None, None, None, None]
         
         self.new_config = None
         
@@ -302,22 +321,110 @@ class PyModbusClient():
     def run(self, queue):
         self.queue = queue
         
-        # SIGTERM catcher
         logging.getLogger('asyncio').setLevel(logging.WARNING)
         self.loop = asyncio.get_event_loop()
         
         if self.new_config is not None:
             self.apply_new_config()
         
-        # Don't do anything if there is no info command (read)
-        for cmd_id, request in self.requests.items():
-            if request['type'] == 'info':
-                break
-        else:
-            logging.debug('PyModbusClient: run: nothing to do... exit')
-            return
+        if self.eqConfig['eqRefreshMode'] == 'polling':
+            self.loop.run_until_complete(self.run_polling())
+            
+        elif self.eqConfig['eqRefreshMode'] == 'cyclic':
+            self.loop.run_until_complete(self.run_cyclic())
+            
+        elif self.eqConfig['eqRefreshMode'] == 'on_event':
+            self.loop.run_until_complete(self.run_one())
+            
+        self.loop.close()
+        self.shutdown()
         
-        asyncio.run(self.run_loop())
+    async def run_polling(self):
+        self.connected = False
+        
+        # Polling loop
+        while not self.should_stop.is_set():
+            # for time measuring
+            t_begin = time.time()
+            
+            if self.new_config is not None:
+                self.apply_new_config()
+            
+            # Connect
+            if not self.connected or not self.client.connected:
+                self.connected = await self.connect()
+            
+            await self.read_all()
+            
+            # Keep the connection open or not...
+            if self.eqConfig['eqKeepopen'] == '0' or not self.connected:
+                self.connected = await self.disconnect()
+            
+            # Polling time
+            elapsed_time = time.time() - t_begin
+            if elapsed_time >= self.polling:
+                self.polling = (elapsed_time // self.polling_config + 1) * self.polling_config
+                logging.warning('PyModbusClient: the polling time is too short, setting it to ' + str(self.polling) + ' s.')
+            while self.polling - elapsed_time > 0 and not self.should_stop.is_set():
+                self.check_queue(self.polling - elapsed_time)
+                await self.execute_write_requests(True, self.connected)
+                elapsed_time = time.time() - t_begin
+            
+            self.cycle_times[self.cycle % 5] = time.time() - t_begin
+            
+        # The loop has exited
+        self.connected = await self.disconnect()
+        
+    async def run_cyclic(self):
+        self.connected = False
+        
+        # Polling loop
+        while not self.should_stop.is_set():
+            # for time measuring
+            t_begin = time.time()
+            
+            if self.new_config is not None:
+                self.apply_new_config()
+            
+            # Connect
+            if not self.connected or not self.client.connected:
+                self.connected = await self.connect()
+            
+            await self.read_all()
+            
+            self.check_queue()
+            await self.execute_write_requests(False, self.connected)
+            
+            self.cycle_times[self.cycle % 5] = time.time() - t_begin
+            
+        # The loop has exited
+        self.connected = await self.disconnect()
+        
+    async def run_one(self):
+        self.connected = False
+        
+        while not self.should_stop.is_set():
+            # for time measuring
+            t_begin = time.time()
+            
+            self.check_queue()
+            await self.execute_write_requests(True, self.connected)
+            
+            if self.new_config is not None:
+                self.apply_new_config()
+            
+            if self.read_cmd.is_set():
+                self.read_cmd.clear()
+                # Connect
+                if not self.connected or not self.client.connected:
+                    self.connected = await self.connect()
+                
+                await self.read_all()
+                
+                # The loop has exited
+                self.connected = await self.disconnect()
+                
+                self.cycle_times[self.cycle % 5] = time.time() - t_begin
         
     async def connect(self):
         logging.debug('PyModbusClient: connect called')
@@ -341,202 +448,179 @@ class PyModbusClient():
             logging.error('PyModbusClient: Something went wrong while closing connection to equipment id ' + self.eqConfig['id'] + ': ' + repr(e) + ' - ' + e.string)
         return False
         
-    async def run_loop(self):
-        connected = False
-        
-        # Polling loop
-        while not self.should_stop.is_set():
-            # for time measuring
-            t_begin = time.time()
+    async def read_all(self):
+        """Read every info commands
+        """
+        exception = None
+        read_results = {}
+        self.cycle += 1
+        for cmd_id, request in self.requests.items():
+            # Only read requests in the loop
+            if request['type'] == 'action':
+                continue
             
-            if self.new_config is not None:
-                self.apply_new_config()
+            # Read once every n cycles
+            if self.cycle % request['freq'] != 0:
+                continue
             
-            # Connect
-            if not connected or not self.client.connected:
-                connected = await self.connect()
+            request_ok = True
+            value = None
             
-            exception = None
-            read_results = {}
-            self.cycle += 1
-            for cmd_id, request in self.requests.items():
-                # Only read requests in the loop
-                if request['type'] == 'action':
-                    continue
+            # Read coils (code 0x01) || Read discrete inputs (code 0x02)
+            if request['fct_modbus'] in ('1', '2'):
+                count = 1
+                if request['data_type'] == 'blob':
+                    count = int(request['count'])
                 
-                # Read once every n cycles
-                if self.cycle % request['freq'] != 0:
-                    continue
+                try:
+                    if request['fct_modbus'] == '1':
+                        response = await self.client.read_coils(address=request['addr'], count=count, slave=request['slave'])
+                    elif request['fct_modbus'] == '2':
+                        response = await self.client.read_discrete_inputs(address=request['addr'], count=count, slave=request['slave'])
+                    
+                    request_ok = PyModbusClient.check_response(response)
                 
-                request_ok = True
-                value = None
-                
-                # Read coils (code 0x01) || Read discrete inputs (code 0x02)
-                if request['fct_modbus'] in ('1', '2'):
-                    count = 1
-                    if request['data_type'] == 'blob':
-                        count = int(request['count'])
+                except Exception as e:
+                    request_ok = False
+                    exception = e
+                    self.connected = False
                     
-                    try:
-                        if request['fct_modbus'] == '1':
-                            response = await self.client.read_coils(address=request['addr'], count=count, slave=request['slave'])
-                        elif request['fct_modbus'] == '2':
-                            response = await self.client.read_discrete_inputs(address=request['addr'], count=count, slave=request['slave'])
-                        
-                        request_ok = PyModbusClient.check_response(response)
-                    
-                    except Exception as e:
-                        request_ok = False
-                        exception = e
-                        connected = False
-                        
-                    if request_ok:
-                        value = response.bits[0]
-                        if request['data_type'] == 'bin-inv':
-                            value = not value
-                            
-                        elif request['data_type'] == 'blob':
-                            value = True
-                            self.blobs[cmd_id] = response.bits
-                        
-                    # if not request_ok
-                    else:
-                        if request['data_type'] == 'blob':
-                            value = False
-                            self.blobs[cmd_id] = None
-                        
-                # Read holding registers (code 0x03) || Read input registers (code 0x04)
-                elif request['fct_modbus'] in ('3', '4'):
-                    normal_number, count, sp_sf = PyModbusClient.request_info(request)
-                    
-                    try:
-                        if request['fct_modbus'] == '3':
-                            response = await self.client.read_holding_registers(address=request['addr'], count=count, slave=request['slave'])
-                        elif request['fct_modbus'] == '4':
-                            response = await self.client.read_input_registers(address=request['addr'], count=count, slave=request['slave'])
-                        
-                        request_ok = PyModbusClient.check_response(response)
-                        
-                    except Exception as e:
-                        request_ok = False
-                        exception = e
-                        connected = False
-                        
-                    if request_ok:
-                        decoder = BinaryPayloadDecoder.fromRegisters(response.registers, request['byteorder'], request['wordorder'])
-                        
-                        # Type: Byte
-                        if '8' in request['data_type']:
-                            if request['data_type'].endswith('-lsb'):
-                                decoder.skip_bytes(1)
-                            
-                            if request['data_type'].startswith('int8'):
-                                value = decoder.decode_8bit_int()
-                            elif request['data_type'].startswith('uint8'):
-                                value = decoder.decode_8bit_uint()
-                            
-                        # Type: Word (16bit) || Dword (32bit) || Qword (64bit)
-                        elif normal_number:
-                            value = getattr(decoder, 'decode_' + request['data_type'][-2:] + 'bit_' + request['data_type'][:-2])()
-                            
-                        # string
-                        elif request['data_type'] == 'string':
-                            value = decoder.decode_string(request['strlen'])
-                            
-                        # blob
-                        elif request['data_type'] == 'blob':
-                            value = 1
-                            self.blobs[cmd_id] = response.registers
-                            
-                        #---------------
-                        # Special cases
-                        # SunSpec scale factor
-                        elif sp_sf:
-                            sp_pf_data_type = request['data_type'][:-5]
-                            offset = 1
-                            if sp_pf_data_type[-2:] == '32':
-                                offset = 2
-                            value = getattr(decoder, 'decode_' + sp_pf_data_type[-2:] + 'bit_' + sp_pf_data_type[:-2])()
-                            
-                            decoder.skip_bytes((count - offset - 1) * 2)
-                            sf = decoder.decode_16bit_int()
-                            value = value * 10 ** sf
-                        
-                    # if not request_ok
-                    else:
-                        # blob
-                        if request['data_type'] == 'blob':
-                            value = 0
-                            self.blobs[cmd_id] = None
-                        
-                # blob part
-                elif request['fct_modbus'] == 'fromBlob':
-                    # Read once every n cycles
-                    if request['blobId'] in self.requests.keys():
-                        if self.cycle % self.requests[request['blobId']]['freq'] != 0:
-                            continue
-                    else: 
-                        continue
-                    
-                    value = self.get_value(cmd_id)
-                    if value is None:
-                        request_ok = False
-                    
-                # Save the result of this request
                 if request_ok:
-                    read_results[cmd_id] = value
-                    if request['data_type'] == 'string':
-                        try:
-                            read_results[cmd_id] = value.decode()
-                        except:
-                            read_results[cmd_id] = '<*ERROR*>'[:request['strlen']]
-                    logging.debug('PyModbusClient: read value for ' + request['name'] + ' (command id ' + cmd_id + '): ' + str(value))
+                    value = response.bits[0]
+                    if request['data_type'] == 'bin-inv':
+                        value = not value
+                        
+                    elif request['data_type'] == 'blob':
+                        value = True
+                        self.blobs[cmd_id] = response.bits
+                    
+                # if not request_ok
                 else:
-                    error_log = 'PyModbusClient: Something went wrong while reading ' + request['name'] + ' (command id ' + cmd_id + ')'
-                    if exception:
-                        if isinstance(exception, ModbusException):
-                            logging.error(error_log + ': ' + repr(exception) + ' - ' + exception.string)
-                        else:
-                            logging.error(error_log + ': ' + repr(exception) + ' - ' + str(exception))
+                    if request['data_type'] == 'blob':
+                        value = False
+                        self.blobs[cmd_id] = None
+                    
+            # Read holding registers (code 0x03) || Read input registers (code 0x04)
+            elif request['fct_modbus'] in ('3', '4'):
+                normal_number, count, sp_sf = PyModbusClient.request_info(request)
+                
+                try:
+                    if request['fct_modbus'] == '3':
+                        response = await self.client.read_holding_registers(address=request['addr'], count=count, slave=request['slave'])
+                    elif request['fct_modbus'] == '4':
+                        response = await self.client.read_input_registers(address=request['addr'], count=count, slave=request['slave'])
+                    
+                    request_ok = PyModbusClient.check_response(response)
+                    
+                except Exception as e:
+                    request_ok = False
+                    exception = e
+                    self.connected = False
+                    
+                if request_ok:
+                    decoder = BinaryPayloadDecoder.fromRegisters(response.registers, request['byteorder'], request['wordorder'])
+                    
+                    # Type: Byte
+                    if '8' in request['data_type']:
+                        if request['data_type'].endswith('-lsb'):
+                            decoder.skip_bytes(1)
+                        
+                        if request['data_type'].startswith('int8'):
+                            value = decoder.decode_8bit_int()
+                        elif request['data_type'].startswith('uint8'):
+                            value = decoder.decode_8bit_uint()
+                        
+                    # Type: Word (16bit) || Dword (32bit) || Qword (64bit)
+                    elif normal_number:
+                        value = getattr(decoder, 'decode_' + request['data_type'][-2:] + 'bit_' + request['data_type'][:-2])()
+                        
+                    # string
+                    elif request['data_type'] == 'string':
+                        value = decoder.decode_string(request['strlen'])
+                        
+                    # blob
+                    elif request['data_type'] == 'blob':
+                        value = 1
+                        self.blobs[cmd_id] = response.registers
+                        
+                    #---------------
+                    # Special cases
+                    # SunSpec scale factor
+                    elif sp_sf:
+                        sp_pf_data_type = request['data_type'][:-5]
+                        offset = 1
+                        if sp_pf_data_type[-2:] == '32':
+                            offset = 2
+                        value = getattr(decoder, 'decode_' + sp_pf_data_type[-2:] + 'bit_' + sp_pf_data_type[:-2])()
+                        
+                        decoder.skip_bytes((count - offset - 1) * 2)
+                        sf = decoder.decode_16bit_int()
+                        value = value * 10 ** sf
+                    
+                # if not request_ok
+                else:
+                    # blob
+                    if request['data_type'] == 'blob':
+                        value = 0
+                        self.blobs[cmd_id] = None
+                    
+            # blob part
+            elif request['fct_modbus'] == 'fromBlob':
+                # Read once every n cycles
+                if request['blobId'] in self.requests.keys():
+                    if self.cycle % self.requests[request['blobId']]['freq'] != 0:
+                        continue
+                else: 
+                    continue
+                
+                value = self.get_value(cmd_id)
+                if value is None:
+                    request_ok = False
+                
+            # Save the result of this request
+            if request_ok:
+                if request['data_type'] == 'string':
+                    try:
+                        value = value.decode()
+                    except:
+                        value = '<*ERROR*>'[:request['strlen']]
+                
+                if value != request['last_value']:
+                    read_results[cmd_id] = value
+                    
+                    self.requests[cmd_id]['last_value'] = read_results[cmd_id]
+                    logging.debug('PyModbusClient: read value for ' + request['name'] + ' (command id ' + cmd_id + '): ' + str(read_results[cmd_id]))
+            else:
+                error_log = 'PyModbusClient: Something went wrong while reading ' + request['name'] + ' (command id ' + cmd_id + ')'
+                if exception:
+                    if isinstance(exception, ModbusException):
+                        logging.error(error_log + ': ' + repr(exception) + ' - ' + exception.string)
                     else:
-                        logging.error(error_log)
-                
-                # Small pause if serial
-                if self.eqConfig['eqProtocol'] == 'serial' and request['fct_modbus'] != 'fromBlob':
-                    await asyncio.sleep(0.05)
-                
-                # Checking write commands
-                if not self.queue.empty():
-                    self.check_queue()
-                
-                ###################################################
-                await self.execute_write_requests(False, connected)
-                ###################################################
-                
-            # After all the info requests
-            # Send results to jeedom
-            self.send_results_to_jeedom(read_results)
+                        logging.error(error_log + ': ' + repr(exception) + ' - ' + str(exception))
+                else:
+                    logging.error(error_log)
             
-            # Keep the connection open or not...
-            if self.eqConfig['eqKeepopen'] == '0' or not connected:
-                connected = await self.disconnect()
+            # Small pause if serial
+            if self.eqConfig['eqProtocol'] == 'serial' and request['fct_modbus'] != 'fromBlob':
+                await asyncio.sleep(0.05)
             
-            # Polling time
-            elapsed_time = time.time() - t_begin
-            if elapsed_time >= self.polling:
-                self.polling = (elapsed_time // self.polling_config + 1) * self.polling_config
-                logging.warning('PyModbusClient: the polling time is too short, setting it to ' + str(self.polling) + ' s.')
-            while self.polling - elapsed_time > 0 and not self.should_stop.is_set():
-                self.check_queue(self.polling - elapsed_time)
-                await self.execute_write_requests(True, connected)
-                elapsed_time = time.time() - t_begin
+            ################################################################
+            # Checking if write commands have been received and execute them
+            if not self.queue.empty():
+                self.check_queue()
             
-        # The loop has exited
-        connected = await self.disconnect()
-        self.shutdown()
+            await self.execute_write_requests(False, self.connected)
+            ################################################################
+            
+        # After all the info requests
+        # Send results to jeedom
+        if self.cycle % 5 == 1 and self.cycle_times[0] is not None:
+            read_results['cycle_time'] = fmean(self.cycle_times)
+            
+        self.send_results_to_jeedom(read_results)
         
     async def execute_write_requests(self, connect=False, connected=False):
-        if len(self.write_cmds) == 0:
+        if len(self.write_cmds) == 0 or time.time() < self.next_write_time:
             return
         
         re_pause = re.compile(r"(.*)\s*?pause\s*?(\d+([\.\,]\d+)?)\s*?$", re.IGNORECASE)
@@ -561,6 +645,7 @@ class PyModbusClient():
             if re_match:
                 value_to_write = eval(re_match.group(1))
                 pause = float(re_match.group(2).replace(',', '.'))
+                self.next_write_time = time.time() + pause
             else:
                 value_to_write = write_cmd['cmdWriteValue']
             
@@ -663,9 +748,6 @@ class PyModbusClient():
                 
             if self.eqConfig['eqProtocol'] == 'serial':
                 await asyncio.sleep(0.05)
-            
-            if pause:
-                await asyncio.sleep(pause)
             
         # After all the requests
         # Keep the connection open or not...

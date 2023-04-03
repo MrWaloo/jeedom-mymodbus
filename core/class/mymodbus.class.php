@@ -236,54 +236,64 @@ class mymodbus extends eqLogic {
         if (!$this->getIsEnable())
             return True;
         // Un nouvel équipement vient d'être ajouté, il faut retourner "true" sinon, l'ajout est invalidé
-        if (!in_array('eqProtocol', $configKeys) && !in_array('eqKeepopen', $configKeys) && !in_array('eqPolling', $configKeys))
+        if (!in_array('eqProtocol', $configKeys) && !in_array('eqKeepopen', $configKeys) && !in_array('eqRefreshMode', $configKeys)
+                && !in_array('eqPolling', $configKeys) && !in_array('eqWriteCmdCheckTimeout', $configKeys) && !in_array('eqFirstDelay', $configKeys))
             return True;
-        if (!in_array('eqProtocol', $configKeys) || !in_array('eqKeepopen', $configKeys) || !in_array('eqPolling', $configKeys))
-            throw new Exception($this->getName() . '&nbsp;:</br>' . __('Veuillez définir la configuration de base de l\'équipement', __FILE__));
+        if (!in_array('eqProtocol', $configKeys) || !in_array('eqKeepopen', $configKeys) || !in_array('eqRefreshMode', $configKeys)
+                || !in_array('eqPolling', $configKeys) || !in_array('eqWriteCmdCheckTimeout', $configKeys) || !in_array('eqFirstDelay', $configKeys))
+            throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Veuillez définir la configuration de base de l\'équipement', __FILE__));
         
         $eqProtocol = $this->getConfiguration('eqProtocol');
+        $eqRefreshMode = $this->getConfiguration('eqRefreshMode');
         $eqPolling = $this->getConfiguration('eqPolling');
+        $eqWriteCmdCheckTimeout = $this->getConfiguration('eqWriteCmdCheckTimeout');
         $eqFirstDelay = $this->getConfiguration('eqFirstDelay');
         if (!in_array($eqProtocol, self::supportedProtocols()))
-            throw new Exception($this->getName() . '&nbsp;:</br>' . __('Le protocol n\'est pas défini correctement.', __FILE__));
+            throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Le protocol n\'est pas défini correctement.', __FILE__));
+        if (!in_array($eqRefreshMode, array('polling', 'cyclic', 'on_event')))
+            throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Le mode de rafraîchissement n\'est pas défini correctement.', __FILE__));
         if (!is_numeric($eqPolling))
-            throw new Exception($this->getName() . '&nbsp;:</br>' . __('Le paramètre "Polling" doit être un nombre.', __FILE__));
-        if ($eqPolling < 10)
-            throw new Exception($this->getName() . '&nbsp;:</br>' . __('Le paramètre "Polling" doit être au moins à 10 secondes', __FILE__));
+            throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Le paramètre "Polling" doit être un nombre.', __FILE__));
+        if ($eqPolling < 1)
+            throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Le paramètre "Polling" doit être au moins à 1 seconde', __FILE__));
+        if (!is_numeric($eqWriteCmdCheckTimeout))
+            throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Le paramètre "Timeout pour vérification d\'une commande action" doit être un nombre.', __FILE__));
+        if ($eqWriteCmdCheckTimeout < 0.1)
+            throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Le paramètre "Timeout pour vérification d\'une commande action" doit être au moins à 0.1 seconde', __FILE__));
         if (!is_numeric($eqFirstDelay))
-            throw new Exception($this->getName() . '&nbsp;:</br>' . __('Le paramètre "Temps entre la connexion et la première requête" doit être un nombre.', __FILE__));
+            throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Le paramètre "Temps entre la connexion et la première requête" doit être un nombre.', __FILE__));
         if ($eqFirstDelay < 0)
-            throw new Exception($this->getName() . '&nbsp;:</br>' . __('Le paramètre "Temps entre la connexion et la première requête" doit être positif.', __FILE__));
+            throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Le paramètre "Temps entre la connexion et la première requête" doit être positif.', __FILE__));
         
         if ($eqProtocol == 'tcp') {
             // Vérification du paramétrage d'une connexion TCP
             if (!in_array('eqTcpAddr', $configKeys) && !in_array('eqTcpPort', $configKeys) && !in_array('eqTcpRtu', $configKeys)) {
-                throw new Exception($this->getName() . '&nbsp;:</br>' . __('Veuillez définir la configuration TCP de l\'équipement', __FILE__));
+                throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Veuillez définir la configuration TCP de l\'équipement', __FILE__));
             }
             $eqTcpAddr = $this->getConfiguration('eqTcpAddr');
             $eqTcpPort = $this->getConfiguration('eqTcpPort');
             if (!filter_var($eqTcpAddr, FILTER_VALIDATE_IP))
-                throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse IP n\'est pas valide', __FILE__));
+                throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('L\'adresse IP n\'est pas valide', __FILE__));
             if (!is_numeric($eqTcpPort))
-                throw new Exception($this->getName() . '&nbsp;:</br>' . __('Le port doit être un nombre.', __FILE__));
+                throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Le port doit être un nombre.', __FILE__));
             
         } elseif ($eqProtocol == 'udp') {
             // Vérification du paramétrage d'une connexion UDP
             if (!in_array('eqUdpAddr', $configKeys) && !in_array('eqUdpPort', $configKeys) && !in_array('eqUdpRtu', $configKeys))
-                throw new Exception($this->getName() . '&nbsp;:</br>' . __('Veuillez définir la configuration UDP de l\'équipement', __FILE__));
+                throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Veuillez définir la configuration UDP de l\'équipement', __FILE__));
             $eqUdpAddr = $this->getConfiguration('eqUdpAddr');
             $eqUdpPort = $this->getConfiguration('eqUdpPort');
             if (!filter_var($eqUdpAddr, FILTER_VALIDATE_IP))
-                throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse IP n\'est pas valide', __FILE__));
+                throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('L\'adresse IP n\'est pas valide', __FILE__));
             if (!is_numeric($eqUdpPort))
-                throw new Exception($this->getName() . '&nbsp;:</br>' . __('Le port doit être un nombre.', __FILE__));
+                throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Le port doit être un nombre.', __FILE__));
             
         } elseif ($eqProtocol == 'serial') {
             // Vérification du paramétrage d'une connexion série
             if (!in_array('eqSerialInterface', $configKeys) || !in_array('eqSerialMethod', $configKeys) ||
                     !in_array('eqSerialBaudrate', $configKeys) || !in_array('eqSerialBytesize', $configKeys) ||
                     !in_array('eqSerialParity', $configKeys) || !in_array('eqSerialStopbits', $configKeys))
-                throw new Exception($this->getName() . '&nbsp;:</br>' . __('Veuillez définir la configuration série de l\'équipement', __FILE__));
+                throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Veuillez définir la configuration série de l\'équipement', __FILE__));
             $eqSerialInterface = $this->getConfiguration('eqSerialInterface');
             $eqSerialMethod = $this->getConfiguration('eqSerialMethod');
             $eqSerialBaudrate = $this->getConfiguration('eqSerialBaudrate');
@@ -291,26 +301,64 @@ class mymodbus extends eqLogic {
             $eqSerialParity = $this->getConfiguration('eqSerialParity');
             $eqSerialStopbits = $this->getConfiguration('eqSerialStopbits');
             if ($eqSerialInterface == '')
-                throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'interface doit être définie correctement.', __FILE__));
+                throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('L\'interface doit être définie correctement.', __FILE__));
             if (!in_array($eqSerialMethod, array('rtu', 'ascii', 'binary')))
-                throw new Exception($this->getName() . '&nbsp;:</br>' . __('La méthode de transport n\'est pas définie correctement.', __FILE__));
+                throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('La méthode de transport n\'est pas définie correctement.', __FILE__));
             if (!is_numeric($eqSerialBaudrate))
-                throw new Exception($this->getName() . '&nbsp;:</br>' . __('La vitesse de transmission Modbus doit être un nombre.', __FILE__));
+                throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('La vitesse de transmission Modbus doit être un nombre.', __FILE__));
             if (!in_array($eqSerialBytesize, array('7', '8')))
-                throw new Exception($this->getName() . '&nbsp;:</br>' . __('Le nombre de bits par octet n\'est pas défini correctement.', __FILE__));
+                throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Le nombre de bits par octet n\'est pas défini correctement.', __FILE__));
             if (!in_array($eqSerialParity, array('E', 'O', 'N')))
-                throw new Exception($this->getName() . '&nbsp;:</br>' . __('La parité n\'est pas définie correctement.', __FILE__));
+                throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('La parité n\'est pas définie correctement.', __FILE__));
             if (!in_array($eqSerialStopbits, array('0', '1', '2')))
-                throw new Exception($this->getName() . '&nbsp;:</br>' . __('Le nombre de bits de stop n\'est pas défini correctement.', __FILE__));
+                throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Le nombre de bits de stop n\'est pas défini correctement.', __FILE__));
         }
-        //log::add('mymodbus', 'debug', 'Validation de la configuration pour l\'équipement *' . $this->getName() . '* : OK');
+        $refreshCmd = $this->getCmd(null, 'refresh');
+        $refreshTimeCmd = $this->getCmd(null, 'refresh time');
+        //log::add(__CLASS__, 'debug', $this->getHumanName() . ' $refreshCmd logicalId ' . $refreshCmd->getLogicalId());
+        //log::add(__CLASS__, 'debug', $this->getHumanName() . ' is_object($refreshCmd) ' . json_encode(is_object($refreshCmd)));
+        //
+        //$has_refresh = false;
+        //$has_refreshTime = false;
+        //foreach ($this->getCmd() as $cmdMymodbus) { // boucle sur les commandes
+        //    if ($cmdMymodbus->getLogicalId() == 'refresh')
+        //        $has_refresh = true;
+        //    if ($cmdMymodbus->getLogicalId() == 'refresh time')
+        //        $has_refreshTime = true;
+        //    if ($has_refresh && $has_refreshTime)
+        //        break;
+        //}
+        if (!is_object($refreshCmd)) {
+            log::add(__CLASS__, 'debug', $this->getHumanName() . ' ' . __('Création de commande : Temps de rafraîchissement', __FILE__));
+            $refreshTimeCmd = (new mymodbusCmd)
+                ->setLogicalId('refresh time')
+                ->setEqLogic_id($this->getId())
+                ->setName(__('Temps de rafraîchissement', __FILE__))
+                ->setType('info')
+                ->setSubType('numeric')
+                ->setUnite('s')
+                ->setOrder(0)
+                ->save();
+        }
+        if (!is_object($refreshTimeCmd)) {
+            log::add(__CLASS__, 'debug', $this->getHumanName() . ' ' . __('Création de commande : Rafraîchir', __FILE__));
+            $refreshCmd = (new mymodbusCmd)
+                ->setLogicalId('refresh')
+                ->setEqLogic_id($this->getId())
+                ->setName(__('Rafraîchir', __FILE__))
+                ->setType('action')
+                ->setSubType('other')
+                ->setOrder(0)
+                ->save();
+        }
+        //log::add('mymodbus', 'debug', 'Validation de la configuration pour l\'équipement *' . $this->getHumanName() . '* : OK');
     }
 
    /*
     * Fonction exécutée automatiquement après la sauvegarde de l'équipement (création ou mise à jour)
     public function postSave() {}
     */
-
+    
     public function postAjax() {
         self::sendNewConfig();
     }
@@ -353,8 +401,10 @@ class mymodbus extends eqLogic {
         $eqConfig['name'] = $this->getName();
         $eqConfig['eqProtocol'] = $this->getConfiguration('eqProtocol');
         $eqConfig['eqKeepopen'] = $this->getConfiguration('eqKeepopen');
-        $eqConfig['eqPolling'] = $this->getConfiguration('eqPolling');
-        $eqConfig['eqFirstDelay'] = $this->getConfiguration('eqFirstDelay');
+        $eqConfig['eqRefreshMode'] = $this->getConfiguration('eqRefreshMode', 'polling');
+        $eqConfig['eqPolling'] = $this->getConfiguration('eqPolling', '5');
+        $eqConfig['eqWriteCmdCheckTimeout'] = $this->getConfiguration('eqWriteCmdCheckTimeout', '1');
+        $eqConfig['eqFirstDelay'] = $this->getConfiguration('eqFirstDelay', '0');
         if ($eqConfig['eqProtocol'] == 'serial') {
             $eqConfig['eqSerialInterface'] = $this->getConfiguration('eqSerialInterface');
             $eqConfig['eqSerialMethod'] = $this->getConfiguration('eqSerialMethod');
@@ -375,6 +425,8 @@ class mymodbus extends eqLogic {
         }
         $eqConfig['cmds'] = array();
         foreach ($this->getCmd() as $cmdMymodbus) { // boucle sur les commandes
+            if (in_array($cmdMymodbus->getLogicalId(), array('refresh', 'refresh time')))
+                continue;
             $cmdConfig = array();
             $cmdConfig['id'] = $cmdMymodbus->getId();
             $cmdConfig['name'] = $cmdMymodbus->getName();
@@ -475,38 +527,45 @@ class mymodbusCmd extends cmd {
       }
      */
     
-    public function execute($command = array()) {
+    public function execute($_option=array()) {
         
         log::add('mymodbus', 'debug', '**************** execute *****: ' . json_encode($command));
         
-        $cmdFormat = $this->getConfiguration('cmdFormat');
-        
-        if (strstr($cmdFormat, '8') || $cmdFormat == 'blob' || in_array($this->getSubType(), array('color', 'select')))
-            return;
-        
         $eqMymodbus = $this->getEqLogic();
         
-        $write_cmd = array();
-        $write_cmd['eqId'] = $eqMymodbus->getId();
-        $write_cmd['cmdId'] = $this->getId();
-        $value = null;
+        $command = array();
+        $command['eqId'] = $eqMymodbus->getId();
         
-        if (in_array($this->getSubtype(), array('other', 'message'))) {
-            if (isset($command['message']))
-                $value = $command['message'];
-            else
-                $value = $this->getConfiguration('cmdWriteValue');
-        } elseif ($this->getSubtype() == 'slider') {
-            if (strstr($cmdFormat, 'int'))
-                $value = intval($command['slider']);
-            else if (strstr($cmdFormat, 'float'))
-                $value = floatval($command['slider']);
+        if ($this->getLogicalId() == 'refresh') {
+            $message = array();
+            $message['CMD'] = 'read';
+            $message['read_cmd'] = $command;
+            
+        } else {
+            $cmdFormat = $this->getConfiguration('cmdFormat');
+            
+            if (strstr($cmdFormat, '8') || $cmdFormat == 'blob' || in_array($this->getSubType(), array('color', 'select')))
+                return;
+            $value = null;
+            
+            if (in_array($this->getSubtype(), array('other', 'message'))) {
+                if (isset($_option['message']))
+                    $value = $_option['message'];
+                else
+                    $value = $this->getConfiguration('cmdWriteValue');
+            } elseif ($this->getSubtype() == 'slider') {
+                if (strstr($cmdFormat, 'int'))
+                    $value = intval($_option['slider']);
+                else if (strstr($cmdFormat, 'float'))
+                    $value = floatval($_option['slider']);
+            }
+            $command['cmdWriteValue'] = jeedom::evaluateExpression($value);
+            $command['cmdId'] = $this->getId();
+            
+            $message = array();
+            $message['CMD'] = 'write';
+            $message['write_cmd'] = $command;
         }
-        $write_cmd['cmdWriteValue'] = jeedom::evaluateExpression($value);
-        
-        $message = array();
-        $message['CMD'] = 'write';
-        $message['write_cmd'] = $write_cmd;
         mymodbus::sendToDaemon($message);
     }
 
@@ -517,6 +576,8 @@ class mymodbusCmd extends cmd {
     // Fonction exécutée automatiquement avant la sauvegarde de la commande (création ou mise à jour)
     // La levée d'une exception invalide la sauvegarde
     public function preSave() {
+        if (in_array($this->getLogicalId(), array('refresh', 'refresh time')))
+            return true;
         $cmdSlave = $this->getConfiguration('cmdSlave');
         $cmdAddress = $this->getConfiguration('cmdAddress');
         $cmdFrequency = $this->getConfiguration('cmdFrequency');
@@ -528,32 +589,32 @@ class mymodbusCmd extends cmd {
             $this->setConfiguration('cmdSlave', $cmdSlave);
         }
         if (!is_numeric($cmdSlave))
-            throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse esclave doit être un nombre.</br>\'0\' si pas de bus série.', __FILE__));
+            throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('L\'adresse esclave doit être un nombre.</br>\'0\' si pas de bus série.', __FILE__));
         if ($this->getType() == 'info' && $cmdFrequency == '') {
             $cmdFrequency = '1';
             $this->setConfiguration('cmdFrequency', $cmdFrequency);
         }
         if ($this->getType() == 'info' && !is_numeric($cmdFrequency))
-            throw new Exception($this->getName() . '&nbsp;:</br>' . __('La configuration \'Lecture 1x sur\' doit être un nombre.', __FILE__));
+            throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('La configuration \'Lecture 1x sur\' doit être un nombre.', __FILE__));
         if (!is_numeric($cmdAddress) && $cmdFormat != 'string' && $cmdFormat != 'blob' && !strstr($cmdFormat, 'sp-sf'))
-            throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse Modbus doit être un nombre.', __FILE__));
+            throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('L\'adresse Modbus doit être un nombre.', __FILE__));
         if ($cmdFormat == 'string' && !preg_match('/\d+\s*\[\s*\d+\s*\]/', $cmdAddress))
-            throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse Modbus d\'une chaine de caractère doit être de la forme</br>adresse[longueur]', __FILE__));
+            throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('L\'adresse Modbus d\'une chaine de caractère doit être de la forme</br>adresse[longueur]', __FILE__));
         if ($cmdFormat == 'blob' && !preg_match('/\d+\s*\[\s*\d+\s*\]/', $cmdAddress))
-            throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse Modbus d\'une plage de registres doit être de la forme</br>adresse[longueur]', __FILE__));
+            throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('L\'adresse Modbus d\'une plage de registres doit être de la forme</br>adresse[longueur]', __FILE__));
         if (strstr($cmdFormat, 'sp-sf') && !preg_match('/\d+\s*sf\s*\d+/i', $cmdAddress))
-            throw new Exception($this->getName() . '&nbsp;:</br>' . __('L\'adresse Modbus d\'un scale factor doit être de la forme&nbsp;:</br><i>adresse_valeur </i>sf<i> adresse_scale_factor</i>', __FILE__));
+            throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('L\'adresse Modbus d\'un scale factor doit être de la forme&nbsp;:</br><i>adresse_valeur </i>sf<i> adresse_scale_factor</i>', __FILE__));
         if ($cmdOption != '' && (!strstr($cmdOption, '#value#') || strstr($cmdOption, ';')))
-            throw new Exception($this->getName() . '&nbsp;:</br>' . __('Le paramètre \'Option\' doit contenir \'#value#\' et aucun \';\'.', __FILE__));
+            throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Le paramètre \'Option\' doit contenir \'#value#\' et aucun \';\'.', __FILE__));
         if ($this->getType() == 'action') {
             if ($cmdFctModbus == '6' && (strstr($cmdFormat, '32') || strstr($cmdFormat, '64')))
-                throw new Exception($this->getName() . '&nbsp;:</br>' . __('La fonction "[0x06] Write register" ne permet pas d\'écrire une variable de cette longueur.', __FILE__));
+                throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('La fonction "[0x06] Write register" ne permet pas d\'écrire une variable de cette longueur.', __FILE__));
             if (strstr($cmdFormat, '8') || $cmdFormat == 'blob' || $cmdFctModbus == 'fromBlob' || in_array($this->getSubType(), array('color', 'select')))
-                log::add('mymodbus', 'warning', $this->getName() . '&nbsp;:</br>' . __('L\'écriture sera ignorée.', __FILE__));
+                log::add('mymodbus', 'warning', $this->getHumanName() . '&nbsp;:</br>' . __('L\'écriture sera ignorée.', __FILE__));
         }
         if ($cmdFctModbus == 'fromBlob') {
             if ($cmdFormat == 'blob')
-                throw new Exception($this->getName() . '&nbsp;:</br>' . __('On ne peut pas extraire une plage de registres d\'une plage de registres.', __FILE__));
+                throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('On ne peut pas extraire une plage de registres d\'une plage de registres.', __FILE__));
             if ($this->getSubtype() == 'binary')
                 $cmdSourceBlob = $this->getConfiguration('cmdSourceBlobBin');
             else
@@ -567,24 +628,24 @@ class mymodbusCmd extends cmd {
             if ($cmdFormat != 'string' && !strstr($cmdFormat, 'sp-sf')) {
                 $cmdAddress = intval($cmdAddress);
                 if ($cmdAddress < $minAddr or $cmdAddress > $maxAddr)
-                    throw new Exception($this->getName() . '&nbsp;:</br>' . __('Adresse Modbus en dehors de la plage de registres.', __FILE__));
+                    throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Adresse Modbus en dehors de la plage de registres.', __FILE__));
             }
             if ($cmdFormat == 'string') {
                 preg_match('/(\d+)\s*\[\s*(\d+)\s*\]/', $cmdAddress, $matches);
                 $startAddr = intval($matches[1]);
                 $endAddr = $startAddr + intval($matches[2]);
                 if ($startAddr < $minAddr or $startAddr > $maxAddr or $endAddr < $minAddr or $endAddr > $maxAddr)
-                    throw new Exception($this->getName() . '&nbsp;:</br>' . __('Adresse Modbus en dehors de la plage de registres.', __FILE__));
+                    throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Adresse Modbus en dehors de la plage de registres.', __FILE__));
             }
             if (strstr($cmdFormat, 'sp-sf')) {
                 preg_match('/(\d+)\s*sf\s*(\d+)/i', $cmdAddress, $matches);
                 $startAddr = intval($matches[1]);
                 $endAddr = intval($matches[2]);
                 if ($startAddr < $minAddr or $startAddr > $maxAddr or $endAddr < $minAddr or $endAddr > $maxAddr)
-                    throw new Exception($this->getName() . '&nbsp;:</br>' . __('Adresse Modbus en dehors de la plage de registres.', __FILE__));
+                    throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Adresse Modbus en dehors de la plage de registres.', __FILE__));
             }
         }
-        //log::add('mymodbus', 'debug', 'Validation de la configuration pour la commande *' . $this->getName() . '* : OK');
+        //log::add('mymodbus', 'debug', 'Validation de la configuration pour la commande *' . $this->getHumanName() . '* : OK');
     }
 
     /*     * **********************Getteur Setteur*************************** */

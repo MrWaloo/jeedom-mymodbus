@@ -14,7 +14,6 @@
  * along with Jeedom. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 /* Permet la réorganisation des commandes dans l'équipement */
 $("#table_cmd").sortable({
     axis: "y",
@@ -47,33 +46,83 @@ $('.bt_showExpressionTest').off('click').on('click', function () {
 //    $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=templates').dialog('open');
 //});
 
-function prePrintEqLogic() {
-    // unlink the event from the protocol dropdown list
-    $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqProtocol]').off();
+function printEqLogic(_eqLogic) {
+    //console.log('eqLogic : ' + init(JSON.stringify(_eqLogic)));
+    if (isset(_eqLogic.configuration.protocol)) {
+        if (_eqLogic.configuration.protocol == 'rtu') {
+            _eqLogic.configuration.eqProtocol = 'serial';
+            _eqLogic.configuration.eqSerialMethod = 'rtu';
+            if (isset(_eqLogic.configuration.port)) {
+                _eqLogic.configuration.eqSerialInterface = _eqLogic.configuration.port;
+                delete _eqLogic.configuration.port;
+            }
+            if (isset(_eqLogic.configuration.baudrate)) {
+                _eqLogic.configuration.eqSerialBaudrate = _eqLogic.configuration.baudrate;
+                delete _eqLogic.configuration.baudrate;
+            }
+            if (isset(_eqLogic.configuration.parity)) {
+                _eqLogic.configuration.eqSerialParity = _eqLogic.configuration.parity;
+                delete _eqLogic.configuration.parity;
+            }
+            if (isset(_eqLogic.configuration.bytesize)) {
+                _eqLogic.configuration.eqSerialBytesize = _eqLogic.configuration.bytesize;
+                delete _eqLogic.configuration.bytesize;
+            }
+            if (isset(_eqLogic.configuration.stopbits)) {
+                _eqLogic.configuration.eqSerialStopbits = _eqLogic.configuration.stopbits;
+                delete _eqLogic.configuration.stopbits;
+            }
+        } else {
+            _eqLogic.configuration.eqProtocol = 'tcp';
+            if (_eqLogic.configuration.protocol == 'rtuovertcp')
+                _eqLogic.configuration.eqTcpRtu = 1;
+            if (isset(_eqLogic.configuration.addr)) {
+                _eqLogic.configuration.eqTcpAddr = _eqLogic.configuration.addr;
+                delete _eqLogic.configuration.addr;
+            }
+            if (isset(_eqLogic.configuration.port)) {
+                _eqLogic.configuration.eqTcpPort = _eqLogic.configuration.port;
+                delete _eqLogic.configuration.port;
+            }
+        }
+        delete _eqLogic.configuration.protocol;
+    }
+    if (isset(_eqLogic.configuration.polling)) {
+        _eqLogic.configuration.eqPolling = _eqLogic.configuration.polling;
+        delete _eqLogic.configuration.polling;
+    }
+    if (isset(_eqLogic.configuration.keepopen)) {
+        _eqLogic.configuration.eqKeepopen = _eqLogic.configuration.keepopen;
+        delete _eqLogic.configuration.keepopen;
+    }
+    // Define the default configuration's value
+    if (!isset(_eqLogic.configuration.eqPolling) || _eqLogic.configuration.eqPolling == '')
+        _eqLogic.configuration.eqPolling = '5';
+    if (!isset(_eqLogic.configuration.eqFirstDelay) || _eqLogic.configuration.eqFirstDelay == '')
+        _eqLogic.configuration.eqFirstDelay = '0';
+    if (!isset(_eqLogic.configuration.eqWriteCmdCheckTimeout) || _eqLogic.configuration.eqWriteCmdCheckTimeout == '')
+        _eqLogic.configuration.eqWriteCmdCheckTimeout = '1';
+    
+    $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqProtocol]').off().on('change', function () {
+        //console.log('sel_val = ' + $(this).val());
+        if ($(this).val() != '' && !is_null($(this).val())) {
+            $('#div_protocolParameters').load('index.php?v=d&plugin=mymodbus&modal=configuration.' + $(this).val(), function () {
+                $('#div_protocolParameters').setValues(_eqLogic, '.eqLogicAttr');
+            });
+        }
+    });
+    // load values
+    $('#eqLogic').setValues(_eqLogic, '.eqLogicAttr');
 }
 
-function printEqLogic(_eqLogic) {
-    $.showLoading();
-    // unlink the event from the protocol dropdown list
-    $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqProtocol]').off();
-    if (isset(_eqLogic.configuration) && isset(_eqLogic.configuration.eqProtocol)) {
-        // load the form from the corresponding modal php file
-        $('#div_protocolParameters').load('index.php?v=d&plugin=mymodbus&modal=configuration.' + _eqLogic.configuration.eqProtocol, function () {
-            // load values
-            $('body').setValues(_eqLogic, '.eqLogicAttr');
-            // unlink and bind the event on change: load form from the corresponding modal php file
-            $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqProtocol]').off().on('change', function () {
-                $('#div_protocolParameters').load('index.php?v=d&plugin=mymodbus&modal=configuration.' + $(this).val());
-            });
-            modifyWithoutSave = false;
-        });
+$('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRefreshMode]').off().on('change', function () {
+    //$('.eqLogicAttr[data-l1key=configuration][data-l2key=eqPolling]').attr('visible', $(this).val() != 'polling');
+    if ($(this).val() == 'polling') {
+        $('#eqPolling').show();
     } else {
-        $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqProtocol]').on('change', function () {
-            $('#div_protocolParameters').load('index.php?v=d&plugin=mymodbus&modal=configuration.' + $(this).val());
-        });
+        $('#eqPolling').hide();
     }
-    $.hideLoading();
-}
+});
 
 // Génère la liste déroulante de choix du bit dans deux octets
 var bitSelect = 
@@ -158,22 +207,27 @@ listSourceBlobs = function(_params) {
 }
 
 $("#table_cmd tbody").delegate(".cmdAttr[data-l1key=type]", 'change', function (event) {
-    actualise_visible($(this));
+    actualise_visible($(this), 'type');
 });
 
 $("#table_cmd tbody").delegate(".cmdAttr[data-l1key=subType]", 'change', function (event) {
-    actualise_visible($(this));
+    actualise_visible($(this), 'subType');
 });
 
 $("#table_cmd tbody").delegate(".cmdAttr[data-l1key=configuration][data-l2key=cmdFctModbus]", 'change', function (event) {
-    actualise_visible($(this));
+    actualise_visible($(this), 'cmdFctModbus');
 });
 
-function actualise_visible(me) {
+
+function actualise_visible(me, source) {
+    var cmdName = $(me).closest('tr').find('.cmdAttr[data-l1key=name]').value();
+    console.log(cmdName + ' *-*-*-*-*-*-*-*-*-* ' + source);
+    var cmdLogicalId = $(me).closest('tr').find('.cmdAttr[data-l1key=logicalId]').value();
     var cmdType = $(me).closest('tr').find('.cmdAttr[data-l1key=type]').value();
     var subType = $(me).closest('tr').find('.cmdAttr[data-l1key=subType]').value();
     var cmdFctModbus = $(me).closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=cmdFctModbus]').value();
     var cmdFormat = $(me).closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=cmdFormat]').value();
+    var eqRefreshMode = $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRefreshMode]').value();
     
     $(me).closest('tr').find('.formatNum').hide();
     $(me).closest('tr').find('.formatBin').hide();
@@ -187,36 +241,42 @@ function actualise_visible(me) {
     $(me).closest('tr').find('.readNum').hide();
     $(me).closest('tr').find('.withSlave').hide();
     
-    if (cmdFctModbus != 'fromBlob')
-        $(me).closest('tr').find('.withSlave').show();
-    
-    if (cmdType == 'info') {
-        $(me).closest('tr').find('.readFunction').show();
-        if (subType == 'binary') {
-            $(me).closest('tr').find('.readBin').show();
-            $(me).closest('tr').find('.formatBin').show();
-        } else {
-            $(me).closest('tr').find('.readNum').show();
-            $(me).closest('tr').find('.formatNum').show();
-        }
-        if (cmdFctModbus != 'fromBlob') {
-            $(me).closest('tr').find('.notFctBlob').show();
-        } else {
+    if (cmdLogicalId == '') { // without a logicalId
+        if (cmdFctModbus != 'fromBlob')
+            $(me).closest('tr').find('.withSlave').show();
+        
+        if (cmdType == 'info') {
+            $(me).closest('tr').find('.readFunction').show();
             if (subType == 'binary') {
-                $(me).closest('tr').find('.FctBlobBin').show();
+                $(me).closest('tr').find('.readBin').show();
+                $(me).closest('tr').find('.formatBin').show();
             } else {
-                $(me).closest('tr').find('.FctBlobNum').show();
+                $(me).closest('tr').find('.readNum').show();
+                $(me).closest('tr').find('.formatNum').show();
+            }
+            if (cmdFctModbus != 'fromBlob') {
+                $(me).closest('tr').find('.notFctBlob').show();
+            } else {
+                if (subType == 'binary') {
+                    $(me).closest('tr').find('.FctBlobBin').show();
+                } else {
+                    $(me).closest('tr').find('.FctBlobNum').show();
+                }
+            }
+            if (cmdFormat != 'blob')
+                $(me).closest('tr').find('.notFormatBlob').show();
+        } else { // action
+            $(me).closest('tr').find('.writeFunction').show();
+            if (cmdFctModbus == '5' || cmdFctModbus == '15') {
+                $(me).closest('tr').find('.formatBin').show();
+            } else {
+                $(me).closest('tr').find('.formatNum').show();
             }
         }
-        if (cmdFormat != 'blob')
-            $(me).closest('tr').find('.notFormatBlob').show();
-    } else { // action
-        $(me).closest('tr').find('.writeFunction').show();
-        if (cmdFctModbus == '5' || cmdFctModbus == '15') {
-            $(me).closest('tr').find('.formatBin').show();
-        } else {
-            $(me).closest('tr').find('.formatNum').show();
-        }
+    } else { // with a logicalId
+        $(me).closest('tr').find('.input-group').hide();
+        $(me).closest('tr').find('.cmdAction[data-action=copy]').hide();
+        $(me).closest('tr').find('.cmdAttr[data-l1key=name]').attr('disabled', true);
     }
 }
 
@@ -309,17 +369,13 @@ function addCmdToTable(_cmd) {
     
     // Default value for new added commands
     if (!isset(_cmd.id)) {
-        _cmd.configuration.cmdSlave = '0';
         _cmd.configuration.cmdFctModbus = '3';
         _cmd.configuration.cmdFormat = 'int16';
-        _cmd.configuration.cmdFrequency = '1';
     }
-    if (!isset(_cmd.configuration.cmdSlave)) {
+    if (!isset(_cmd.configuration.cmdSlave))
         _cmd.configuration.cmdSlave = '0';
-    }
-    if (!isset(_cmd.configuration.cmdFrequency)) {
+    if (!isset(_cmd.configuration.cmdFrequency))
         _cmd.configuration.cmdFrequency = '1';
-    }
     
     //console.log('CMD - ' + init(JSON.stringify(_cmd)));
     
@@ -327,6 +383,7 @@ function addCmdToTable(_cmd) {
     var tr = '<tr class="cmd" data-cmd_id="' + init(_cmd.id) + '">';
     tr += ' <td class="hidden-xs">'
     tr += '     <span class="cmdAttr" data-l1key="id" disabled></span>'
+    tr += '     <span class="cmdAttr" data-l1key="logicalId" hidden></span>'
     tr += ' </td>'
     // Nom
     tr += ' <td class="name">';
@@ -338,8 +395,10 @@ function addCmdToTable(_cmd) {
     tr += ' </td>';  
     // Type
     tr += ' <td>';
-    tr += '     <span class="type" id="' + init(_cmd.type) + '" type="' + init(_cmd.type) + '">' + jeedom.cmd.availableType() + '</span>';
-    tr += '     <span class="subType" subType="' + init(_cmd.subType) + '"></span>';
+    tr += '     <div class="input-group">';
+    tr += '         <span class="type" id="' + init(_cmd.type) + '" type="' + init(_cmd.type) + '">' + jeedom.cmd.availableType() + '</span>';
+    tr += '         <span class="subType" subType="' + init(_cmd.subType) + '"></span>';
+    tr += '     </div>';
     tr += ' </td>';
     // Adresse esclave
     tr += ' <td><input class="cmdAttr form-control input-sm withSlave" data-l1key="configuration" data-l2key="cmdSlave"></td>';
@@ -400,7 +459,6 @@ function addCmdToTable(_cmd) {
     tr += '         </select>';
     tr += '         <select class="cmdAttr form-control input-sm FctBlobNum" style="width:100%;" data-l1key="configuration" data-l2key="cmdSourceBlobNum">';
     tr += '         </select>';
-    tr += '     </div>';
     tr += '     <input class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="cmdAddress"/>';
     tr += '     <label class="checkbox-inline notFormatBlob">';
     tr += '         <input type="checkbox" class="cmdAttr checkbox-inline tooltips" title="{{\'Little endian\' si coché}}" data-l1key="configuration" data-l2key="cmdInvertBytes"/>{{Inverser octets}}';
@@ -408,6 +466,7 @@ function addCmdToTable(_cmd) {
     tr += '     <label class="checkbox-inline notFormatBlob">';
     tr += '         <input type="checkbox" class="cmdAttr checkbox-inline tooltips" title="{{\'Little endian\' si coché}}" data-l1key="configuration" data-l2key="cmdInvertWords"/>{{Inverser mots}}</label></br>';
     tr += '     </label></br>';
+    tr += '     </div>';
     tr += ' </td>';
     // Paramètre
     tr += ' <td>';
@@ -419,7 +478,7 @@ function addCmdToTable(_cmd) {
     tr += '     </div>';
     tr += '     <div class="input-group notFctBlob">';
     tr += '         <label class="label">{{Lecture 1x sur&nbsp;:}}&nbsp;';
-    tr += '             <input class="cmdAttr form-inline input-sm roundedLeft" style="width:70px;" data-l1key="configuration" data-l2key="cmdFrequency" placeholder="{{1 par défaut}}"/>';
+    tr += '             <input class="cmdAttr form-inline input-sm" style="width:70px;" data-l1key="configuration" data-l2key="cmdFrequency" placeholder="{{1 par défaut}}"/>';
     tr += '         </label>';
     tr += '     </div>';
     tr += '     <div class="input-group" style="width:100%;">';
@@ -438,15 +497,17 @@ function addCmdToTable(_cmd) {
     }
     tr += '     <label class="checkbox-inline"><input type="checkbox" class="cmdAttr checkbox-inline" data-l1key="isVisible" checked/>{{Afficher}}</label>';
     tr += '     <label class="checkbox-inline"><input type="checkbox" class="cmdAttr" data-l1key="isHistorized" data-size="mini"/>{{Historiser}}</label>';
-    tr += '     <div style="margin-top:7px;">';
-    tr += '         <input class="tooltips cmdAttr form-control input-sm expertModeVisible" data-l1key="configuration" data-l2key="minValue" placeholder="{{Min}}" title="{{Min}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;"/>';
-    tr += '         <input class="tooltips cmdAttr form-control input-sm expertModeVisible" data-l1key="configuration" data-l2key="maxValue" placeholder="{{Max}}" title="{{Max}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;"/>';
+    tr += '     <div class="input-group" style="margin-top:7px;">';
+    tr += '         <input class="tooltips cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="minValue" placeholder="{{Min}}" title="{{Min}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;"/>';
+    tr += '         <input class="tooltips cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="maxValue" placeholder="{{Max}}" title="{{Max}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;"/>';
     tr += '         <input class="tooltips cmdAttr form-control input-sm" data-l1key="unite" placeholder="{{Unité}}" title="{{Unité}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;"/>';
     tr += '     </div>';
     tr += ' </td>';
     // Delete button
     tr += ' <td>';
-    tr += '     <i class="fas fa-minus-circle pull-right cmdAction cursor" data-action="remove" title="{{Supprimer}}"></i>';
+    tr += '     <div class="input-group">';
+    tr += '         <i class="fas fa-minus-circle pull-right cmdAction cursor" data-action="remove" title="{{Supprimer}}"></i>';
+    tr += '     </div>';
     tr += ' </td>';
     tr += '</tr>';
     $('#table_cmd tbody').append(tr);
@@ -468,8 +529,22 @@ function addCmdToTable(_cmd) {
             $('#div_alert').showAlert({message: error.message, level: 'danger'});
         },
         success: function (result) {
+//            tr.find('.cmdAttr[data-l1key="type"]').off();
+//            tr.find('.cmdAttr[data-l1key="subType"]').off();
+//            tr.find('.cmdAttr[data-l1key="cmdFctModbus"]').off();
+            
             tr.setValues(_cmd, '.cmdAttr');
             jeedom.cmd.changeType(tr, init(_cmd.subType));
+            
+//            tr.find('.cmdAttr[data-l1key="type"]').on('change', function () {
+//                actualise_visible($(this));
+//            });
+//            tr.find('.cmdAttr[data-l1key="subType"]').on('change', function () {
+//                actualise_visible($(this));
+//            });
+//            tr.find('.cmdAttr[data-l1key="cmdFctModbus"]').on('change', function () {
+//                actualise_visible($(this));
+//            });
         }
     });
 }

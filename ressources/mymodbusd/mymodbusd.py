@@ -203,6 +203,14 @@ class Main():
                 logging.info("mymodbusd: Command 'write' received from jeedom: sending the command to the daemon")
                 self.send_write_cmd(message['write_cmd'])
                 return
+            # Write
+            elif message['CMD'] == 'read':
+                if 'read_cmd' not in message:
+                    logging.error("mymodbusd: Received CMD=read without read_cmd: " + str(message))
+                    return
+                logging.info("mymodbusd: Command 'read' received from jeedom: sending the command to the daemon")
+                self.send_read_cmd(message['read_cmd'])
+                return
             # setLogLevel
             elif message['CMD'] == 'setLogLevel':
                 if 'level' not in message:
@@ -236,6 +244,20 @@ class Main():
             queue.put({'write_cmd': write_cmd}, True, float(eqConfig['eqPolling']) * 2)
         except Full:
             logging.error("mymodbusd: send_write_cmd: Full/Timeout !!!!")
+        
+    def send_read_cmd(self, read_cmd):
+        if self.clear_to_leave.is_set() or self.should_stop.is_set():
+            return
+        if 'eqId' not in read_cmd:
+            logging.error("mymodbusd: Received CMD=read: no 'eqId' read_cmd: " + str(read_cmd))
+            return
+        
+        [process, queue] = self.sub_process[read_cmd['eqId']]
+        eqConfig = self.get_config(read_cmd['eqId'])
+        try:
+            queue.put({'read_cmd': read_cmd}, True, float(eqConfig['eqPolling']) * 2)
+        except Full:
+            logging.error("mymodbusd: send_read_cmd: Full/Timeout !!!!")
         
     def send_log_level(self, level):
         if self.clear_to_leave.is_set() or self.should_stop.is_set():
@@ -355,7 +377,7 @@ class Main():
                     if process not in mp.active_children():
                         for eqConfig in self.config:
                             if eqId == eqConfig['id']:
-                                logging.warning("mymodbusd: process re-run: " + process.name)
+                                logging.info("mymodbusd: process re-run: " + process.name)
                                 self.start_sub_process(eqConfig)
                                 break
             

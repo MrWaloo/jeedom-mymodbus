@@ -41,18 +41,23 @@ if (isset($result['heartbeat_request'])) {
     $names = '';
     $eqlogic = mymodbus::byId($result['eqId']);
     foreach ($result['values'] as $cmd_id => $new_value) {
-        $cmd = mymodbusCmd::byid($cmd_id);
-        //$old_value = $cmd->execCmd();
-        
-        $cmdOption = $cmd->getConfiguration('cmdOption');
-        // Only if the option is valid and cannot be malicious code
-        if (strstr($cmdOption, '#value#') && !strstr($cmdOption, ';')) {
-            try {
-                $eval = str_replace('#value#', '$new_value', $cmdOption);
-                $new_value = eval('return ' . $eval . ';');
-            } catch (Throwable $t) {
-                log::add('mymodbus', 'error', 'jeemodbus.php: ' . $cmd->getName() . __(' Calcul non effectué. Erreur lors du calcul : ' . $t, __FILE__));
+        if (is_numeric($cmd_id)) {
+            $cmd = mymodbusCmd::byid($cmd_id);
+            //$old_value = $cmd->execCmd();
+            
+            $cmdOption = $cmd->getConfiguration('cmdOption');
+            // Only if the option is valid and cannot be malicious code
+            if (strstr($cmdOption, '#value#') && !strstr($cmdOption, ';')) {
+                try {
+                    $eval = str_replace('#value#', '$new_value', $cmdOption);
+                    $new_value = eval('return ' . $eval . ';');
+                } catch (Throwable $t) {
+                    log::add('mymodbus', 'error', 'jeemodbus.php: ' . $cmd->getName() . __(' Calcul non effectué. Erreur lors du calcul : ' . $t, __FILE__));
+                }
             }
+        } else if ($cmd_id == 'cycle_time') {
+            $cmd = mymodbusCmd::byEqLogicIdAndLogicalId($result['eqId'], 'refresh time');
+            $new_value = number_format($new_value, 3);
         }
         
         log::add('mymodbus', 'debug', 'jeemodbus.php: Mise à jour cmd ' . $cmd->getName() . ' -> new value: ' . $new_value, 'config');

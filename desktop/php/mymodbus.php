@@ -84,7 +84,7 @@ $eqLogics = eqLogic::byType($plugin->getId());
     </div> <!-- /.eqLogicThumbnailDisplay -->
 
     <!-- Page de présentation de l'équipement -->
-    <div class="col-xs-12 eqLogic" style="display:none;">
+    <div class="col-xs-12 eqLogic" style="display:none;" id="eqLogic">
         <div class="input-group pull-right" style="display:inline-flex">
             <span class="input-group-btn">
                 <!-- Les balises <a></a> sont volontairement fermées à la ligne suivante pour éviter les espaces entre les boutons. Ne pas modifier -->
@@ -170,11 +170,30 @@ $eqLogics = eqLogic::byType($plugin->getId());
                                 </div>
                             </div>
                             <div class="form-group">
+                                <label class="col-sm-4 control-label">{{Mode de rafraîchissement}}</label>
+                                <div class="col-sm-6">
+                                    <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRefreshMode">
+                                        <option disabled selected value>-- {{Selectionnez un mode}} --</option>
+                                        <option value="polling">{{Polling}}</option>
+                                        <option value="cyclic">{{Cyclique}}</option>
+                                         <option value="on_event">{{Sur événement}}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group" id="eqPolling">
                                 <label class="col-sm-4 control-label">{{Polling en secondes}}
-                                    <sup><i class="fas fa-question-circle tooltips" title="{{Raffraichissement des valeurs toutes les n secondes, minimum 10}}"></i></sup>
+                                    <sup><i class="fas fa-question-circle tooltips" title="{{En mode Polling: raffraichissement des valeurs toutes les n secondes, minimum 1}}"></i></sup>
                                 </label>
                                 <div class="col-sm-6">
                                     <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqPolling" placeholder="60"/>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-sm-4 control-label">{{Timeout pour vérification d'une commande action}}
+                                    <sup><i class="fas fa-question-circle tooltips" title="{{Temps aloué à la vérification de l'envoi d'une commande action par Jeedom, minimum 0.1}}"></i></sup>
+                                </label>
+                                <div class="col-sm-6">
+                                    <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqWriteCmdCheckTimeout" placeholder="1"/>
                                 </div>
                             </div>
                             <div class="form-group">
