@@ -48,7 +48,7 @@ $('.bt_showExpressionTest').off('click').on('click', function () {
 
 function printEqLogic(_eqLogic) {
     //console.log('eqLogic : ' + init(JSON.stringify(_eqLogic)));
-    if (isset(_eqLogic.configuration.protocol)) {
+    if (isset(_eqLogic.configuration.protocol) && !isset(_eqLogic.configuration.eqProtocol)) {
         if (_eqLogic.configuration.protocol == 'rtu') {
             _eqLogic.configuration.eqProtocol = 'serial';
             _eqLogic.configuration.eqSerialMethod = 'rtu';
@@ -87,11 +87,11 @@ function printEqLogic(_eqLogic) {
         }
         delete _eqLogic.configuration.protocol;
     }
-    if (isset(_eqLogic.configuration.polling)) {
+    if (isset(_eqLogic.configuration.polling) && !isset(_eqLogic.configuration.eqPolling)) {
         _eqLogic.configuration.eqPolling = _eqLogic.configuration.polling;
         delete _eqLogic.configuration.polling;
     }
-    if (isset(_eqLogic.configuration.keepopen)) {
+    if (isset(_eqLogic.configuration.keepopen) && !isset(_eqLogic.configuration.eqKeepopen)) {
         _eqLogic.configuration.eqKeepopen = _eqLogic.configuration.keepopen;
         delete _eqLogic.configuration.keepopen;
     }

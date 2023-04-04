@@ -21,6 +21,7 @@ import multiprocessing as mp
 import asyncio
 import re
 from statistics import fmean
+from math import isnan
 from queue import (Empty, Full)
 
 from pymodbus.client import (AsyncModbusTcpClient, AsyncModbusUdpClient, AsyncModbusSerialClient)
@@ -585,7 +586,10 @@ class PyModbusClient():
                     except:
                         value = '<*ERROR*>'[:request['strlen']]
                 
-                if value != request['last_value']:
+                if isnan(value):
+                    logging.error('PyModbusClient: read value for ' + request['name'] + ' (command id ' + cmd_id + '): NaN!')
+                    
+                elif value != request['last_value']:
                     read_results[cmd_id] = value
                     
                     self.requests[cmd_id]['last_value'] = read_results[cmd_id]

@@ -206,13 +206,13 @@ class mymodbus extends eqLogic {
     }
     
     public static function changeLogLevel($level=null) {
-		$message = array();
+        $message = array();
         $message['CMD'] = 'setLogLevel';
-		$message['level'] = is_null($level) ? log::getLogLevel(__class__) : $level;
-		if (is_numeric($message['level'])) // Replace numeric log level with text level
-			$message['level'] = log::convertLogLevel($message['level']);
-		self::sendToDaemon($message);
-	}
+        $message['level'] = is_null($level) ? log::getLogLevel(__class__) : $level;
+        if (is_numeric($message['level'])) // Replace numeric log level with text level
+            $message['level'] = log::convertLogLevel($message['level']);
+        self::sendToDaemon($message);
+    }
     
     /*     * *********************Méthodes d'instance************************* */
     
@@ -313,43 +313,33 @@ class mymodbus extends eqLogic {
             if (!in_array($eqSerialStopbits, array('0', '1', '2')))
                 throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Le nombre de bits de stop n\'est pas défini correctement.', __FILE__));
         }
-        $refreshCmd = $this->getCmd(null, 'refresh');
-        $refreshTimeCmd = $this->getCmd(null, 'refresh time');
-        //log::add(__CLASS__, 'debug', $this->getHumanName() . ' $refreshCmd logicalId ' . $refreshCmd->getLogicalId());
-        //log::add(__CLASS__, 'debug', $this->getHumanName() . ' is_object($refreshCmd) ' . json_encode(is_object($refreshCmd)));
-        //
-        //$has_refresh = false;
-        //$has_refreshTime = false;
-        //foreach ($this->getCmd() as $cmdMymodbus) { // boucle sur les commandes
-        //    if ($cmdMymodbus->getLogicalId() == 'refresh')
-        //        $has_refresh = true;
-        //    if ($cmdMymodbus->getLogicalId() == 'refresh time')
-        //        $has_refreshTime = true;
-        //    if ($has_refresh && $has_refreshTime)
-        //        break;
-        //}
-        if (!is_object($refreshCmd)) {
-            log::add(__CLASS__, 'debug', $this->getHumanName() . ' ' . __('Création de commande : Temps de rafraîchissement', __FILE__));
-            $refreshTimeCmd = (new mymodbusCmd)
-                ->setLogicalId('refresh time')
-                ->setEqLogic_id($this->getId())
-                ->setName(__('Temps de rafraîchissement', __FILE__))
-                ->setType('info')
-                ->setSubType('numeric')
-                ->setUnite('s')
-                ->setOrder(0)
-                ->save();
-        }
-        if (!is_object($refreshTimeCmd)) {
-            log::add(__CLASS__, 'debug', $this->getHumanName() . ' ' . __('Création de commande : Rafraîchir', __FILE__));
-            $refreshCmd = (new mymodbusCmd)
-                ->setLogicalId('refresh')
-                ->setEqLogic_id($this->getId())
-                ->setName(__('Rafraîchir', __FILE__))
-                ->setType('action')
-                ->setSubType('other')
-                ->setOrder(0)
-                ->save();
+        
+        if ($this->getId() != '') {
+            $refreshCmd = $this->getCmd(null, 'refresh');
+            $refreshTimeCmd = $this->getCmd(null, 'refresh time');
+            if (!is_object($refreshCmd)) {
+                log::add(__CLASS__, 'debug', $this->getHumanName() . ' ' . __('Création de commande : Temps de rafraîchissement', __FILE__));
+                $refreshTimeCmd = (new mymodbusCmd)
+                    ->setLogicalId('refresh time')
+                    ->setEqLogic_id($this->getId())
+                    ->setName(__('Temps de rafraîchissement', __FILE__))
+                    ->setType('info')
+                    ->setSubType('numeric')
+                    ->setUnite('s')
+                    ->setOrder(0)
+                    ->save();
+            }
+            if (!is_object($refreshTimeCmd)) {
+                log::add(__CLASS__, 'debug', $this->getHumanName() . ' ' . __('Création de commande : Rafraîchir', __FILE__));
+                $refreshCmd = (new mymodbusCmd)
+                    ->setLogicalId('refresh')
+                    ->setEqLogic_id($this->getId())
+                    ->setName(__('Rafraîchir', __FILE__))
+                    ->setType('action')
+                    ->setSubType('other')
+                    ->setOrder(0)
+                    ->save();
+            }
         }
         //log::add('mymodbus', 'debug', 'Validation de la configuration pour l\'équipement *' . $this->getHumanName() . '* : OK');
     }
@@ -506,7 +496,7 @@ class mymodbus extends eqLogic {
         if ($comp !== '') $comp .= '/';
         $callback = $prot.'localhost:' . $protocol . '/' . $comp . 'plugins/mymodbus/core/php/jeemymodbus.php';
         if ((file_exists('/.dockerenv') || config::byKey('forceDocker', __CLASS__, '0')) && config::byKey('urlOverrideEnable', __CLASS__, '0') == '1')
-			$callback = config::byKey('urlOverrideValue', __CLASS__, $callback);
+            $callback = config::byKey('urlOverrideValue', __CLASS__, $callback);
         return $callback;
     }
 }
