@@ -90,11 +90,11 @@ class PyModbusClient():
             else:
                 framer = ModbusSocketFramer
         
-            client = AsyncModbusTcpClient(host=config['eqTcpAddr'], port=int(config['eqTcpPort']), framer=framer)
+            client = AsyncModbusTcpClient(host=config['eqTcpAddr'], port=int(config['eqTcpPort']), framer=framer, reconnect_delay=0)
             
         if config['eqProtocol'] == 'udp':
             framer = ModbusSocketFramer
-            client = AsyncModbusUdpClient(host=config['eqUdpAddr'], port=int(config['eqUdpPort']), framer=framer)
+            client = AsyncModbusUdpClient(host=config['eqUdpAddr'], port=int(config['eqUdpPort']), framer=framer, reconnect_delay=0)
                 
         elif config['eqProtocol'] == 'serial':
             if config['eqSerialMethod'] == 'rtu':
@@ -105,7 +105,7 @@ class PyModbusClient():
                 framer = ModbusBinaryFramer
             
             client = AsyncModbusSerialClient(port=config['eqSerialInterface'], baudrate=int(config['eqSerialBaudrate']), bytesize=int(config['eqSerialBytesize']),
-                                            parity=config['eqSerialParity'], stopbits=int(config['eqSerialStopbits']), framer=framer)
+                                            parity=config['eqSerialParity'], stopbits=int(config['eqSerialStopbits']), framer=framer, reconnect_delay=0)
         return framer, client
         
     @staticmethod
@@ -349,6 +349,7 @@ class PyModbusClient():
             t_begin = time.time()
             
             if self.new_config is not None:
+                self.connected = await self.disconnect()
                 self.apply_new_config()
             
             # Connect
@@ -385,6 +386,7 @@ class PyModbusClient():
             t_begin = time.time()
             
             if self.new_config is not None:
+                self.connected = await self.disconnect()
                 self.apply_new_config()
             
             # Connect

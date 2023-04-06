@@ -216,6 +216,44 @@ class mymodbus extends eqLogic {
     
     /*     * *********************Méthodes d'instance************************* */
     
+    public function copy($_name) {
+		$eqLogicCopy = clone $this;
+		$eqLogicCopy->setName($_name);
+		$eqLogicCopy->setId('');
+		$eqLogicCopy->save();
+		foreach (($eqLogicCopy->getCmd()) as $cmd) {
+			$cmd->remove();
+		}
+		$cmd_link = array();
+		foreach (($this->getCmd()) as $cmd) {
+			$cmdCopy = clone $cmd;
+			$cmdCopy->setId('');
+			$cmdCopy->setEqLogic_id($eqLogicCopy->getId());
+            if ($cmd->getType() == 'info' && $cmd->getConfiguration('cmdFctModbus') == 'fromBlob') {
+                if ($cmd->getSubType() == 'binary')
+                    $cmdSourceBlob_type = 'cmdSourceBlobBin';
+                else
+                    $cmdSourceBlob_type = 'cmdSourceBlobNum';
+                $sourceBlob_id = $cmd->getConfiguration($cmdSourceBlob_type);
+                $sourceBlob = cmd::byId($sourceBlob_id);
+                $copySourceBlob = cmd::byEqLogicIdCmdName($eqLogicCopy->getId(), $sourceBlob->getName());
+                $cmdCopy->setConfiguration($cmdSourceBlob_type, $copySourceBlob->getId());
+            }
+			$cmdCopy->save();
+			$cmd_link[$cmd->getId()] = $cmdCopy;
+		}
+		foreach (($this->getCmd()) as $cmd) {
+			if (!isset($cmd_link[$cmd->getId()])) {
+				continue;
+			}
+			if ($cmd->getValue() != '' && isset($cmd_link[$cmd->getValue()])) {
+				$cmd_link[$cmd->getId()]->setValue($cmd_link[$cmd->getValue()]->getId());
+				$cmd_link[$cmd->getId()]->save();
+			}
+		}
+		return $eqLogicCopy;
+	}
+    
     // Fonction exécutée automatiquement avant la suppression de l'équipement
     //public function preRemove() {}
 
@@ -227,11 +265,7 @@ class mymodbus extends eqLogic {
     // Fonction exécutée automatiquement avant la sauvegarde de l'équipement (création ou mise à jour)
     // La levée d'une exception invalide la sauvegarde
     public function preSave() {
-        $configKeys = array();
-        foreach ($this->getConfiguration() as $key => $value) {
-            $configKeys[] = $key;
-            //log::add('mymodbus', 'debug', 'eqLogic Configuration *' . $key . '* : *' . $value . '*');
-        }
+        $configKeys = array_keys($this->getConfiguration());
         // Equipement non activé, pas de vérification
         if (!$this->getIsEnable())
             return True;
@@ -315,9 +349,9 @@ class mymodbus extends eqLogic {
         }
         
         if ($this->getId() != '') {
-            $refreshCmd = $this->getCmd(null, 'refresh');
-            $refreshTimeCmd = $this->getCmd(null, 'refresh time');
-            if (!is_object($refreshCmd)) {
+            $refreshCmdTest = $this->getCmd(null, 'refresh');
+            $refreshTimeCmdTest = $this->getCmd(null, 'refresh time');
+            if (!is_object($refreshTimeCmdTest)) {
                 log::add(__CLASS__, 'debug', $this->getHumanName() . ' ' . __('Création de commande : Temps de rafraîchissement', __FILE__));
                 $refreshTimeCmd = (new mymodbusCmd)
                     ->setLogicalId('refresh time')
@@ -329,18 +363,51 @@ class mymodbus extends eqLogic {
                     ->setOrder(0)
                     ->save();
             }
-            if (!is_object($refreshTimeCmd)) {
+            if (!is_object($refreshCmdTest)) {
                 log::add(__CLASS__, 'debug', $this->getHumanName() . ' ' . __('Création de commande : Rafraîchir', __FILE__));
                 $refreshCmd = (new mymodbusCmd)
                     ->setLogicalId('refresh')
                     ->setEqLogic_id($this->getId())
                     ->setName(__('Rafraîchir', __FILE__))
                     ->setType('action')
-                    ->setSubType('other')
-                    ->setOrder(0)
-                    ->save();
+                    ->setSubType('other');
+                if (!is_object($refreshTimeCmdTest)) {
+                    $refreshTimeCmd->setOrder(1);
+                    $refreshTimeCmd->save();
+                }
+                $refreshCmd->setOrder(0);
+                $refreshCmd->save();
+            }
+            
+            if (!is_object($refreshTimeCmdTest)) {
+                foreach ($this->getCmd() as $cmdMymodbus) { // boucle sur les commandes
+                    if (in_array($cmdMymodbus->getLogicalId(), array('refresh', 'refresh time')))
+                        continue;
+                    if ($cmdMymodbus->getId() != '') {
+                        $cmdMymodbus->setOrder($cmdMymodbus->getOrder() + 1);
+                        $cmdMymodbus->save();
+                    }
+                }
+            }
+            if (!is_object($refreshCmdTest)) {
+                foreach ($this->getCmd() as $cmdMymodbus) { // boucle sur les commandes
+                    if (in_array($cmdMymodbus->getLogicalId(), array('refresh', 'refresh time')))
+                        continue;
+                    if ($cmdMymodbus->getId() != '') {
+                        $cmdMymodbus->setOrder($cmdMymodbus->getOrder() + 1);
+                        $cmdMymodbus->save();
+                    }
+                }
             }
         }
+        
+        // Suppression de l'ancienne configuration
+        $old_config = $this->configuration;
+        foreach (array('protocol', 'addr', 'port', 'keepopen', 'polling', 'mheure', 'auto_cmd', 'unit', 'baudrate', 'parity', 'bytesize', 'stopbits') as $attribut)
+            if (isset($this->configuration[$attribut])) {
+                unset($this->configuration[$attribut]);
+                $this->_changed = true;
+            }
         //log::add('mymodbus', 'debug', 'Validation de la configuration pour l\'équipement *' . $this->getHumanName() . '* : OK');
     }
 
@@ -635,6 +702,14 @@ class mymodbusCmd extends cmd {
                     throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Adresse Modbus en dehors de la plage de registres.', __FILE__));
             }
         }
+        
+        // Suppression de l'ancienne configuration
+        foreach (array('type', 'datatype', 'location', 'request', 'parameters') as $attribut)
+            if (isset($this->configuration[$attribut])) {
+                unset($this->configuration[$attribut]);
+                $this->_changed = true;
+            }
+        
         //log::add('mymodbus', 'debug', 'Validation de la configuration pour la commande *' . $this->getHumanName() . '* : OK');
     }
 
