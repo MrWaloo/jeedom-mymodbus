@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Jeedom. If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 import signal
 import json
 import logging
@@ -83,7 +84,7 @@ class PyModbusClient():
         
     @staticmethod
     def get_framer_and_client(config):
-        logging.debug('PyModbusClient: client protocol is:' + config['eqProtocol'])
+        logging.debug('PyModbusClient: *' + config['name'] + '* client protocol is:' + config['eqProtocol'])
         if config['eqProtocol'] == 'tcp':
             if config['eqTcpRtu'] == '1':
                 framer = ModbusRtuFramer
@@ -109,7 +110,7 @@ class PyModbusClient():
         return framer, client
         
     @staticmethod
-    def get_requests(cmds):
+    def get_requests(cmds, name):
         re_array = re.compile(r"(\d+)\s*\[\s*(\d+)\s*\]")
         re_sf = re.compile(r"(\d+)\s*?sf\s*?(\d+)", re.IGNORECASE)
         requests = {}
@@ -156,18 +157,19 @@ class PyModbusClient():
             # Endianess
             request['byteorder'] = '>' if req_config['cmdInvertBytes'] == '0' else '<'
             request['wordorder'] = '>' if req_config['cmdInvertWords'] == '0' else '<'
+            request['repeat'] = req_config['repeat'] == '1'
             # req_config['id'] is the Jeedom command id
             requests[req_config['id']] = request
-        logging.debug('PyModbusClient: requests:' + json.dumps(requests))
+        logging.debug('PyModbusClient: *' + name + '* requests:' + json.dumps(requests))
         return requests
         
     @staticmethod
-    def check_response(response):
+    def check_response(response, name):
         if response.isError():
-            logging.debug('PyModbusClient: pymodbus returned an error!')
+            logging.error('PyModbusClient: *' + name + '* pymodbus returned an error!')
             return False
         if isinstance(response, ExceptionResponse):
-            logging.debug('PyModbusClient: received exception from device')
+            logging.error('PyModbusClient: *' + name + f"* received exception from device: {type(response)}  = {response}. Traceback: {response.__traceback__}")
             return False
         return True
         
@@ -201,7 +203,7 @@ class PyModbusClient():
                 self.jcom.send_change_immediate({'eqId': self.eqConfig['id'], 'values': results})
             # Or show them in the log
             else:
-                logging.info('PyModbusClient: read_results:' + json.dumps(results))
+                logging.info('PyModbusClient: *' + self.eqConfig['name'] + '* read_results:' + json.dumps(results))
         
     def check_queue(self, timeout=None):
         if timeout is None or float(timeout) < float(self.eqConfig['eqWriteCmdCheckTimeout']):
@@ -212,7 +214,7 @@ class PyModbusClient():
         except Empty:
             pass
         else:
-            logging.debug('PyModbusClient: check_queue - daemon_cmd: ' + json.dumps(daemon_cmd))
+            logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* check_queue - daemon_cmd: ' + json.dumps(daemon_cmd))
             if 'write_cmd' in daemon_cmd.keys():
                 self.write_cmds.append(daemon_cmd['write_cmd'])
                 
@@ -246,7 +248,7 @@ class PyModbusClient():
             if k != 'cmds':
                 self.eqConfig[k] = v
         
-        self.requests = PyModbusClient.get_requests(self.new_config['cmds'])
+        self.requests = PyModbusClient.get_requests(self.new_config['cmds'], self.eqConfig['name'])
         self.framer, self.client = PyModbusClient.get_framer_and_client(self.eqConfig)
         self.blobs = {}
         self.cycle = 0
@@ -366,7 +368,7 @@ class PyModbusClient():
             elapsed_time = time.time() - t_begin
             if elapsed_time >= self.polling:
                 self.polling = (elapsed_time // self.polling_config + 1) * self.polling_config
-                logging.warning('PyModbusClient: the polling time is too short, setting it to ' + str(self.polling) + ' s.')
+                logging.warning('PyModbusClient: *' + self.eqConfig['name'] + '* the polling time is too short, setting it to ' + str(self.polling) + ' s.')
             while self.polling - elapsed_time > 0 and not self.should_stop.is_set():
                 self.check_queue(self.polling - elapsed_time)
                 await self.execute_write_requests(True, self.connected)
@@ -430,31 +432,30 @@ class PyModbusClient():
                 self.cycle_times[self.cycle % 5] = time.time() - t_begin
         
     async def connect(self):
-        logging.debug('PyModbusClient: connect called')
+        logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* connect called')
         try:
-            if not self.client.connected:
-                logging.debug('PyModbusClient: connecting...')
+            if not self.connected or not self.client.connected:
+                logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* connecting...')
                 await self.client.connect()
             ret = True
         except Exception as e:
-            logging.error('PyModbusClient: Something went wrong while connecting to equipment id ' + self.eqConfig['id'] + ': ' + repr(e) + ' - ' + e.string)
+            logging.error('PyModbusClient: *' + self.eqConfig['name'] + '* Something went wrong while connecting to equipment id ' + self.eqConfig['id'] + ': ' + repr(e) + ' - ' + e.string)
             ret = False
         delay = float(self.eqConfig['eqFirstDelay'])
         await asyncio.sleep(delay)
         return ret
         
     async def disconnect(self):
-        logging.debug('PyModbusClient: disconnect called')
+        logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* disconnect called')
         try:
             await self.client.close()
         except Exception as e:
-            logging.error('PyModbusClient: Something went wrong while closing connection to equipment id ' + self.eqConfig['id'] + ': ' + repr(e) + ' - ' + e.string)
+            logging.error('PyModbusClient: *' + self.eqConfig['name'] + '* Something went wrong while closing connection to equipment id ' + self.eqConfig['id'] + ': ' + repr(e) + ' - ' + e.string)
         return False
         
     async def read_all(self):
         """Read every info commands
         """
-        exception = None
         read_results = {}
         self.cycle += 1
         for cmd_id, request in self.requests.items():
@@ -468,6 +469,7 @@ class PyModbusClient():
             
             request_ok = True
             value = None
+            exception = None
             
             # Read coils (code 0x01) || Read discrete inputs (code 0x02)
             if request['fct_modbus'] in ('1', '2'):
@@ -481,7 +483,7 @@ class PyModbusClient():
                     elif request['fct_modbus'] == '2':
                         response = await self.client.read_discrete_inputs(address=request['addr'], count=count, slave=request['slave'])
                     
-                    request_ok = PyModbusClient.check_response(response)
+                    request_ok = PyModbusClient.check_response(response, self.eqConfig['name'])
                 
                 except Exception as e:
                     request_ok = False
@@ -513,7 +515,7 @@ class PyModbusClient():
                     elif request['fct_modbus'] == '4':
                         response = await self.client.read_input_registers(address=request['addr'], count=count, slave=request['slave'])
                     
-                    request_ok = PyModbusClient.check_response(response)
+                    request_ok = PyModbusClient.check_response(response, self.eqConfig['name'])
                     
                 except Exception as e:
                     request_ok = False
@@ -589,20 +591,17 @@ class PyModbusClient():
                         value = '<*ERROR*>'[:request['strlen']]
                 
                 if isnan(value):
-                    logging.error('PyModbusClient: read value for ' + request['name'] + ' (command id ' + cmd_id + '): NaN!')
+                    logging.error('PyModbusClient: *' + self.eqConfig['name'] + '* read value for ' + request['name'] + ' (command id ' + cmd_id + '): NaN!')
                     
-                elif value != request['last_value']:
+                elif request['repeat'] or value != request['last_value']:
                     read_results[cmd_id] = value
                     
                     self.requests[cmd_id]['last_value'] = read_results[cmd_id]
-                    logging.debug('PyModbusClient: read value for ' + request['name'] + ' (command id ' + cmd_id + '): ' + str(read_results[cmd_id]))
+                    logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* read value for ' + request['name'] + ' (command id ' + cmd_id + '): ' + str(read_results[cmd_id]))
             else:
-                error_log = 'PyModbusClient: Something went wrong while reading ' + request['name'] + ' (command id ' + cmd_id + ')'
+                error_log = 'PyModbusClient: *' + self.eqConfig['name'] + '* Something went wrong while reading ' + request['name'] + ' (command id ' + cmd_id + ')'
                 if exception:
-                    if isinstance(exception, ModbusException):
-                        logging.error(error_log + ': ' + repr(exception) + ' - ' + exception.string)
-                    else:
-                        logging.error(error_log + ': ' + repr(exception) + ' - ' + str(exception))
+                    logging.error(error_log + f": {type(exception)}  = {exception}. Traceback: {exception.__traceback__}")
                 else:
                     logging.error(error_log)
             
@@ -633,7 +632,7 @@ class PyModbusClient():
         write_connected = connected
         
         if connect or not write_connected or not self.client.connected:
-            logging.debug('PyModbusClient: connect to execute write commands')
+            logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* connect to execute write commands')
             write_connected = await self.connect()
         
         while len(self.write_cmds) > 0:
@@ -644,7 +643,7 @@ class PyModbusClient():
             if request['fct_modbus'] == 'fromBlob' or '8' in request['data_type'] or request['data_type'] == 'blob':
                 continue # ignore this command that should not be received...
             
-            logging.debug('PyModbusClient: write_request ' + repr(request))
+            logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* write_request ' + repr(request))
             
             re_match = re_pause.match(str(write_cmd['cmdWriteValue']))
             pause = None
@@ -671,7 +670,7 @@ class PyModbusClient():
                     elif request['fct_modbus'] == '15':
                         response = await self.client.write_coils(address=request['addr'], values=[value], slave=request['slave'])
                     
-                    request_ok = PyModbusClient.check_response(response)
+                    request_ok = PyModbusClient.check_response(response, self.eqConfig['name'])
                 
                 except Exception as e:
                     request_ok = False
@@ -679,12 +678,9 @@ class PyModbusClient():
                     write_connected = False
                     
                 if not request_ok:
-                    error_log = 'PyModbusClient: Something went wrong while writing ' + request['name'] + ' (command id ' + write_cmd['cmdId'] + ')'
+                    error_log = 'PyModbusClient: *' + self.eqConfig['name'] + '* Something went wrong while writing ' + request['name'] + ' (command id ' + write_cmd['cmdId'] + ')'
                     if exception:
-                        if isinstance(exception, ModbusException):
-                            logging.error(error_log + ': ' + repr(exception) + ' - ' + exception.string)
-                        else:
-                            logging.error(error_log + ': ' + repr(exception) + ' - ' + str(exception))
+                        logging.error(error_log + f": {type(exception)}  = {exception}. Traceback: {exception.__traceback__}")
                     else:
                         logging.error(error_log)
                 
@@ -720,10 +716,10 @@ class PyModbusClient():
                             builder.add_16bit_int(sf)
                             
                         else:
-                            logging.warning('PyModbusClient: Cannot write ' + request['name'] + ' (command id ' + write_cmd['cmdId'] + '), the registers aren\'t consecutive.')
+                            logging.warning('PyModbusClient: *' + self.eqConfig['name'] + '* Cannot write ' + request['name'] + ' (command id ' + write_cmd['cmdId'] + '), the registers aren\'t consecutive.')
                     
                 except Exception as e:
-                    logging.error('PyModbusClient: Something went wrong while building the write request for ' + request['name'] + ' (command id ' + write_cmd['cmdId'] + '): ' + repr(e))
+                    logging.error('PyModbusClient: *' + self.eqConfig['name'] + '* Something went wrong while building the write request for ' + request['name'] + ' (command id ' + write_cmd['cmdId'] + '): ' + repr(e))
                     
                 else:
                     # build registers
@@ -735,7 +731,7 @@ class PyModbusClient():
                             elif request['fct_modbus'] == '16':
                                 response = await self.client.write_registers(address=request['addr'], values=registers, slave=request['slave'])
                             
-                            request_ok = PyModbusClient.check_response(response)
+                            request_ok = PyModbusClient.check_response(response, self.eqConfig['name'])
                         
                         except Exception as e:
                             request_ok = False
@@ -743,12 +739,9 @@ class PyModbusClient():
                             write_connected = False
                             
                         if not request_ok:
-                            error_log = 'PyModbusClient: Something went wrong while writing ' + request['name'] + ' (command id ' + write_cmd['cmdId'] + ')'
+                            error_log = 'PyModbusClient: *' + self.eqConfig['name'] + '* Something went wrong while writing ' + request['name'] + ' (command id ' + write_cmd['cmdId'] + ')'
                             if exception:
-                                if isinstance(exception, ModbusException):
-                                    logging.error(error_log + ': ' + repr(exception) + ' - ' + exception.string)
-                                else:
-                                    logging.error(error_log + ': ' + repr(exception) + ' - ' + str(exception))
+                                logging.error(error_log + f": {type(exception)}  = {exception}. Traceback: {exception.__traceback__}")
                             else:
                                 logging.error(error_log)
                 
@@ -758,10 +751,10 @@ class PyModbusClient():
         # After all the requests
         # Keep the connection open or not...
         if connect and self.eqConfig['eqKeepopen'] == '0':
-            logging.debug('PyModbusClient: disconnect after write')
+            logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* disconnect after write')
             write_connected = await self.disconnect()
         
     def shutdown(self):
-        logging.info('PyModbusClient: shutdown called')
+        logging.info('PyModbusClient: *' + self.eqConfig['name'] + '* shutdown called')
         self.loop.stop()
         

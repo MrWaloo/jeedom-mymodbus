@@ -96,6 +96,8 @@ function printEqLogic(_eqLogic) {
         delete _eqLogic.configuration.keepopen;
     }
     // Define the default configuration's value
+    if (!isset(_eqLogic.configuration.eqRefreshMode) || _eqLogic.configuration.eqRefreshMode == '')
+        _eqLogic.configuration.eqRefreshMode = 'polling';
     if (!isset(_eqLogic.configuration.eqPolling) || _eqLogic.configuration.eqPolling == '')
         _eqLogic.configuration.eqPolling = '5';
     if (!isset(_eqLogic.configuration.eqFirstDelay) || _eqLogic.configuration.eqFirstDelay == '')
@@ -116,7 +118,6 @@ function printEqLogic(_eqLogic) {
 }
 
 $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRefreshMode]').off().on('change', function () {
-    //$('.eqLogicAttr[data-l1key=configuration][data-l2key=eqPolling]').attr('visible', $(this).val() != 'polling');
     if ($(this).val() == 'polling') {
         $('#eqPolling').show();
     } else {
@@ -206,28 +207,18 @@ listSourceBlobs = function(_params) {
     });
 }
 
-$("#table_cmd tbody").delegate(".cmdAttr[data-l1key=type]", 'change', function (event) {
-    actualise_visible($(this), 'type');
-});
-
-$("#table_cmd tbody").delegate(".cmdAttr[data-l1key=subType]", 'change', function (event) {
-    actualise_visible($(this), 'subType');
-});
-
-$("#table_cmd tbody").delegate(".cmdAttr[data-l1key=configuration][data-l2key=cmdFctModbus]", 'change', function (event) {
-    actualise_visible($(this), 'cmdFctModbus');
-});
-
-
 function actualise_visible(me, source) {
+    if (source !== 'first call')
+        modifyWithoutSave = true;
     //var cmdName = $(me).closest('tr').find('.cmdAttr[data-l1key=name]').value();
     //console.log(cmdName + ' *-*-*-*-*-*-*-*-*-* ' + source);
     var cmdLogicalId = $(me).closest('tr').find('.cmdAttr[data-l1key=logicalId]').value();
     var cmdType = $(me).closest('tr').find('.cmdAttr[data-l1key=type]').value();
     var subType = $(me).closest('tr').find('.cmdAttr[data-l1key=subType]').value();
-    var cmdFctModbus = $(me).closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=cmdFctModbus]').value();
-    var cmdFormat = $(me).closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=cmdFormat]').value();
-    var eqRefreshMode = $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRefreshMode]').value();
+    var cmdFctModbusEl = $(me).closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=cmdFctModbus]');
+    var cmdFctModbus = $(cmdFctModbusEl).value();
+    var cmdFormatEl = $(me).closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=cmdFormat]');
+    var cmdFormat = $(cmdFormatEl).value();
     
     $(me).closest('tr').find('.formatNum').hide();
     $(me).closest('tr').find('.formatBin').hide();
@@ -249,22 +240,31 @@ function actualise_visible(me, source) {
             $(me).closest('tr').find('.readFunction').show();
             if (subType == 'binary') {
                 $(me).closest('tr').find('.readBin').show();
-                $(me).closest('tr').find('.formatBin').show();
+                $(me).closest('tr').find('.readNum').show();
+                if (cmdFctModbus == '1' || cmdFctModbus == '2') {
+                    $(me).closest('tr').find('.formatBin').show();
+                } else {
+                    $(me).closest('tr').find('.formatNum').show();
+                }
             } else {
                 $(me).closest('tr').find('.readNum').show();
                 $(me).closest('tr').find('.formatNum').show();
             }
             if (cmdFctModbus != 'fromBlob') {
                 $(me).closest('tr').find('.notFctBlob').show();
+                
             } else {
                 if (subType == 'binary') {
                     $(me).closest('tr').find('.FctBlobBin').show();
+                    $(me).closest('tr').find('.formatBin').show();
+                    $(me).closest('tr').find('.formatNum').hide(); // HIDE !
                 } else {
                     $(me).closest('tr').find('.FctBlobNum').show();
                 }
             }
             if (cmdFormat != 'blob')
                 $(me).closest('tr').find('.notFormatBlob').show();
+            
         } else { // action
             $(me).closest('tr').find('.writeFunction').show();
             if (cmdFctModbus == '5' || cmdFctModbus == '15') {
@@ -273,11 +273,30 @@ function actualise_visible(me, source) {
                 $(me).closest('tr').find('.formatNum').show();
             }
         }
+        
+        selectFirstVisible(cmdFctModbusEl);
+        selectFirstVisible(cmdFormatEl);
+        
     } else { // with a logicalId
         $(me).closest('tr').find('.input-group').hide();
         $(me).closest('tr').find('.cmdAction[data-action=copy]').hide();
-        $(me).closest('tr').find('.cmdAttr[data-l1key=name]').attr('disabled', true);
+        $(me).closest('tr').find('.cmdAttr[data-l1key=name]').prop('disabled', true);
     }
+}
+
+function selectFirstVisible(selectEl) {
+    var firstVisibleOption = null;
+    var wrongSelection = false;
+    selectEl.find('option').each(function() {
+        var option = $(this);
+        var visible = option[0].style.display !== "none";
+        if (option.is(':selected') && !visible)
+            wrongSelection = true;
+        if (visible && firstVisibleOption === null)
+            firstVisibleOption = option.value();
+    });
+    if (wrongSelection)
+        $(selectEl).val(firstVisibleOption).change();
 }
 
 $("#bt_add_command").on('click', function (event) {
@@ -519,8 +538,8 @@ function addCmdToTable(_cmd) {
             $('#div_alert').showAlert({message: error.message, level: 'danger'});
         },
         success: function (resultBin, resultNum) {
-            tr.find('.cmdAttr[data-l1key=configuration][data-l2key="cmdSourceBlobBin"]').append(resultBin);
-            tr.find('.cmdAttr[data-l1key=configuration][data-l2key="cmdSourceBlobNum"]').append(resultNum);
+            tr.find('.cmdAttr[data-l1key=configuration][data-l2key=cmdSourceBlobBin]').append(resultBin);
+            tr.find('.cmdAttr[data-l1key=configuration][data-l2key=cmdSourceBlobNum]').append(resultNum);
         }
     });
     jeedom.eqLogic.buildSelectCmd({
@@ -529,22 +548,24 @@ function addCmdToTable(_cmd) {
             $('#div_alert').showAlert({message: error.message, level: 'danger'});
         },
         success: function (result) {
-//            tr.find('.cmdAttr[data-l1key="type"]').off();
-//            tr.find('.cmdAttr[data-l1key="subType"]').off();
-//            tr.find('.cmdAttr[data-l1key="cmdFctModbus"]').off();
+            tr.find('.cmdAttr[data-l1key=type]').off();
+            tr.find('.cmdAttr[data-l1key=subType]').off();
+            tr.find('.cmdAttr[data-l1key=cmdFctModbus]').off();
             
             tr.setValues(_cmd, '.cmdAttr');
             jeedom.cmd.changeType(tr, init(_cmd.subType));
             
-//            tr.find('.cmdAttr[data-l1key="type"]').on('change', function () {
-//                actualise_visible($(this));
-//            });
-//            tr.find('.cmdAttr[data-l1key="subType"]').on('change', function () {
-//                actualise_visible($(this));
-//            });
-//            tr.find('.cmdAttr[data-l1key="cmdFctModbus"]').on('change', function () {
-//                actualise_visible($(this));
-//            });
+            tr.find('.cmdAttr[data-l1key=type]').on('change', function () {
+                actualise_visible($(this), 'type');
+            });
+            tr.find('.cmdAttr[data-l1key=subType]').on('change', function () {
+                actualise_visible($(this), 'subType');
+            });
+            tr.find('.cmdAttr[data-l1key=configuration][data-l2key=cmdFctModbus]').on('change', function () {
+                actualise_visible($(this), 'cmdFctModbus');
+            });
+            
+            actualise_visible($(tr.find('.cmdAttr[data-l1key=type]')), 'first call');
         }
     });
 }

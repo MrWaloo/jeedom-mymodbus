@@ -501,6 +501,7 @@ class mymodbus extends eqLogic {
             $cmdConfig['cmdFrequency'] = $cmdMymodbus->getConfiguration('cmdFrequency');
             $cmdConfig['cmdInvertBytes'] = $cmdMymodbus->getConfiguration('cmdInvertBytes');
             $cmdConfig['cmdInvertWords'] = $cmdMymodbus->getConfiguration('cmdInvertWords');
+            $cmdConfig['repeat'] = $cmdMymodbus->getConfiguration('repeatEventManagement', 'never') === 'always' ? '1' : '0';
             $eqConfig['cmds'][] = $cmdConfig;
         }
         return $eqConfig;
@@ -653,6 +654,8 @@ class mymodbusCmd extends cmd {
         }
         if ($this->getType() == 'info' && !is_numeric($cmdFrequency))
             throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('La configuration \'Lecture 1x sur\' doit être un nombre.', __FILE__));
+        if ($this->getType() == 'info' && $this->getSubType() == 'binary' && in_array($cmdFctModbus, array('3', '4')) && !preg_match('/#value# & \d+/', $cmdOption))
+            throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Pour pouvoir utiliser une fonction de lecture de registre numérique, une commande de type binaire doit avoir un filtre en option', __FILE__));
         if (!is_numeric($cmdAddress) && $cmdFormat != 'string' && $cmdFormat != 'blob' && !strstr($cmdFormat, 'sp-sf'))
             throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('L\'adresse Modbus doit être un nombre.', __FILE__));
         if ($cmdFormat == 'string' && !preg_match('/\d+\s*\[\s*\d+\s*\]/', $cmdAddress))
