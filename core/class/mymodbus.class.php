@@ -587,7 +587,7 @@ class mymodbusCmd extends cmd {
     
     public function execute($_option=array()) {
         
-        log::add('mymodbus', 'debug', '**************** execute *****: ' . json_encode($command));
+        log::add('mymodbus', 'debug', '**************** execute *****: ' . json_encode($_option));
         
         $eqMymodbus = $this->getEqLogic();
         
