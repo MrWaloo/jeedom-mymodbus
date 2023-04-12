@@ -194,9 +194,8 @@ listSourceBlobs = function(_params) {
             var resultNum = '';
             for (var i in cmds) {
                 if (cmds[i].configuration.cmdFormat === 'blob') {
-                    if (cmds[i].subType === 'binary')
-                        resultBin += '<option value="' + cmds[i].id + '">' + cmds[i].name + '</option>';
-                    else
+                    resultBin += '<option value="' + cmds[i].id + '">' + cmds[i].name + '</option>';
+                    if (cmds[i].subType !== 'binary')
                         resultNum += '<option value="' + cmds[i].id + '">' + cmds[i].name + '</option>';
                 }
             }

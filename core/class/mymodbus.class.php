@@ -689,6 +689,10 @@ class mymodbusCmd extends cmd {
                 $cmdAddress = intval($cmdAddress);
                 if ($cmdAddress < $minAddr or $cmdAddress > $maxAddr)
                     throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Adresse Modbus en dehors de la plage de registres.', __FILE__));
+                if ($this->getSubtype() == 'binary') {
+                    if ($blobCmd->getSubtype() == 'numeric' && !preg_match('/#value# & \d+/', $cmdOption))
+                        throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Pour pouvoir utiliser une plage de lecture de registre numérique, une commande de type binaire doit avoir un filtre en option', __FILE__));
+                }
             }
             if ($cmdFormat == 'string') {
                 preg_match('/(\d+)\s*\[\s*(\d+)\s*\]/', $cmdAddress, $matches);
