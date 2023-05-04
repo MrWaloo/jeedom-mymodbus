@@ -274,6 +274,7 @@ function actualise_visible(me, source) {
       }
       if (subType == 'select')
         $(me).closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=listValue]').show();
+      $(me).closest('tr').find('.notFormatBlob').show();
     }
     
     selectFirstVisible(cmdFctModbusEl);

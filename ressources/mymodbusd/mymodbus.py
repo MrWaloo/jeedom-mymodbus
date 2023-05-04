@@ -54,6 +54,8 @@ bar = PyModbusClient(config[1])
 
 # -----------------------------------------------------------------------------
 
+MAX_RETRY = 60
+
 class PyModbusClient():
   def __init__(self, config, jcom=None, log_level='debug'):
     """ For pymodbus client
@@ -467,7 +469,8 @@ class PyModbusClient():
       if self.cycle % request['freq'] != 0:
         continue
       
-      request_ok = True
+      request_ok = False
+      retry = 0
       value = None
       exception = None
       
@@ -478,12 +481,17 @@ class PyModbusClient():
           count = int(request['count'])
         
         try:
-          if request['fct_modbus'] == '1':
-            response = await self.client.read_coils(address=request['addr'], count=count, slave=request['slave'])
-          elif request['fct_modbus'] == '2':
-            response = await self.client.read_discrete_inputs(address=request['addr'], count=count, slave=request['slave'])
-          
-          request_ok = PyModbusClient.check_response(response, self.eqConfig['name'])
+          while not request_ok and retry < MAX_RETRY:
+            if request['fct_modbus'] == '1':
+              response = await self.client.read_coils(address=request['addr'], count=count, slave=request['slave'])
+            elif request['fct_modbus'] == '2':
+              response = await self.client.read_discrete_inputs(address=request['addr'], count=count, slave=request['slave'])
+            
+            request_ok = PyModbusClient.check_response(response, self.eqConfig['name'])
+            
+            if self.eqConfig['eqProtocol'] == 'serial' and self.eqConfig['eqSerialBiMaster'] == '1' and not request_ok:
+              retry += 1
+              await asyncio.sleep(0.5)
         
         except Exception as e:
           request_ok = False
@@ -510,12 +518,17 @@ class PyModbusClient():
         normal_number, count, sp_sf = PyModbusClient.request_info(request)
         
         try:
-          if request['fct_modbus'] == '3':
-            response = await self.client.read_holding_registers(address=request['addr'], count=count, slave=request['slave'])
-          elif request['fct_modbus'] == '4':
-            response = await self.client.read_input_registers(address=request['addr'], count=count, slave=request['slave'])
-          
-          request_ok = PyModbusClient.check_response(response, self.eqConfig['name'])
+          while not request_ok and retry < MAX_RETRY:
+            if request['fct_modbus'] == '3':
+              response = await self.client.read_holding_registers(address=request['addr'], count=count, slave=request['slave'])
+            elif request['fct_modbus'] == '4':
+              response = await self.client.read_input_registers(address=request['addr'], count=count, slave=request['slave'])
+            
+            request_ok = PyModbusClient.check_response(response, self.eqConfig['name'])
+                        
+            if self.eqConfig['eqProtocol'] == 'serial' and self.eqConfig['eqSerialBiMaster'] == '1' and not request_ok:
+              retry += 1
+              await asyncio.sleep(0.5)
           
         except Exception as e:
           request_ok = False
@@ -571,6 +584,7 @@ class PyModbusClient():
           
       # blob part
       elif request['fct_modbus'] == 'fromBlob':
+        request_ok = True
         # Read once every n cycles
         if request['blobId'] in self.requests.keys():
           if self.cycle % self.requests[request['blobId']]['freq'] != 0:
@@ -654,7 +668,7 @@ class PyModbusClient():
       else:
         value_to_write = write_cmd['cmdWriteValue']
       
-      request_ok = True
+      request_ok = False
       exception = None
       
       # Write single coil (code 0x05) || Write coils (code 0x0F)
