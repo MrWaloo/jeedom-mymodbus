@@ -14,17 +14,17 @@
 # along with Jeedom. If not, see <http://www.gnu.org/licenses/>.
 
 def value_to_sf(value):
-    if not isinstance(value, (int, float)) or value == 0:
-        return (0, 0)
-    
-    s = str(value).rstrip('0')
-    if '.' in s:
-        sf = len(s.split('.')[1]) * -1
-        val = value * 10 ** (sf * -1)
-    else:
-        val, sf = value, 0
-        while val % 10 == 0:
-            sf += 1
-            val //= 10
-    
-    return (int(val), sf)
+  if not isinstance(value, (int, float)) or value == 0:
+    return (0, 0)
+  
+  s = str(value).rstrip('0')
+  if '.' in s:
+    sf = len(s.split('.')[1]) * -1
+    val = value * 10 ** (sf * -1)
+  else:
+    val, sf = value, 0
+    while val % 10 == 0:
+      sf += 1
+      val //= 10
+  
+  return (int(val), sf)

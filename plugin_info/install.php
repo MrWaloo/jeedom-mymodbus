@@ -23,11 +23,11 @@ function mymodbus_update() {
 	do {
 		$cron = cron::byClassAndFunction('mymodbus', 'cronDaily');
 		if (is_object($cron))
-            $cron->remove(true);
+      $cron->remove(true);
 		else
-            break;
+      break;
 	} while (true);
-    
+  
 }
 
 /*
