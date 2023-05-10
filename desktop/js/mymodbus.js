@@ -199,9 +199,23 @@ listSourceBlobs = function(_params) {
             resultNum += '<option value="' + cmds[i].id + '">' + cmds[i].name + '</option>';
         }
       }
-      if (typeof(_params.success) == 'function') {
+      if (typeof(_params.success) == 'function')
         _params.success(resultBin, resultNum);
+    }
+  });
+}
+listSourceValues = function(_params) {
+  jeedom.eqLogic.getCmd({
+    id: _params.id,
+    async: false,
+    success: function(cmds) {
+      var result = '';
+      for (var i in cmds) {
+        if (cmds[i].type === 'info' && cmds[i].configuration.cmdFormat != 'blob' && cmds[i].logicalId === '')
+          result += '<option value="' + cmds[i].id + '">' + cmds[i].name + '</option>';
       }
+      if (typeof(_params.success) == 'function')
+        _params.success(result);
     }
   });
 }
@@ -284,6 +298,8 @@ function actualise_visible(me, source) {
     $(me).closest('tr').find('.input-group').hide();
     $(me).closest('tr').find('.cmdAction[data-action=copy]').hide();
     $(me).closest('tr').find('.cmdAttr[data-l1key=name]').prop('disabled', true);
+    
+    $(me).closest('tr').find('.cmdAttr[data-l1key=value').hide();
   }
 }
 
@@ -410,6 +426,9 @@ function addCmdToTable(_cmd) {
   // Nom
   tr += ' <td class="name">';
   tr += '   <input class="cmdAttr form-control input-sm" data-l1key="name">';
+  tr += '   <select class="cmdAttr form-control input-sm" data-l1key="value" style="display : none;margin-top : 5px;" title="Commande info liée">';
+  tr += '     <option value="">Aucune</option>';
+  tr += '   </select>';
   tr += ' </td>';
   // Valeur
   tr += ' <td>';
@@ -546,30 +565,33 @@ function addCmdToTable(_cmd) {
       tr.find('.cmdAttr[data-l1key=configuration][data-l2key=cmdSourceBlobNum]').append(resultNum);
     }
   });
-  jeedom.eqLogic.buildSelectCmd({
+  
+  listSourceValues({
     id:  $('.eqLogicAttr[data-l1key=id]').value(),
     error: function (error) {
       $('#div_alert').showAlert({message: error.message, level: 'danger'});
     },
     success: function (result) {
-      tr.find('.cmdAttr[data-l1key=type]').off();
-      tr.find('.cmdAttr[data-l1key=subType]').off();
-      tr.find('.cmdAttr[data-l1key=cmdFctModbus]').off();
-      
-      tr.setValues(_cmd, '.cmdAttr');
-      jeedom.cmd.changeType(tr, init(_cmd.subType));
-      
-      tr.find('.cmdAttr[data-l1key=type]').on('change', function () {
-        actualise_visible($(this), 'type');
-      });
-      tr.find('.cmdAttr[data-l1key=subType]').on('change', function () {
-        actualise_visible($(this), 'subType');
-      });
-      tr.find('.cmdAttr[data-l1key=configuration][data-l2key=cmdFctModbus]').on('change', function () {
-        actualise_visible($(this), 'cmdFctModbus');
-      });
-      
-      actualise_visible($(tr.find('.cmdAttr[data-l1key=type]')), 'first call');
+      tr.find('.cmdAttr[data-l1key=value]').append(result);
     }
   });
+  
+  tr.find('.cmdAttr[data-l1key=type]').off();
+  tr.find('.cmdAttr[data-l1key=subType]').off();
+  tr.find('.cmdAttr[data-l1key=cmdFctModbus]').off();
+  
+  tr.setValues(_cmd, '.cmdAttr');
+  jeedom.cmd.changeType(tr, init(_cmd.subType));
+  
+  tr.find('.cmdAttr[data-l1key=type]').on('change', function () {
+    actualise_visible($(this), 'type');
+  });
+  tr.find('.cmdAttr[data-l1key=subType]').on('change', function () {
+    actualise_visible($(this), 'subType');
+  });
+  tr.find('.cmdAttr[data-l1key=configuration][data-l2key=cmdFctModbus]').on('change', function () {
+    actualise_visible($(this), 'cmdFctModbus');
+  });
+  
+  actualise_visible($(tr.find('.cmdAttr[data-l1key=type]')), 'first call');
 }

@@ -252,6 +252,11 @@ $eqLogics = eqLogic::byType($plugin->getId());
             </tbody>
           </table>
         </div>
+        <div class="input-group pull-right" style="display:inline-flex;margin-top:5px;">
+          <span class="input-group-btn">
+            <a class="btn btn-warning btn-sm roundedRight" id="bt_add_command"><i class="fas fa-plus-circle"></i> {{Ajouter une commande}} </a>
+          </span>
+        </div>
       </div><!-- /.tabpanel #commandtab-->
     </div><!-- /.tab-content -->
   </div><!-- /.eqLogic -->

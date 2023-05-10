@@ -730,7 +730,7 @@ class PyModbusClient():
         
         while not request_ok and retry < MAX_RETRY and not self.should_stop.is_set():
           if eqSerialBiMaster:
-            logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* --eqSerialBiMaster-- read in while loop (command id ' + cmd_id + ') / retry = ' + str(retry))
+            logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* --eqSerialBiMaster-- write in while loop (command id ' + write_cmd['cmdId'] + ') / retry = ' + str(retry))
             if not self.queue.empty():
               self.check_queue()
             if not write_connected or not self.client.connected:
@@ -760,7 +760,7 @@ class PyModbusClient():
             break
           
         if eqSerialBiMaster:
-          logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* --eqSerialBiMaster-- read exit while loop after ' + str(retry) + ' tries. request_ok = ' + str(request_ok) + ' - ' + request['name'] + ' (command id ' + cmd_id + ')')
+          logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* --eqSerialBiMaster-- write exit while loop after ' + str(retry) + ' tries. request_ok = ' + str(request_ok) + ' - ' + request['name'] + ' (command id ' + write_cmd['cmdId'] + ')')
           if retry == MAX_RETRY:
             logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* --eqSerialBiMaster-- too many tries -> restarting daemon...')
             self.should_stop.set()
@@ -816,7 +816,7 @@ class PyModbusClient():
           if len(registers):
             while not request_ok and retry < MAX_RETRY and not self.should_stop.is_set():
               if eqSerialBiMaster:
-                logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* --eqSerialBiMaster-- read in while loop (command id ' + cmd_id + ') / retry = ' + str(retry))
+                logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* --eqSerialBiMaster-- write in while loop (command id ' + write_cmd['cmdId'] + ') / retry = ' + str(retry))
                 if not self.queue.empty():
                   self.check_queue()
                 if not write_connected or not self.client.connected:
@@ -846,7 +846,7 @@ class PyModbusClient():
                 break
               
             if eqSerialBiMaster:
-              logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* --eqSerialBiMaster-- read exit while loop after ' + str(retry) + ' tries. request_ok = ' + str(request_ok) + ' - ' + request['name'] + ' (command id ' + cmd_id + ')')
+              logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* --eqSerialBiMaster-- write exit while loop after ' + str(retry) + ' tries. request_ok = ' + str(request_ok) + ' - ' + request['name'] + ' (command id ' + write_cmd['cmdId'] + ')')
               if retry == MAX_RETRY:
                 logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* --eqSerialBiMaster-- too many tries -> restarting daemon...')
                 self.should_stop.set()

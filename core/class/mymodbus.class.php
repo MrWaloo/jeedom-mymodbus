@@ -590,6 +590,9 @@ class mymodbusCmd extends cmd {
     
     log::add('mymodbus', 'debug', '**************** execute *****: ' . json_encode($_option));
     
+    if ($this->getType() != 'action')
+      return;
+    
     $eqMymodbus = $this->getEqLogic();
     
     $command = array();
@@ -605,23 +608,22 @@ class mymodbusCmd extends cmd {
       
       if (strstr($cmdFormat, '8') || $cmdFormat == 'blob' || $this->getSubType() == 'color') // DEBUG: in_array($this->getSubType(), array('color', 'select'))
         return;
-      $value = null;
+      
+      $value = $this->getConfiguration('cmdWriteValue');
       
       if (in_array($this->getSubtype(), array('other', 'message'))) {
         if (isset($_option['message']))
           $value = $_option['message'];
-        else
-          $value = $this->getConfiguration('cmdWriteValue');
       } elseif ($this->getSubtype() == 'slider') {
         if (strstr($cmdFormat, 'int'))
-          $value = intval($_option['slider']);
-        else if (strstr($cmdFormat, 'float'))
-          $value = floatval($_option['slider']);
+          $value = trim(str_replace('#slider#', $_option['slider'], $value));
+        elseif (strstr($cmdFormat, 'float'))
+          $value = trim(str_replace('#slider#', $_option['slider'], $value));
       } elseif ($this->getSubtype() == 'select') {
         if (strstr($cmdFormat, 'int'))
-          $value = intval($_option['select']);
-        else if (strstr($cmdFormat, 'float'))
-          $value = floatval($_option['select']);
+          $value = trim(str_replace('#select#', $_option['select'], $value));
+        elseif (strstr($cmdFormat, 'float'))
+          $value = trim(str_replace('#select#', $_option['select'], $value));
       }
       $command['cmdWriteValue'] = jeedom::evaluateExpression($value);
       $command['cmdId'] = $this->getId();
@@ -728,3 +730,5 @@ class mymodbusCmd extends cmd {
 
   /*   * **********************Getteur Setteur*************************** */
 }
+
+?>
