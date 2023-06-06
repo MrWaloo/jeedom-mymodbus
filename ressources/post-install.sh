@@ -151,7 +151,9 @@ chown -R www-data:www-data "$PYENV_ROOT"
 sudo -E -u www-data "$PYENV_ROOT"/bin/pyenv local "$PYENV_VERSION"
 sudo -E -u www-data "$PYENV_ROOT"/bin/pyenv exec pip install --upgrade pip setuptools
 chown -R www-data:www-data "$PYENV_ROOT"
-sudo -E -u www-data "$PYENV_ROOT"/bin/pyenv exec pip install --upgrade requests pyserial pyudev pymodbus
+sudo -E -u www-data "$PYENV_ROOT"/bin/pyenv exec pip install --upgrade requests pyserial pyudev
+chown -R www-data:www-data "$PYENV_ROOT"
+sudo -E -u www-data "$PYENV_ROOT"/bin/pyenv exec pip install pymodbus==3.2.2
 chown -R www-data:www-data "$PYENV_ROOT"
 echo 100 > "$PROGRESS_FILE"
 rm "$PROGRESS_FILE"
