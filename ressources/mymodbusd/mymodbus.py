@@ -651,7 +651,7 @@ class PyModbusClient():
           except:
             value = '<*ERROR*>'[:request['strlen']]
         
-        if isnan(value):
+        if isinstance(value, float) and isnan(value):
           logging.error('PyModbusClient: *' + self.eqConfig['name'] + '* read value for ' + request['name'] + ' (command id ' + cmd_id + '): NaN!')
           
         elif request['repeat'] or value != request['last_value']:

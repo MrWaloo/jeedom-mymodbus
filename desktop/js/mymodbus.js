@@ -318,7 +318,12 @@ function selectFirstVisible(selectEl) {
     $(selectEl).val(firstVisibleOption).change();
 }
 
-$("#bt_add_command").on('click', function (event) {
+$("#bt_add_command_top").on('click', function (event) {
+  addCmdToTable({});
+  modifyWithoutSave = true;
+});
+
+$("#bt_add_command_bottom").on('click', function (event) {
   addCmdToTable({});
   modifyWithoutSave = true;
 });
