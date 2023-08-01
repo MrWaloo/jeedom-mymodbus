@@ -606,25 +606,20 @@ class mymodbusCmd extends cmd {
     } else {
       $cmdFormat = $this->getConfiguration('cmdFormat');
       
-      if (strstr($cmdFormat, '8') || $cmdFormat == 'blob' || $this->getSubType() == 'color') // DEBUG: in_array($this->getSubType(), array('color', 'select'))
+      if (strstr($cmdFormat, '8') || $cmdFormat == 'blob')
         return;
       
       $value = $this->getConfiguration('cmdWriteValue');
       
-      if (in_array($this->getSubtype(), array('other', 'message'))) {
-        if (isset($_option['message']))
-          $value = $_option['message'];
+      if ($this->getSubtype() == 'message') {
+        $value = $_option['message']; // the title is ignored
       } elseif ($this->getSubtype() == 'slider') {
-        if (strstr($cmdFormat, 'int'))
-          $value = trim(str_replace('#slider#', $_option['slider'], $value));
-        elseif (strstr($cmdFormat, 'float'))
-          $value = trim(str_replace('#slider#', $_option['slider'], $value));
-      } elseif ($this->getSubtype() == 'select') {
-        if (strstr($cmdFormat, 'int'))
-          $value = trim(str_replace('#select#', $_option['select'], $value));
-        elseif (strstr($cmdFormat, 'float'))
-          $value = trim(str_replace('#select#', $_option['select'], $value));
-      }
+        $value = trim(str_replace('#slider#', $_option['slider'], $value));
+      } elseif ($this->getSubtype() == 'color') {
+        $value = trim(str_replace('#color#', $_option['color'], $value));
+      }elseif ($this->getSubtype() == 'select') {
+        $value = trim(str_replace('#select#', $_option['select'], $value));
+      } 
       $command['cmdWriteValue'] = jeedom::evaluateExpression($value);
       $command['cmdId'] = $this->getId();
       
@@ -677,7 +672,7 @@ class mymodbusCmd extends cmd {
     if ($this->getType() == 'action') {
       if ($cmdFctModbus == '6' && (strstr($cmdFormat, '32') || strstr($cmdFormat, '64')))
         throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('La fonction "[0x06] Write register" ne permet pas d\'écrire une variable de cette longueur.', __FILE__));
-      if (strstr($cmdFormat, '8') || $cmdFormat == 'blob' || $cmdFctModbus == 'fromBlob' || $this->getSubType() == 'color') // DEBUG: in_array($this->getSubType(), array('color', 'select'))
+      if (strstr($cmdFormat, '8') || $cmdFormat == 'blob' || $cmdFctModbus == 'fromBlob')
         log::add('mymodbus', 'warning', $this->getHumanName() . '&nbsp;:</br>' . __('L\'écriture sera ignorée.', __FILE__));
     }
     if ($cmdFctModbus == 'fromBlob') {
