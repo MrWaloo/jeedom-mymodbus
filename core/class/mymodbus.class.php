@@ -99,7 +99,7 @@ class mymodbus extends eqLogic {
     $eqConfig = self::getCompleteConfiguration();
     
     // Pas de démarrage si ce n'est pas possible
-    if (self::getDeamonLaunchable($eqConfig) != 'ok') {
+    if (self::getDeamonLaunchable() != 'ok') {
       log::add('mymodbus', 'error', __('Démarrage du démon impossible, veuillez vérifier la configuration de MyModbus', __FILE__));
       return true;
     }
@@ -349,8 +349,8 @@ class mymodbus extends eqLogic {
     }
     
     if ($this->getId() != '') {
-      $refreshCmdTest = $this->getCmd(null, 'refresh');
-      $refreshTimeCmdTest = $this->getCmd(null, 'refresh time');
+      $refreshCmdTest = $this->getCmd('action', 'refresh');
+      $refreshTimeCmdTest = $this->getCmd('info', 'refresh time');
       if (!is_object($refreshTimeCmdTest)) {
         log::add(__CLASS__, 'debug', $this->getHumanName() . ' ' . __('Création de commande : Temps de rafraîchissement', __FILE__));
         $refreshTimeCmd = (new mymodbusCmd)
@@ -371,34 +371,27 @@ class mymodbus extends eqLogic {
           ->setName(__('Rafraîchir', __FILE__))
           ->setType('action')
           ->setSubType('other');
-        if (!is_object($refreshTimeCmdTest)) {
-          $refreshTimeCmd->setOrder(1);
-          $refreshTimeCmd->save();
-        }
+        $refreshTimeCmd = $this->getCmd('info', 'refresh time');
+        $refreshTimeCmd->setOrder(1);
+        $refreshTimeCmd->save();
         $refreshCmd->setOrder(0);
         $refreshCmd->save();
       }
       
-      if (!is_object($refreshTimeCmdTest)) {
+      $offset = 0;
+      if (!is_object($refreshTimeCmdTest))
+        $offset++;
+      if (!is_object($refreshCmdTest))
+        $offset++;
+      if ($offset > 0)
         foreach ($this->getCmd() as $cmdMymodbus) { // boucle sur les commandes
           if (in_array($cmdMymodbus->getLogicalId(), array('refresh', 'refresh time')))
             continue;
           if ($cmdMymodbus->getId() != '') {
-            $cmdMymodbus->setOrder($cmdMymodbus->getOrder() + 1);
+            $cmdMymodbus->setOrder($cmdMymodbus->getOrder() + $offset);
             $cmdMymodbus->save();
           }
         }
-      }
-      if (!is_object($refreshCmdTest)) {
-        foreach ($this->getCmd() as $cmdMymodbus) { // boucle sur les commandes
-          if (in_array($cmdMymodbus->getLogicalId(), array('refresh', 'refresh time')))
-            continue;
-          if ($cmdMymodbus->getId() != '') {
-            $cmdMymodbus->setOrder($cmdMymodbus->getOrder() + 1);
-            $cmdMymodbus->save();
-          }
-        }
-      }
     }
     
     // Suppression de l'ancienne configuration
@@ -516,36 +509,11 @@ class mymodbus extends eqLogic {
       $running_pid = exec("ps -eo pid,command | grep `cat $pid_file` | grep -v grep | awk '{print $1}'");
       //log::add('mymodbus', 'debug', 'getDeamonState $running_pid: ' . strval($running_pid));
       return (($running_pid != 0) && (intval($running_pid) == intval($pid)))? 'ok': 'nok';
-    } else
-      return 'nok';
+    }
+    return 'nok';
   }
   
-  public static function getDeamonLaunchable($eqConfig='') {
-    // Si 2 équipements utilisent la même connexion -> nok
-    if ($eqConfig != '') {
-      $serialIntf = array();
-      $tcpIp = array();
-      $udpIp = array();
-      foreach ($eqConfig as $config) {
-        if ($config['eqProtocol'] == 'serial') {
-          $intf = $config['eqSerialInterface'];
-          if (in_array($intf, $serialIntf))
-            return 'nok';
-          $serialIntf[] = $intf;
-        } /* elseif ($config['eqProtocol'] == 'tcp') {
-          $ip = $config['eqTcpAddr'];
-          if (in_array($ip, $tcpIp))
-            return 'nok';
-          $tcpIp[] = $ip;
-        } elseif ($config['eqProtocol'] == 'udp') {
-          $ip = $config['eqUdpAddr'];
-          if (in_array($ip, $udpIp))
-            return 'nok';
-          $udpIp[] = $ip;
-        } */
-      }
-    }
-    
+  public static function getDeamonLaunchable() {
     foreach (self::byType('mymodbus') as $eqMymodbus) { // boucle sur les équipements
       if ($eqMymodbus->getIsEnable()) {
         foreach ($eqMymodbus->getCmd('info') as $cmd) {
@@ -554,16 +522,15 @@ class mymodbus extends eqLogic {
         }
       }
     }
-    
     return'nok';
   }
   
   public static function getCallbackUrl() {
     $protocol = config::byKey('internalProtocol', 'core', 'http://');
-    $protocol = config::byKey('internalPort', 'core', 80);
+    $port = config::byKey('internalPort', 'core', 80);
     $comp = trim(config::byKey('internalComplement', 'core', ''), '/');
     if ($comp !== '') $comp .= '/';
-    $callback = $prot.'localhost:' . $protocol . '/' . $comp . 'plugins/mymodbus/core/php/jeemymodbus.php';
+    $callback = $protocol . 'localhost:' . $port . '/' . $comp . 'plugins/mymodbus/core/php/jeemymodbus.php';
     if ((file_exists('/.dockerenv') || config::byKey('forceDocker', __CLASS__, '0')) && config::byKey('urlOverrideEnable', __CLASS__, '0') == '1')
       $callback = config::byKey('urlOverrideValue', __CLASS__, $callback);
     return $callback;
