@@ -526,11 +526,10 @@ class mymodbus extends eqLogic {
   }
   
   public static function getCallbackUrl() {
-    $protocol = config::byKey('internalProtocol', 'core', 'http://');
     $port = config::byKey('internalPort', 'core', 80);
     $comp = trim(config::byKey('internalComplement', 'core', ''), '/');
     if ($comp !== '') $comp .= '/';
-    $callback = $protocol . 'localhost:' . $port . '/' . $comp . 'plugins/mymodbus/core/php/jeemymodbus.php';
+    $callback = 'localhost:' . $port . '/' . $comp . 'plugins/mymodbus/core/php/jeemymodbus.php';
     if ((file_exists('/.dockerenv') || config::byKey('forceDocker', __CLASS__, '0')) && config::byKey('urlOverrideEnable', __CLASS__, '0') == '1')
       $callback = config::byKey('urlOverrideValue', __CLASS__, $callback);
     return $callback;
