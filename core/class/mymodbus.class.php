@@ -202,6 +202,11 @@ class mymodbus extends eqLogic {
       else
         break;
     }
+    $perso_intf = explode(";", config::byKey('interfaces', __CLASS__, '', True));
+    foreach ($perso_intf as $intf) {
+      if ($intf && file_exists($intf))
+        $interfaces[$intf] = $intf;
+    }
     return $interfaces;
   }
   
@@ -514,6 +519,19 @@ class mymodbus extends eqLogic {
   }
   
   public static function getDeamonLaunchable() {
+    // Si 2 équipements utilisent la même connexion -> nok (workaround provisoire)
+    if ($eqConfig != '') {
+      $serialIntf = array();
+      foreach ($eqConfig as $config) {
+        if ($config['eqProtocol'] == 'serial') {
+          $intf = $config['eqSerialInterface'];
+          if (in_array($intf, $serialIntf))
+            return 'nok';
+          $serialIntf[] = $intf;
+        } 
+      }
+    }
+    
     foreach (self::byType('mymodbus') as $eqMymodbus) { // boucle sur les équipements
       if ($eqMymodbus->getIsEnable()) {
         foreach ($eqMymodbus->getCmd('info') as $cmd) {

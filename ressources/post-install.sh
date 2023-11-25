@@ -1,5 +1,5 @@
 # post-install script for Jeedom plugin MyModbus
-PROGRESS_FILE=/tmp/post-install_mymodbus_in_progress
+PROGRESS_FILE=/tmp/jeedom_install_in_progress_mymodbus
 if [ -n "$1" ]; then
 	PROGRESS_FILE="$1"
 fi
@@ -11,12 +11,12 @@ else
 fi
 TMP_FILE=/tmp/post-install_mymodbus_bashrc
 export PYENV_ROOT="$(realpath ressources)/_pyenv"
-PYENV_VERSION="3.9.16"
+PYENV_VERSION="3.11.6"
 
 touch "$PROGRESS_FILE"
 echo 0 > "$PROGRESS_FILE"
 echo "********************************************************"
-echo "*      Nettoyage de l'ancienne version       *"
+echo "*           Nettoyage de l'ancienne version            *"
 echo "********************************************************"
 date
 if [ -f core/php/mymodbus.inc.php ]; then
@@ -106,11 +106,18 @@ fi
 if [ -d ressources/jeedom ]; then
   rm -rf ressources/jeedom
 fi
+if [ -d ressources/mymodbusd/__pycache__ ]; then
+  rm -rf ressources/mymodbusd/__pycache__
+fi
+if [ -d ressources/mymodbusd/jeedom/__pycache__ ]; then
+  rm -rf ressources/mymodbusd/jeedom/__pycache__
+fi
 echo 5 > "$PROGRESS_FILE"
 echo "********************************************************"
-echo "*         Installation de pyenv          *"
+echo "*            Installation de pyenv                     *"
 echo "********************************************************"
 date
+ldconfig
 if [ ! -d "$PYENV_ROOT" ]; then
   sudo -E -u www-data curl https://pyenv.run | bash
   echo 20 > "$PROGRESS_FILE"
@@ -130,10 +137,16 @@ export PYENV_ROOT="$PYENV_ROOT"
 command -v pyenv >/dev/null || export PATH="\$PYENV_ROOT/bin:\$PATH"
 eval "\$(pyenv init -)"
 EOF
+echo "****  Suppression des anciennes versions de pyenv..."
+for version in `"$PYENV_ROOT"/bin/pyenv versions --bare`; do
+  if [ ! "$version" = "$PYENV_VERSION" ]; then
+    "$PYENV_ROOT"/bin/pyenv uninstall -f "$version"
+  fi
+done
 echo 30 > "$PROGRESS_FILE"
 if [ ! -d "$PYENV_ROOT/versions/$PYENV_VERSION" ]; then
   echo "********************************************************"
-  echo "*  Installation de python $PYENV_VERSION (dure longtemps)  *"
+  echo "*    Installation de python $PYENV_VERSION (dure longtemps)    *"
   echo "********************************************************"
   date
   chown -R www-data:www-data "$PYENV_ROOT"
@@ -141,7 +154,7 @@ if [ ! -d "$PYENV_ROOT/versions/$PYENV_VERSION" ]; then
 fi
 echo 95 > "$PROGRESS_FILE"
 echo "********************************************************"
-echo "*    Configuration de pyenv avec python $PYENV_VERSION     *"
+echo "*      Configuration de pyenv avec python $PYENV_VERSION       *"
 echo "********************************************************"
 date
 command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
@@ -159,6 +172,6 @@ echo 100 > "$PROGRESS_FILE"
 rm "$PROGRESS_FILE"
 rm "$TMP_FILE"
 echo "********************************************************"
-echo "*       Installation terminée          *"
+echo "*           Installation terminée                      *"
 echo "********************************************************"
 date

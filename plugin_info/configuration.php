@@ -34,6 +34,17 @@ if (!isConnect()) {
       </div>
     </div>
   </fieldset>
+  <fieldset>
+    <legend><i class="icon loisir-darth"></i>{{Interfaces série personnalisées}}</legend>
+    <div class="form-group expertModeVisible">
+      <label class="col-lg-4 control-label">{{Liste des interfaces personnalisées&nbsp;:}}
+        <i class="fas fa-question-circle tooltips" title="{{séparées par des ';'}}"></i>
+      </label>
+      <div class="col-lg-2">
+        <input class="configKey form-control" data-l1key="interfaces"/>
+      </div>
+    </div>
+  </fieldset>
 </form>
 
 <script>
