@@ -1,5 +1,6 @@
 {
   "apt" : {
+    "git" : {},
     "libbz2-dev" : {},
     "libreadline-dev" : {},
     "libsqlite3-dev" : {},
