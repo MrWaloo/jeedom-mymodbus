@@ -151,7 +151,7 @@ if [ ! -d "$PYENV_ROOT/versions/$PYENV_VERSION" ]; then
   date
   echo "**** Mise à jour de pyenv"
   chown -R root:root "$PYENV_ROOT"
-  cd "$PYENV_ROOT" && git reset --hard && cd -
+  cd "$PYENV_ROOT" && git reset --hard HEAD && git clean -fdx && git pull && cd -
   echo "**** Mise à jour de pyenv terminée, installation de python $PYENV_VERSION"
   chown -R www-data:www-data "$PYENV_ROOT"
   sudo -E -u www-data "$PYENV_ROOT"/bin/pyenv install "$PYENV_VERSION"
