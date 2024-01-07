@@ -41,10 +41,10 @@ $('.bt_showExpressionTest').off('click').on('click', function () {
   $('#md_modal').dialog({title: "{{Testeur d'expression}}"});
   $("#md_modal").load('index.php?v=d&modal=expression.test').dialog('open');
 });
-//$('#bt_templatesMymodbus').on('click', function () {
-//  $('#md_modal').dialog({title: "{{Gestion des templates d'équipements MyMobus}}"});
-//  $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=templates').dialog('open');
-//});
+$('#bt_templatesMymodbus').on('click', function () {
+  $('#md_modal').dialog({title: "{{Gestion des templates d'équipements MyMobus}}"});
+  $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=templates').dialog('open');
+});
 
 function printEqLogic(_eqLogic) {
   //console.log('eqLogic : ' + init(JSON.stringify(_eqLogic)));
