@@ -118,6 +118,9 @@ echo "*            Installation de pyenv                     *"
 echo "********************************************************"
 date
 ldconfig
+if [ -d "$PYENV_ROOT" ] && [ ! -d "$PYENV_ROOT/.git" ]; then
+  rm -rf "$PYENV_ROOT"
+fi
 if [ ! -d "$PYENV_ROOT" ]; then
   sudo -E -u www-data curl https://pyenv.run | bash
   echo 20 > "$PROGRESS_FILE"
