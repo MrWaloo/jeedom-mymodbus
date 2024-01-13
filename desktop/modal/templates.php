@@ -59,6 +59,30 @@ if (!isConnect('admin')) {
   </form>
 </div>
 
+<script>
+
+function refreshMymodbusTemplateList() {
+  mymodbus.callPluginAjax({
+    data: {
+      action: "getTemplateList"
+    },
+    error: function(error) {
+      $.fn.showAlert({message: error.message, level: 'danger'})
+    },
+    success: function (dataresult) {
+      $('#div_listMyModbusTemplate').hide();
+      $('#ul_MyModbusTemplateList').empty();
+      li = ''
+      for (var i in dataresult) {
+        li += "<li class='cursor li_mymodbusTemplate' data-name='" + dataresult[i][0] + "' data-file='" + dataresult[i][1] + "'><a>" + dataresult[i][0] + "</a></li>";
+      }
+      $('#ul_MyModbusTemplateList').html(li);
+    }
+  });
+}
+refreshMymodbusTemplateList();
+
+</script>
 
 <?php
 

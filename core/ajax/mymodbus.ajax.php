@@ -17,6 +17,7 @@
 
 try {
   require_once dirname(__FILE__) . '/../../../../core/php/core.inc.php';
+  require_once dirname(__FILE__) . '/../class/mymodbusConst.class.php';
   include_file('core', 'authentification', 'php');
 
   if (!isConnect('admin')) {
@@ -28,7 +29,10 @@ try {
   En V4 : autoriser l'exécution d'une méthode 'action' en GET en indiquant le(s) nom(s) de(s) action(s) dans un tableau en argument
   */
   ajax::init(array('fileupload'));
-  
+
+  /* ---------------------------
+  * changeLogLevel
+  */
   if (init('action') == 'changeLogLevel') {
     $level = init('level');
     $level_config = $level['log::level::mymodbus'];
@@ -37,17 +41,27 @@ try {
         ajax::success(mymodbus::changeLogLevel($log_level));
     }
   }
-
+  
+  /* ---------------------------
+  * getTemplateList
+  */
+  if (init('action') == 'getTemplateList') {
+    ajax::success(mymodbus::templateList());
+  }
+  
+  /* ---------------------------
+  * fileupload
+  */
   if (init('action') == 'fileupload') {
     if (!isset($_FILES['file'])) {
       throw new Exception(__('Aucun fichier trouvé. Vérifiez le paramètre PHP (post size limit)', __FILE__));
     }
     if (init('dir') == 'template') {
-      $uploaddir = realpath(__DIR__ . '/../../data/template/');
+      $uploaddir = realpath(__DIR__ . '/../../' . mymodbusConst::PATH_TEMPLATES_PERSO);
       $allowed_ext = '.json';
       $max_size = 500*1024; // 500KB
     } elseif (init('dir') == 'backup') {
-      $uploaddir = realpath(__DIR__ . '/../../data/backup/');
+      $uploaddir = realpath(__DIR__ . '/../../' . mymodbusConst::PATH_BACKUP);
       $allowed_ext = '.tgz';
       $max_size = 100*1024*1024; // 100MB
     } else {
@@ -77,25 +91,27 @@ try {
     }
     // After template file imported
     if (init('dir') == 'template') {
+      // TODO: définir une fonction 
       // Adapt template for the topic in configuration
-      jMQTT::moveTopicToConfigurationByFile($fname);
-      jMQTT::logger('info', sprintf(__("Template %s correctement téléversée", __FILE__), $fname));
+      //jMQTT::moveTopicToConfigurationByFile($fname);
+      //jMQTT::logger('info', sprintf(__("Template %s correctement téléversée", __FILE__), $fname));
       ajax::success($fname);
     }
     elseif (init('dir') == 'backup') {
-      $backup_dir = realpath(__DIR__ . '/../../data/backup/');
+      $backup_dir = realpath(__DIR__ . '/../../' . mymodbusConst::PATH_BACKUP);
       $files = ls($backup_dir, '*.tgz', false, array('files', 'quiet'));
       sort($files);
       $backups = array();
       foreach ($files as $backup)
         $backups[] = array('name' => $backup, 'size' => sizeFormat(filesize($backup_dir.'/'.$backup)));
-      jMQTT::logger('info', sprintf(__("Sauvegarde %s correctement téléversée", __FILE__), $fname));
+        // TODO !!!!!!!!!!!!!!!!!!!!!!!!!!
+        //jMQTT::logger('info', sprintf(__("Sauvegarde %s correctement téléversée", __FILE__), $fname));
       ajax::success($backups);
     }
   }
   
   throw new Exception(__('Aucune méthode correspondante à : ', __FILE__) . init('action'));
-  /*   * *********Catch exeption*************** */
+  /* * *********Catch exeption*************** */
 }
 catch (Exception $e) {
   ajax::error(displayException($e), $e->getCode());

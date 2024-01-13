@@ -18,6 +18,7 @@
 
 /* * ***************************Includes********************************* */
 require_once __DIR__  . '/../../../../core/php/core.inc.php';
+require_once 'mymodbusConst.class.php';
 
 class mymodbus extends eqLogic {
   /*   * *************************Attributs****************************** */
@@ -35,8 +36,6 @@ class mymodbus extends eqLogic {
   */
 
   public static $_version = '2.0';
-  
-  public static $_DEFAULT_SOCKET_PORT = 55502;
 
   /*   * ***********************Methode static*************************** */
   
@@ -104,7 +103,7 @@ class mymodbus extends eqLogic {
       return true;
     }
     
-    $socketPort = is_numeric(config::byKey('socketport', __CLASS__, self::$_DEFAULT_SOCKET_PORT, True)) ? config::byKey('socketport', __CLASS__, self::$_DEFAULT_SOCKET_PORT) : self::$_DEFAULT_SOCKET_PORT;
+    $socketPort = is_numeric(config::byKey('socketport', __CLASS__, mymodbusConst::DEFAULT_SOCKET_PORT, True)) ? config::byKey('socketport', __CLASS__, mymodbusConst::DEFAULT_SOCKET_PORT) : mymodbusConst::DEFAULT_SOCKET_PORT;
     $daemonLoglevel = escapeshellarg(log::convertLogLevel(log::getLogLevel(__CLASS__)));
     $daemonApikey = escapeshellarg(jeedom::getApiKey(__CLASS__));
     $daemonCallback = escapeshellarg(self::getCallbackUrl());
@@ -117,8 +116,8 @@ class mymodbus extends eqLogic {
     
     $request = ' --socketport ' . $socketPort . ' --loglevel ' . $daemonLoglevel . ' --apikey ' . $daemonApikey . ' --callback ' . $daemonCallback . ' --json ' . $jsonEqConfig;
     
-    $mymodbus_path = realpath(dirname(__FILE__) . '/../../ressources/mymodbusd');
-    $pyenv_path = realpath(dirname(__FILE__) . '/../../ressources/_pyenv');
+    $mymodbus_path = realpath(__DIR__ . '/../../ressources/mymodbusd');
+    $pyenv_path = realpath(__DIR__ . '/../../ressources/_pyenv');
     $cmd = 'export PYENV_ROOT="' . $pyenv_path . '"; command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"; eval "$(pyenv init -)"; ';
     $cmd .= 'cd ' . $mymodbus_path . '; ';
     $cmd .= 'nice -n 19 python3 mymodbusd.py' . $request;
@@ -156,7 +155,7 @@ class mymodbus extends eqLogic {
     $params['dt'] = date(DATE_ATOM);
     $payLoad = json_encode($params);
     $socket = socket_create(AF_INET, SOCK_STREAM, 0);
-    $socket_port = is_numeric(config::byKey('socketport', __CLASS__, self::$_DEFAULT_SOCKET_PORT, True)) ? config::byKey('socketport', __CLASS__, self::$_DEFAULT_SOCKET_PORT) : self::$_DEFAULT_SOCKET_PORT;
+    $socket_port = is_numeric(config::byKey('socketport', __CLASS__, mymodbusConst::DEFAULT_SOCKET_PORT, True)) ? config::byKey('socketport', __CLASS__, mymodbusConst::DEFAULT_SOCKET_PORT) : mymodbusConst::DEFAULT_SOCKET_PORT;
     socket_connect($socket, '127.0.0.1', config::byKey('socketport', __CLASS__, $socket_port));
     $socket_ok = socket_write($socket, $payLoad, strlen($payLoad));
     if (!$socket_ok) {
@@ -179,7 +178,7 @@ class mymodbus extends eqLogic {
   // Supported protocols are in desktop/modal/configuration.[protocol].php
   public static function supportedProtocols() {
     $protocols = array();
-    foreach (glob(dirname(__FILE__) . '/../../desktop/modal/configuration.*.php') as $file) {
+    foreach (glob(__DIR__ . '/../../desktop/modal/configuration.*.php') as $file) {
       $protocols[] = substr(basename($file), strlen('configuration.'), strlen('.php') * -1);
     }
     return $protocols;
@@ -217,6 +216,43 @@ class mymodbus extends eqLogic {
     if (is_numeric($message['level'])) // Replace numeric log level with text level
       $message['level'] = log::convertLogLevel($message['level']);
     self::sendToDaemon($message);
+  }
+  
+  /*
+  * =-=-=-=-=-=-=-=-=-=-=-=-= Templates =-=-=-=-=-=-=-=-=-=-=-=-=
+  * Beaucoup de fonctions sont copiées ou inspirées du plugin jMQTT
+  * pour la gestion des templates.
+  */
+  
+  // Fonction copiée du plugin jMQTT
+  public static function templateRead($_file) {
+    $content = file_get_contents($_file);
+    $templateContent = json_decode($content, true);
+    $templateKey = array_keys($templateContent)[0];
+    return [$templateKey, $templateContent[$templateKey]];
+  }
+
+  // Fonction inspirée du plugin jMQTT
+  public static function templateList() {
+    // Get personal and official templates
+    $perso = self::getTemplateList(mymodbusConst::PATH_TEMPLATES_PERSO, '[Perso] ');
+    $official = self::getTemplateList(mymodbusConst::PATH_TEMPLATES_JMQTT);
+    return array_merge($perso, $official);
+  }
+
+  // Fonction inspirée du plugin jMQTT
+  public static function getTemplateList($_patern, $_prefix = '') {
+    $return = array();
+    foreach (glob(__DIR__ . '/../../' . $_patern . '*.json') as $file) {
+      try {
+        $file = realpath($file);
+        [$templateKey, $templateValue] = self::templateRead($file);
+        $return[] = array($_prefix . $templateKey, $file);
+      } catch (Throwable $e) {
+        log::add(__CLASS__, 'warning', sprintf(__("Erreur lors de la lecture du Template '%s'", __FILE__), $file));
+      }
+    }
+    return $return;
   }
   
   /*   * *********************Méthodes d'instance************************* */
