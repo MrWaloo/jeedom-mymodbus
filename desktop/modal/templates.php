@@ -44,6 +44,7 @@ if (!isConnect('admin')) {
     <table id="table_MyModbusTemplateCmds" class="table tree table-bordered table-condensed table-striped">
       <thead>
         <tr>
+          <th style="width:0px;">{{ID}}</th>
           <th style="min-width:60px;">{{Nom}}</th>
           <th style="width:60px;">{{Type}}</th>
           <th style="min-width:60px;">{{Adresse esclave}}</th>
