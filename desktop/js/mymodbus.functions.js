@@ -42,3 +42,6 @@ mymodbus.callPluginAjax = function(_params) {
   });
 }
 
+mymodbus.getEqId = function() {
+  return $('.eqLogicAttr[data-l1key=id]').value();
+}

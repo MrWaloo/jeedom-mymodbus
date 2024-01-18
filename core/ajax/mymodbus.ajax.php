@@ -25,8 +25,7 @@ try {
   }
   
   /* Fonction permettant l'envoi de l'entête 'Content-Type: application/json'
-  En V3 : indiquer l'argument 'true' pour contrôler le token d'accès Jeedom
-  En V4 : autoriser l'exécution d'une méthode 'action' en GET en indiquant le(s) nom(s) de(s) action(s) dans un tableau en argument
+  *  Autoriser l'exécution d'une méthode 'action' en GET en indiquant le(s) nom(s) de(s) action(s) dans un tableau en argument
   */
   ajax::init(array('fileupload'));
 
@@ -49,6 +48,15 @@ try {
     ajax::success(mymodbus::templateList());
   }
   
+  if (init('action') == 'createTemplate') {
+    $eqpt = mymodbus::byId(init('id'));
+    if (!is_object($eqpt) || $eqpt->getEqType_name() != mymodbus::class) {
+      throw new Exception(sprintf(__("Pas d'équipement MyModbus avec l'id %s", __FILE__), init('id')));
+    }
+    $eqpt->createTemplate(init('name'));
+    ajax::success();
+  }
+
   /* ---------------------------
   * fileupload
   */

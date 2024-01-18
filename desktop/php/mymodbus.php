@@ -88,13 +88,14 @@ $eqLogics = eqLogic::byType($plugin->getId());
   <div class="col-xs-12 eqLogic" style="display:none;" id="eqLogic">
     <div class="input-group pull-right" style="display:inline-flex">
       <span class="input-group-btn">
-        <!-- Les balises <a></a> sont volontairement fermées à la ligne suivante pour éviter les espaces entre les boutons. Ne pas modifier -->
-        <a class="btn btn-primary btn-sm bt_showExpressionTest roundedLeft"><i class="fas fa-check"></i> {{Expression}}
-        </a><a class="btn btn-default btn-sm eqLogicAction" data-action="configure"><i class="fas fa-cogs"></i> {{Configuration avancée}}
-        </a><a class="btn btn-default btn-sm eqLogicAction" data-action="copy"><i class="fas fa-copy"></i> {{Dupliquer}}
-        </a><a class="btn btn-sm btn-success eqLogicAction" data-action="save"><i class="fas fa-check-circle"></i> {{Sauvegarder}}
-        </a><a class="btn btn-danger btn-sm eqLogicAction roundedRight" data-action="remove"><i class="fas fa-minus-circle"></i> {{Supprimer}}
-        </a>
+        <a class="btn btn-primary btn-sm eqLogicAction roundedLeft tooltips" data-action="createTemplate" title="{{Créer Template}}"><i class="fas fa-cubes"></i></a>
+        <a class="btn btn-warning btn-sm eqLogicAction tooltips" data-action="applyTemplate" title="{{Appliquer Template}}"><i class="fas fa-share"></i></a>
+        <a class="btn btn-warning btn-sm eqLogicAction tooltips" data-action="export" title="{{TEST Exporter TEST}}"><i class="fas fa-share"></i></a>
+        <a class="btn btn-primary btn-sm bt_showExpressionTest tooltips" title="{{Expression}}"><i class="fas fa-check"></i></a>
+        <a class="btn btn-default btn-sm eqLogicAction tooltips" data-action="configure" title="{{Configuration avancée}}"><i class="fas fa-cogs"></i></a>
+        <a class="btn btn-default btn-sm eqLogicAction tooltips" data-action="copy" title="{{Dupliquer}}"><i class="fas fa-copy"></i></a>
+        <a class="btn btn-success btn-sm eqLogicAction" data-action="save"><i class="fas fa-check-circle"></i> {{Sauvegarder}}</a>
+        <a class="btn btn-danger btn-sm eqLogicAction roundedRight" data-action="remove"><i class="fas fa-minus-circle"></i> {{Supprimer}}</a>
       </span>
     </div>
     <!-- Onglets -->

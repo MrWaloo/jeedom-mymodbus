@@ -37,10 +37,30 @@ $('#bt_healthmymodbus').on('click', function () {
   $('#md_modal').dialog({title: "{{Santé mymodbus}}"});
   $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=health').dialog('open');
 });
-$('.bt_showExpressionTest').off('click').on('click', function () {
-  $('#md_modal').dialog({title: "{{Testeur d'expression}}"});
-  $("#md_modal").load('index.php?v=d&modal=expression.test').dialog('open');
+$('.eqLogicAction[data-action=createTemplate]').off('click').on('click', function () {
+  bootbox.prompt({
+    title: "{{Nom du nouveau template ?}}",
+    callback: function (result) {
+      if (result !== null) {
+        mymodbus.callPluginAjax({
+          data: {
+            action: "createTemplate",
+            id: mymodbus.getEqId(),
+            name : result
+          }
+        });
+      }
+    }
+  });
 });
+
+
+$('.eqLogicAction[data-action=export]').off('click').on('click', function() {
+  window.open('core/php/export.php?type=eqLogic&id=' + $('.eqLogicAttr[data-l1key=id]').value(), "_blank", null)
+})
+
+
+
 $('#bt_templatesMymodbus').on('click', function () {
   $('#md_modal').dialog({title: "{{Gestion des templates d'équipements MyMobus}}"});
   $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=templates').dialog('open');

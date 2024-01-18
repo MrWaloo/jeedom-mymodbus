@@ -254,6 +254,43 @@ class mymodbus extends eqLogic {
     }
     return $return;
   }
+
+  // Fonction inspirée du plugin jMQTT
+  public function createTemplate($_tName) {
+    
+    $export = $this->export();
+    
+    // Remplacement des id des plages de registres par leur '$$[Nom]$$'
+    foreach ($export['commands'] as &$cmd) {
+      if ($cmd['type'] == 'info' && $cmd['configuration']['cmdFctModbus'] == 'fromBlob') {
+        if ($cmd['subType'] == 'binary')
+          $cmdSourceBlob_type = 'cmdSourceBlobBin';
+        else
+          $cmdSourceBlob_type = 'cmdSourceBlobNum';
+        $sourceBlob_id = $cmd['configuration'][$cmdSourceBlob_type];
+        $sourceBlob = mymodbusCmd::byId($sourceBlob_id);
+        $cmd['configuration'][$cmdSourceBlob_type] = '$$[' . $sourceBlob->getName() . ']$$';
+      }
+    }
+    unset($cmd);
+    
+    // Cleanup template name
+    $_tName = ucfirst(str_replace('  ', ' ', trim($_tName)));
+    $_tName = preg_replace('/[^a-zA-Z0-9 ()_-]+/', '', $_tName);
+    
+    $exportedTemplate[$_tName] = $export;
+    $exportedTemplate[$_tName]['name'] = $_tName;
+
+    // Convert and save to file
+    $jsonExport = json_encode(
+      $exportedTemplate,
+      JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+    );
+    file_put_contents(
+      __DIR__ . '/../../' . mymodbusConst::PATH_TEMPLATES_PERSO . str_replace(' ', '_', $_tName) . '.json',
+      $jsonExport
+    );
+  }
   
   /*   * *********************Méthodes d'instance************************* */
   
@@ -519,25 +556,8 @@ class mymodbus extends eqLogic {
     foreach ($this->getCmd() as $cmdMymodbus) { // boucle sur les commandes
       if (in_array($cmdMymodbus->getLogicalId(), array('refresh', 'refresh time')))
         continue;
-      $cmdConfig = array();
-      $cmdConfig['id'] = $cmdMymodbus->getId();
-      $cmdConfig['name'] = $cmdMymodbus->getName();
-      $cmdConfig['type'] = $cmdMymodbus->getType();
-      $cmdConfig['cmdSlave'] = $cmdMymodbus->getConfiguration('cmdSlave');
-      $cmdConfig['cmdFctModbus'] = $cmdMymodbus->getConfiguration('cmdFctModbus');
-      if ($cmdConfig['cmdFctModbus'] == 'fromBlob') {
-        if ($cmdMymodbus->getSubType() == 'binary')
-          $cmdConfig['cmdSourceBlob'] = $cmdMymodbus->getConfiguration('cmdSourceBlobBin');
-        else
-          $cmdConfig['cmdSourceBlob'] = $cmdMymodbus->getConfiguration('cmdSourceBlobNum');
-      }
-      $cmdConfig['cmdFormat'] = $cmdMymodbus->getConfiguration('cmdFormat');
-      $cmdConfig['cmdAddress'] = $cmdMymodbus->getConfiguration('cmdAddress');
-      $cmdConfig['cmdFrequency'] = $cmdMymodbus->getConfiguration('cmdFrequency');
-      $cmdConfig['cmdInvertBytes'] = $cmdMymodbus->getConfiguration('cmdInvertBytes');
-      $cmdConfig['cmdInvertWords'] = $cmdMymodbus->getConfiguration('cmdInvertWords');
-      $cmdConfig['repeat'] = $cmdMymodbus->getConfiguration('repeatEventManagement', 'never') === 'always' ? '1' : '0';
-      $eqConfig['cmds'][] = $cmdConfig;
+      
+      $eqConfig['cmds'][] = $cmdMymodbus->getCmdConfiguration();
     }
     return $eqConfig;
   }
@@ -743,6 +763,28 @@ class mymodbusCmd extends cmd {
     //log::add('mymodbus', 'debug', 'Validation de la configuration pour la commande *' . $this->getHumanName() . '* : OK');
   }
 
+  public function getCmdConfiguration() {
+    $return = array();
+    $return['id'] = $this->getId();
+    $return['name'] = $this->getName();
+    $return['type'] = $this->getType();
+    $return['cmdSlave'] = $this->getConfiguration('cmdSlave');
+    $return['cmdFctModbus'] = $this->getConfiguration('cmdFctModbus');
+    if ($return['cmdFctModbus'] == 'fromBlob') {
+      if ($this->getSubType() == 'binary')
+        $return['cmdSourceBlob'] = $this->getConfiguration('cmdSourceBlobBin');
+      else
+        $return['cmdSourceBlob'] = $this->getConfiguration('cmdSourceBlobNum');
+    }
+    $return['cmdFormat'] = $this->getConfiguration('cmdFormat');
+    $return['cmdAddress'] = $this->getConfiguration('cmdAddress');
+    $return['cmdFrequency'] = $this->getConfiguration('cmdFrequency');
+    $return['cmdInvertBytes'] = $this->getConfiguration('cmdInvertBytes');
+    $return['cmdInvertWords'] = $this->getConfiguration('cmdInvertWords');
+    $return['repeat'] = $this->getConfiguration('repeatEventManagement', 'never') === 'always' ? '1' : '0';
+
+    return $return;
+  }
   /*   * **********************Getteur Setteur*************************** */
 }
 
