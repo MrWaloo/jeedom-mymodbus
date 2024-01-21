@@ -479,6 +479,15 @@ class mymodbus extends eqLogic {
         unset($this->configuration[$attribut]);
         $this->_changed = true;
       }
+    // Suppression des éléments de configuration inutiles
+    $confOK = $this->getEqConfiguration();
+    $conf = $this->getConfiguration();
+    foreach ($conf as $key => $value) {
+      if (substr($key, 0, 2) == 'eq' && !in_array($key, array_keys($confOK))) {
+        unset($this->configuration[$key]);
+        $this->_changed = true;
+      }
+    }
     //log::add('mymodbus', 'debug', 'Validation de la configuration pour l\'équipement *' . $this->getHumanName() . '* : OK');
   }
 
@@ -677,6 +686,27 @@ class mymodbusCmd extends cmd {
   // Fonction exécutée automatiquement avant la sauvegarde de la commande (création ou mise à jour)
   // La levée d'une exception invalide la sauvegarde
   public function preSave() {
+    // Suppression de l'ancienne configuration
+    foreach (array('type', 'datatype', 'location', 'request', 'parameters') as $attribut)
+      if (isset($this->configuration[$attribut])) {
+        unset($this->configuration[$attribut]);
+        $this->_changed = true;
+      }
+    
+      // Suppression des éléments de configuration inutiles
+    $confOK = $this->getCmdConfiguration();
+    $conf = $this->getConfiguration();
+    foreach ($conf as $key => $value) {
+      if (substr($key, 0, 3) == 'cmd' && !in_array($key, array_keys($confOK)) && substr($key, 0, 13) !== 'cmdSourceBlob' && $key !== 'cmdOption' || 
+          substr($key, 0, 13) === 'cmdSourceBlob' && $conf['cmdFctModbus'] != 'fromBlob' ||
+          $conf['cmdFctModbus'] == 'fromBlob' && $this->getSubType() == 'binary' && $key === 'cmdSourceBlobNum' ||
+          $conf['cmdFctModbus'] == 'fromBlob' && $this->getSubType() !== 'binary' && $key === 'cmdSourceBlobBin' ||
+          $key === 'cmdSourceBlob') {
+        unset($this->configuration[$key]);
+        $this->_changed = true;
+      }
+    }
+    
     if (in_array($this->getLogicalId(), array('refresh', 'refresh time')))
       return true;
     $cmdSlave = $this->getConfiguration('cmdSlave');
@@ -752,13 +782,6 @@ class mymodbusCmd extends cmd {
           throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Adresse Modbus en dehors de la plage de registres.', __FILE__));
       }
     }
-    
-    // Suppression de l'ancienne configuration
-    foreach (array('type', 'datatype', 'location', 'request', 'parameters') as $attribut)
-      if (isset($this->configuration[$attribut])) {
-        unset($this->configuration[$attribut]);
-        $this->_changed = true;
-      }
     
     //log::add('mymodbus', 'debug', 'Validation de la configuration pour la commande *' . $this->getHumanName() . '* : OK');
   }

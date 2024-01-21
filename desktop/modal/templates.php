@@ -61,6 +61,20 @@ if (!isConnect('admin')) {
 </div>
 
 <script>
+// TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+$('#bt_jmqttTemplateUp').fileupload({
+  dataType: 'json',
+  replaceFileInput: false,
+  done: function (e, data) {
+    if (data.result.state != 'ok') {
+      $.fn.showAlert({message: data.result.result, level: 'danger'});
+    } else {
+      $.fn.showAlert({message: 'Template ajouté avec succès', level: 'success'});
+      refreshJmqttTemplateList();
+    }
+    $('#bt_jmqttTemplateUp').val(null);
+  }
+});
 
 function refreshMymodbusTemplateList() {
   mymodbus.callPluginAjax({
