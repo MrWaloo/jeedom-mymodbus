@@ -60,7 +60,6 @@ $('.eqLogicAction[data-action=export]').off('click').on('click', function() {
 })
 
 
-
 $('#bt_templatesMymodbus').on('click', function () {
   $('#md_modal').dialog({title: "{{Gestion des templates d'équipements MyMobus}}"});
   $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=templates').dialog('open');
@@ -125,10 +124,11 @@ function printEqLogic(_eqLogic) {
   if (!isset(_eqLogic.configuration.eqWriteCmdCheckTimeout) || _eqLogic.configuration.eqWriteCmdCheckTimeout == '')
     _eqLogic.configuration.eqWriteCmdCheckTimeout = '1';
   
+  // Afficher la partie variable de la configuration de l'équipement en fonction du protocole choisi
   $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqProtocol]').off().on('change', function () {
     //console.log('sel_val = ' + $(this).val());
     if ($(this).val() != '' && !is_null($(this).val())) {
-      $('#div_protocolParameters').load('index.php?v=d&plugin=mymodbus&modal=configuration.' + $(this).val(), function () {
+      $('#div_protocolParameters').load('index.php?v=d&plugin=mymodbus&modal=eqConfig_' + $(this).val(), function () {
         $('#div_protocolParameters').setValues(_eqLogic, '.eqLogicAttr');
       });
     }
@@ -169,7 +169,7 @@ $("#table_cmd").delegate(".paramFiltre", 'click', function () {
       '     <form class="form-horizontal" onsubmit="return false;"> ' +
       '       <div class="form-group"> ' +
       '         <label class="col-xs-5 control-label">{{Filtrer sur :}}</label>' +
-              bitSelect +
+      bitSelect +
       '       </div>' +
       '     </form>' +
       '   </div>' +

@@ -61,41 +61,41 @@ if (!isConnect('admin')) {
 </div>
 
 <script>
-// TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-$('#bt_jmqttTemplateUp').fileupload({
-  dataType: 'json',
-  replaceFileInput: false,
-  done: function (e, data) {
-    if (data.result.state != 'ok') {
-      $.fn.showAlert({message: data.result.result, level: 'danger'});
-    } else {
-      $.fn.showAlert({message: 'Template ajouté avec succès', level: 'success'});
-      refreshJmqttTemplateList();
-    }
-    $('#bt_jmqttTemplateUp').val(null);
-  }
-});
-
-function refreshMymodbusTemplateList() {
-  mymodbus.callPluginAjax({
-    data: {
-      action: "getTemplateList"
-    },
-    error: function(error) {
-      $.fn.showAlert({message: error.message, level: 'danger'})
-    },
-    success: function (dataresult) {
-      $('#div_listMyModbusTemplate').hide();
-      $('#ul_MyModbusTemplateList').empty();
-      li = ''
-      for (var i in dataresult) {
-        li += "<li class='cursor li_mymodbusTemplate' data-name='" + dataresult[i][0] + "' data-file='" + dataresult[i][1] + "'><a>" + dataresult[i][0] + "</a></li>";
+  // TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  $('#bt_jmqttTemplateUp').fileupload({
+    dataType: 'json',
+    replaceFileInput: false,
+    done: function (e, data) {
+      if (data.result.state != 'ok') {
+        $.fn.showAlert({message: data.result.result, level: 'danger'});
+      } else {
+        $.fn.showAlert({message: 'Template ajouté avec succès', level: 'success'});
+        refreshJmqttTemplateList();
       }
-      $('#ul_MyModbusTemplateList').html(li);
+      $('#bt_jmqttTemplateUp').val(null);
     }
   });
-}
-refreshMymodbusTemplateList();
+
+  function refreshMymodbusTemplateList() {
+    mymodbus.callPluginAjax({
+      data: {
+        action: "getTemplateList"
+      },
+      error: function(error) {
+        $.fn.showAlert({message: error.message, level: 'danger'})
+      },
+      success: function (dataresult) {
+        $('#div_listMyModbusTemplate').hide();
+        $('#ul_MyModbusTemplateList').empty();
+        li = ''
+        for (var i in dataresult) {
+          li += "<li class='cursor li_mymodbusTemplate' data-name='" + dataresult[i][0] + "' data-file='" + dataresult[i][1] + "'><a>" + dataresult[i][0] + "</a></li>";
+        }
+        $('#ul_MyModbusTemplateList').html(li);
+      }
+    });
+  }
+  refreshMymodbusTemplateList();
 
 </script>
 

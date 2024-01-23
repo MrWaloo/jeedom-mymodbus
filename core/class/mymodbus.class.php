@@ -175,11 +175,11 @@ class mymodbus extends eqLogic {
     self::sendToDaemon($message);
   }
   
-  // Supported protocols are in desktop/modal/configuration.[protocol].php
+  // Supported protocols are in desktop/modal/eqConfig_[protocol].php
   public static function supportedProtocols() {
     $protocols = array();
-    foreach (glob(__DIR__ . '/../../desktop/modal/configuration.*.php') as $file) {
-      $protocols[] = substr(basename($file), strlen('configuration.'), strlen('.php') * -1);
+    foreach (glob(__DIR__ . '/../../desktop/modal/eqConfig_*.php') as $file) {
+      $protocols[] = substr(basename($file), strlen('eqConfig_'), strlen('.php') * -1);
     }
     return $protocols;
   }
