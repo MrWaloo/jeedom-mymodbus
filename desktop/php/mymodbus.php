@@ -113,10 +113,6 @@ $eqLogics = eqLogic::byType($plugin->getId());
             <!-- Affichage de la configuration de l'équipement -->
             <div id='div_MyModbusEqlogic'></div>
 
-            <?php
-            // include('../modal/eqConfig.php');
-            ?>
-
           </fieldset>
         </form>
       </div><!-- /.tabpanel #eqlogictab-->
@@ -163,7 +159,7 @@ $eqLogics = eqLogic::byType($plugin->getId());
 
 <script>
 
-  $('#div_MyModbusEqlogic').load('index.php?v=d&plugin=mymodbus&modal=eqConfig');
+$('#div_MyModbusEqlogic').load('index.php?v=d&plugin=mymodbus&modal=eqConfig');
 
 </script>
 

@@ -18,25 +18,32 @@
 if (!isConnect('admin')) {
   throw new Exception('401 Unauthorized');
 }
+
+$colSmClass = 'col-sm-6';
+$disabled = '';
+if (init('template') !== '') {
+  $colSmClass = 'col-sm-12';
+  $disabled = ' disabled';
+}
 ?>
 
 <!-- Partie gauche de l'onglet "Equipement" -->
-<div class="col-lg-6">
+<div class="<?= $colSmClass ?>">
   <legend><i class="fa fa-wrench"></i> {{Equipement :}}</legend>
   <div class="form-group">
     <label class="col-sm-4 control-label">{{Nom de l'équipement}}</label>
     <div class="col-sm-6">
       <input type="text" class="eqLogicAttr form-control" data-l1key="id" style="display:none;" />
-      <input type="text" class="eqLogicAttr form-control" data-l1key="name" placeholder="{{Nom de l'équipement}}"/>
+      <input type="text" class="eqLogicAttr form-control" data-l1key="name" placeholder="{{Nom de l'équipement}}"<?= $disabled ?>/>
     </div>
   </div>
   <?php
-  if (init('noParent') === '') {
+  if (init('template') === '') {
   ?>
   <div class="form-group">
     <label class="col-sm-4 control-label">{{Objet parent}}</label>
     <div class="col-sm-6">
-      <select id="sel_object" class="eqLogicAttr form-control" data-l1key="object_id">
+      <select id="sel_object" class="eqLogicAttr form-control" data-l1key="object_id"<?= $disabled ?>>
         <option value="">{{Aucun}}</option>
         <?php
         foreach ((jeeObject::buildTree(null, false)) as $object)
@@ -54,7 +61,7 @@ if (!isConnect('admin')) {
       <?php
       foreach (jeedom::getConfiguration('eqLogic:category') as $key => $value) {
         echo '<label class="checkbox-inline">';
-        echo '<input type="checkbox" class="eqLogicAttr" data-l1key="category" data-l2key="' . $key . '" >' . $value['name'];
+        echo '<input type="checkbox" class="eqLogicAttr" data-l1key="category" data-l2key="' . $key . '"' . $disabled . '>' . $value['name'];
         echo '</label>';
       }
       ?>
@@ -63,8 +70,8 @@ if (!isConnect('admin')) {
   <div class="form-group">
     <label class="col-sm-4 control-label">{{Options}}</label>
     <div class="col-sm-6">
-      <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isEnable" checked/>{{Activer}}</label>
-      <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isVisible" checked/>{{Visible}}</label>
+      <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isEnable" checked<?= $disabled ?>/>{{Activer}}</label>
+      <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isVisible" checked<?= $disabled ?>/>{{Visible}}</label>
     </div>
   </div>
   
@@ -73,7 +80,7 @@ if (!isConnect('admin')) {
   <div class="form-group">
     <label class="col-sm-4 control-label">{{Protocol de connexion}}</label>
     <div class="col-sm-6">
-      <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqProtocol">
+      <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqProtocol"<?= $disabled ?>>
         <option disabled selected value>-- {{Choisir un protocol de connexion}} --</option>
         <?php
         foreach (mymodbus::supportedProtocols() as $protocol)
@@ -85,13 +92,13 @@ if (!isConnect('admin')) {
   <div class="form-group">
     <label class="col-sm-4 control-label"></label>
     <div class="col-sm-6">
-      <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="configuration" data-l2key="eqKeepopen"/>{{Garder la connexion ouverte}}</label>
+      <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="configuration" data-l2key="eqKeepopen"<?= $disabled ?>/>{{Garder la connexion ouverte}}</label>
     </div>
   </div>
   <div class="form-group">
     <label class="col-sm-4 control-label">{{Mode de rafraîchissement}}</label>
     <div class="col-sm-6">
-      <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRefreshMode">
+      <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRefreshMode"<?= $disabled ?>>
         <option disabled selected value>-- {{Selectionnez un mode}} --</option>
         <option value="polling">{{Polling}}</option>
         <option value="cyclic">{{Cyclique}}</option>
@@ -104,7 +111,7 @@ if (!isConnect('admin')) {
       <sup><i class="fas fa-question-circle tooltips" title="{{En mode Polling: raffraichissement des valeurs toutes les n secondes, minimum 1}}"></i></sup>
     </label>
     <div class="col-sm-6">
-      <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqPolling" placeholder="60"/>
+      <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqPolling" placeholder="60"<?= $disabled ?>/>
     </div>
   </div>
   <div class="form-group">
@@ -112,13 +119,13 @@ if (!isConnect('admin')) {
       <sup><i class="fas fa-question-circle tooltips" title="{{Temps aloué à la vérification de l'envoi d'une commande action par Jeedom, minimum 0.1}}"></i></sup>
     </label>
     <div class="col-sm-6">
-      <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqWriteCmdCheckTimeout" placeholder="1"/>
+      <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqWriteCmdCheckTimeout" placeholder="1"<?= $disabled ?>/>
     </div>
   </div>
   <div class="form-group">
     <label class="col-sm-4 control-label">{{Temps entre la connexion et la première requête}}</label>
     <div class="col-sm-6">
-      <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqFirstDelay" placeholder="0"/>
+      <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqFirstDelay" placeholder="0"<?= $disabled ?>/>
     </div>
   </div>
   
@@ -127,13 +134,12 @@ if (!isConnect('admin')) {
   
 </div>
 
-<!-- Partie basse ou droite de l'onglet "Équipement" -->
-<div class="col-lg-6">
+<div class="<?= $colSmClass ?>">
   <legend><i class="fas fa-info"></i>{{Informations}}</legend>
   <div class="form-group">
     <label class="col-sm-2 control-label">{{Notes}}</label>
     <div class="col-sm-8">
-      <textarea class="form-control eqLogicAttr autogrow" data-l1key="comment"></textarea>
+      <textarea class="form-control eqLogicAttr autogrow" data-l1key="comment"<?= $disabled ?>></textarea>
     </div>
   </div>
 </div>

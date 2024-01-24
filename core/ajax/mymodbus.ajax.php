@@ -48,6 +48,9 @@ try {
     ajax::success(mymodbus::templateList());
   }
   
+  /* ---------------------------
+  * createTemplate
+  */
   if (init('action') == 'createTemplate') {
     $eqpt = mymodbus::byId(init('id'));
     if (!is_object($eqpt) || $eqpt->getEqType_name() != mymodbus::class) {
@@ -58,7 +61,14 @@ try {
   }
 
   /* ---------------------------
-  * fileupload
+  * getTemplateByFile
+  */
+  if (init('action') == 'getTemplateByFile') {
+    ajax::success(mymodbus::templateByFile(init('file')));
+  }
+
+  /* ---------------------------
+  * fileupload TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   */
   if (init('action') == 'fileupload') {
     if (!isset($_FILES['file'])) {
