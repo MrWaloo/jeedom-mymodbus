@@ -128,6 +128,12 @@ $('#ul_MyModbusTemplateList').on('click', '.li_mymodbusTemplate', function(event
           $('#table_MyModbusTemplateCmds tbody').append(tr);
 
           var tr = $('#table_MyModbusTemplateCmds tbody tr:last');
+          
+          if (_cmd.type == 'action' && isset(_cmd.value)) {
+            option = '<option>' + _cmd.value + '</option>';
+            tr.find('.cmdAttr[data-l1key=value]').append(option);
+          }
+
           tr.setValues(_cmd, '.cmdAttr');
           jeedom.cmd.changeType(tr, init(_cmd.subType));
           tr.find('.cmdAttr[data-l1key=type]').prop('disabled', true);
