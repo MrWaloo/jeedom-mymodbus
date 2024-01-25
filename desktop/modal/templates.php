@@ -20,7 +20,7 @@ if (!isConnect('admin')) {
 }
 ?>
 
-<div class="col-lg-3 col-md-3 col-sm-3" style="height:100%">
+<div class="col-lg-2 col-md-2 col-sm-2" style="height:100%">
   <div class="bs-sidebar nav nav-list bs-sidenav" style="height:calc(100%);overflow:auto;overflow-x:hidden;">
     <div class="form-group">
       <span class="btn btn-default btn-file" style="width:100%;">
@@ -31,7 +31,7 @@ if (!isConnect('admin')) {
     <ul id="ul_MyModbusTemplateList" class="nav nav-list bs-sidenav"></ul>
   </div>
 </div>
-<div class="col-lg-9 col-md-9 col-sm-9" id="div_MyModbusTemplate" style="display:none;height:100%">
+<div class="col-lg-10 col-md-10 col-sm-10" id="div_MyModbusTemplate" style="display:none;height:100%">
   <form class="form-horizontal" style="height:calc(100%);overflow:auto;overflow-x:hidden;">
     <a class="btn btn-sm btn-primary" id="bt_MyModbusTemplateDownload"><i class="fas fa-cloud-download-alt"></i> {{Télécharger}}</a>
     <a class="btn btn-sm btn-danger" id="bt_MyModbusTemplateDelete"><i class="fas fa-times"></i> {{Supprimer}}</a>
@@ -45,14 +45,13 @@ if (!isConnect('admin')) {
     <table id="table_MyModbusTemplateCmds" class="table tree table-bordered table-condensed table-striped">
       <thead>
         <tr>
-          <th style="width:0px;">{{ID}}</th>
           <th style="min-width:60px;">{{Nom}}</th>
           <th style="width:60px;">{{Type}}</th>
-          <th style="min-width:60px;">{{Adresse esclave}}</th>
-          <th style="min-width:230px;">{{Fonction Modbus}}</th>
-          <th style="min-width:120px;width:320px;">{{Adresse Modbus}}</th>
+          <th style="width:80px;">{{Adresse esclave}}</th>
+          <th style="min-width:230px;width:230px">{{Fonction Modbus}}</th>
+          <th style="min-width:200px;width:200px;">{{Adresse Modbus}}</th>
           <th>{{Paramètres}}</th>
-          <th style="min-width:95px;width:95px;">{{Options}}</th>
+          <th style="min-width:130px;width:130px;">{{Options}}</th>
         </tr>
       </thead>
       <tbody>
@@ -116,14 +115,46 @@ $('#ul_MyModbusTemplateList').on('click', '.li_mymodbusTemplate', function(event
       $.fn.showAlert({message: error.message, level: 'danger'});
     },
     success: function (data) {
+      // Configuration de l'équipement
       $('#div_MyModbusTemplate').show();
       $('#div_MyModbusTemplateEqlogic').load('index.php?v=d&plugin=mymodbus&modal=eqConfig&template=1', function () {
         $('#div_MyModbusTemplateEqlogic').setValues(data, '.eqLogicAttr');
       });
-      //$('#div_MyModbusTemplate').setValues(data, '.eqLogicAttr');
 
-      console.log(data);
+      // Configuration des commandes
+      for (let _cmd of data['commands']) {
+        if (isset(_cmd.configuration) && !isset(_cmd.logicalId)) {
+          var tr = getTrfromCmd(_cmd, true);
+          $('#table_MyModbusTemplateCmds tbody').append(tr);
 
+          var tr = $('#table_MyModbusTemplateCmds tbody tr:last');
+          tr.setValues(_cmd, '.cmdAttr');
+          jeedom.cmd.changeType(tr, init(_cmd.subType));
+          tr.find('.cmdAttr[data-l1key=type]').prop('disabled', true);
+          tr.find('.cmdAttr[data-l1key=subType]').prop('disabled', true);
+
+          if (isset(_cmd.configuration.cmdFctModbus) && _cmd.configuration.cmdFctModbus == 'fromBlob') {
+            let cmdSourceBlob = '';
+            if (_cmd.subType == 'binary')
+              cmdSourceBlob = _cmd.configuration.cmdSourceBlobBin;
+            else
+              cmdSourceBlob = _cmd.configuration.cmdSourceBlobNum;
+
+            if (cmdSourceBlob.slice(0, 3) == '$$[' && cmdSourceBlob.slice(-3) == ']$$')
+              cmdSourceBlob = cmdSourceBlob.slice(3, -3);
+            else
+              cmdSourceBlob = '{{**Erreur format**}}';
+            cmdSourceBlob = '<option>' + cmdSourceBlob + '</option>';
+
+            if (_cmd.subType == 'binary')
+              tr.find('.cmdAttr[data-l1key=configuration][data-l2key=cmdSourceBlobBin]').append(cmdSourceBlob);
+            else
+              tr.find('.cmdAttr[data-l1key=configuration][data-l2key=cmdSourceBlobNum]').append(cmdSourceBlob);
+          }
+          actualise_visible($(tr.find('.cmdAttr[data-l1key=type]')), 'first call', true);
+        }
+      }
+      $('#div_MyModbusTemplate').children(0).scrollTop(0);
     }
   });
 });

@@ -240,7 +240,7 @@ listSourceValues = function(_params) {
   });
 }
 
-function actualise_visible(me, source) {
+function actualise_visible(me, source, _template = false) {
   if (source !== 'first call')
     modifyWithoutSave = true;
   //var cmdName = $(me).closest('tr').find('.cmdAttr[data-l1key=name]').value();
@@ -266,7 +266,7 @@ function actualise_visible(me, source) {
   $(me).closest('tr').find('.withSlave').hide();
   $(me).closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=listValue]').hide();
   
-  if (cmdLogicalId == '') { // without a logicalId
+  if (_template || cmdLogicalId == '') { // without a logicalId
     if (cmdFctModbus != 'fromBlob')
       $(me).closest('tr').find('.withSlave').show();
     
@@ -343,10 +343,12 @@ function getTrfromCmd(_cmd, _template = false) {
   // id
   let dataCmdId = (!_template) ? 'data-cmd_id="' + init(_cmd.id) : '';
   let tr = '<tr class="cmd" ' + dataCmdId + '">';
-  tr += ' <td class="hidden-xs">'
-  tr += '   <span class="cmdAttr" data-l1key="id" disabled></span>'
-  tr += '   <span class="cmdAttr" data-l1key="logicalId" hidden></span>'
-  tr += ' </td>'
+  if (!_template) {
+    tr += ' <td class="hidden-xs">'
+    tr += '   <span class="cmdAttr" data-l1key="id" disabled></span>'
+    tr += '   <span class="cmdAttr" data-l1key="logicalId" hidden></span>'
+    tr += ' </td>'
+  }
   // Nom
   tr += ' <td class="name">';
   tr += '   <input class="cmdAttr form-control input-sm" data-l1key="name"' + formDisabled + '>';
@@ -461,7 +463,7 @@ function getTrfromCmd(_cmd, _template = false) {
   tr += ' </td>';    
   // Options
   tr += ' <td>';
-  if (is_numeric(_cmd.id)) {
+  if (is_numeric(!_template && _cmd.id)) {
     tr += '   <a class="btn btn-default btn-xs cmdAction" data-action="configure" title="{{Configuration de la commande}}""><i class="fas fa-cogs"></i></a>';
     tr += '   <a class="btn btn-default btn-xs cmdAction" data-action="test" title="{{Tester}}"><i class="fas fa-rss"></i></a>';
     tr += '   <a class="btn btn-default btn-xs cmdAction" data-action="copy" title="{{Dupliquer}}"><i class="far fa-clone"></i></a>';
@@ -592,7 +594,7 @@ function addCmdToTable(_cmd) {
   
   //console.log('CMD - ' + init(JSON.stringify(_cmd)));
   
-  // The function get TrFromCmd returns the html code for the whole row in the table <tr>...</tr>
+  // The function getTrFromCmd returns the html code for the whole row in the table <tr>...</tr>
   var tr = getTrfromCmd(_cmd);
   $('#table_cmd tbody').append(tr);
   
