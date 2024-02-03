@@ -146,8 +146,8 @@ $('#ul_MyModbusTemplateList').on('click', '.li_mymodbusTemplate', function(event
             else
               cmdSourceBlob = _cmd.configuration.cmdSourceBlobNum;
 
-            if (cmdSourceBlob.slice(0, 3) == '#[' && cmdSourceBlob.slice(-3) == ']#')
-              cmdSourceBlob = cmdSourceBlob.slice(3, -3);
+            if (cmdSourceBlob.slice(0, 2) == '#[' && cmdSourceBlob.slice(-2) == ']#')
+              cmdSourceBlob = cmdSourceBlob.slice(2, -2);
             else
               cmdSourceBlob = '{{**Erreur format**}}';
             cmdSourceBlob = '<option>' + cmdSourceBlob + '</option>';
