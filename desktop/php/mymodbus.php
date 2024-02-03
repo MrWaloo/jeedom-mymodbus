@@ -83,9 +83,6 @@ $eqLogics = eqLogic::byType($plugin->getId());
       <span class="input-group-btn">
         <a class="btn btn-primary btn-sm eqLogicAction roundedLeft tooltips" data-action="createTemplate" title="{{Créer Template}}"><i class="fas fa-cubes"></i></a>
         <a class="btn btn-warning btn-sm eqLogicAction tooltips" data-action="applyTemplate" title="{{Appliquer Template}}"><i class="fas fa-share"></i></a>
-        <!-- DEBUG Export à supprimer !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
-        <a class="btn btn-warning btn-sm eqLogicAction tooltips" data-action="export" title="{{TEST Exporter TEST}}"><i class="fas fa-share"></i></a>
-        <!-- DEBUG Export à supprimer !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
         <a class="btn btn-primary btn-sm bt_showExpressionTest tooltips" title="{{Expression}}"><i class="fas fa-check"></i></a>
         <a class="btn btn-default btn-sm eqLogicAction tooltips" data-action="configure" title="{{Configuration avancée}}"><i class="fas fa-cogs"></i></a>
         <a class="btn btn-default btn-sm eqLogicAction tooltips" data-action="copy" title="{{Dupliquer}}"><i class="fas fa-copy"></i></a>

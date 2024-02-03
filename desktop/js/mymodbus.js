@@ -14,15 +14,7 @@
  * along with Jeedom. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* Permet la réorganisation des commandes dans l'équipement */
-$("#table_cmd").sortable({
-  axis: "y",
-  cursor: "move",
-  items: ".cmd",
-  placeholder: "ui-state-highlight",
-  tolerance: "intersect",
-  forcePlaceholderSize: true
-});
+// *********** Evénements de la page du plugin
 
 $('.eqLogicAction[data-action=bt_addMymodbusEq]').off('click').on('click', function() {
   let dialog_message = '<label class="control-label">{{Nom du nouvel équipement :}}</label>';
@@ -101,14 +93,21 @@ $('.eqLogicAction[data-action=bt_addMymodbusEq]').off('click').on('click', funct
   });
 });
 
-$('.eqLogicAction[data-action=bt_docSpecific]').on('click', function () {
-  window.open('https://bebel27a.github.io/jeedom-mymobdus.github.io/fr_FR/');
-});
-
 $('#bt_healthmymodbus').on('click', function () {
   $('#md_modal').dialog({title: "{{Santé mymodbus}}"});
   $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=health').dialog('open');
 });
+
+$('#bt_templatesMymodbus').on('click', function () {
+  $('#md_modal').dialog({title: "{{Gestion des templates d'équipement MyMobus}}"});
+  $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=templates').dialog('open');
+});
+
+$('.eqLogicAction[data-action=bt_docSpecific]').on('click', function () {
+  window.open('https://bebel27a.github.io/jeedom-mymobdus.github.io/fr_FR/');
+});
+
+// *********** Evénements de la page de l'édition d'un équipement
 
 $('.eqLogicAction[data-action=createTemplate]').off('click').on('click', function () {
   bootbox.prompt({
@@ -127,9 +126,51 @@ $('.eqLogicAction[data-action=createTemplate]').off('click').on('click', functio
   });
 });
 
-$('#bt_templatesMymodbus').on('click', function () {
-  $('#md_modal').dialog({title: "{{Gestion des templates d'équipement MyMobus}}"});
-  $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=templates').dialog('open');
+$('.eqLogicAction[data-action=applyTemplate]').off('click').on('click', function () {
+  mymodbus.callPluginAjax({
+    data: {
+      action: "getTemplateList",
+    },
+    success: function (dataresult) {
+      var dialog_message = '<label class="control-label">{{Choisissez un template :}}</label> ';
+      dialog_message += '<select class="bootbox-input bootbox-input-select form-control" id="applyTemplateSelector">';
+      for(var i in dataresult)
+        dialog_message += '<option value="'+dataresult[i][0]+'">'+dataresult[i][0]+'</option>';
+      dialog_message += '</select><br/>';
+
+      dialog_message += '<label class="control-label">{{Que voulez-vous faire des commandes existantes ?}}</label> ';
+      dialog_message += '<div class="radio"><label><input type="radio" name="applyTemplateCommand" value="1" checked="checked">{{Les conserver / Mettre à jour}}</label></div>';
+      dialog_message += '<div class="radio"><label><input type="radio" name="applyTemplateCommand" value="0">' + "{{Les supprimer d'abord}}" + '</label></div>';
+
+      bootbox.confirm({
+        title: '{{Appliquer un Template}}',
+        message: dialog_message,
+        callback: function (result){ if (result) {
+          mymodbus.callPluginAjax({
+            data: {
+              action: "applyTemplate",
+              id: mymodbus.getEqId(),
+              templateName : $("#applyTemplateSelector").val(),
+              keepCmd: $("[name='applyTemplateCommand']:checked").val()
+            },
+            success: function (dataresult) {
+              $('.eqLogicDisplayCard[data-eqLogic_id=' + mymodbus.getEqId() + ']').click();
+            }
+          });
+        }}
+      });
+    }
+  });
+});
+
+/* Permet la réorganisation des commandes dans l'équipement */
+$("#table_cmd").sortable({
+  axis: "y",
+  cursor: "move",
+  items: ".cmd",
+  placeholder: "ui-state-highlight",
+  tolerance: "intersect",
+  forcePlaceholderSize: true
 });
 
 function printEqLogic(_eqLogic) {
