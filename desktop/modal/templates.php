@@ -102,7 +102,7 @@ $('#ul_MyModbusTemplateList').on('click', '.li_mymodbusTemplate', function(event
   $('#ul_MyModbusTemplateList .li_mymodbusTemplate').removeClass('active');
   $('#table_MyModbusTemplateCmds tbody').empty();
   $(this).addClass('active');
-  if ($('#ul_MyModbusTemplateList li.active').attr('data-name').startsWith('[Perso]'))
+  if ($('#ul_MyModbusTemplateList li.active').attr('data-name').startsWith('[Perso] '))
     $('#bt_jmqttTemplateDelete').show();
   else
     $('#bt_jmqttTemplateDelete').hide();
@@ -146,7 +146,7 @@ $('#ul_MyModbusTemplateList').on('click', '.li_mymodbusTemplate', function(event
             else
               cmdSourceBlob = _cmd.configuration.cmdSourceBlobNum;
 
-            if (cmdSourceBlob.slice(0, 3) == '$$[' && cmdSourceBlob.slice(-3) == ']$$')
+            if (cmdSourceBlob.slice(0, 3) == '#[' && cmdSourceBlob.slice(-3) == ']#')
               cmdSourceBlob = cmdSourceBlob.slice(3, -3);
             else
               cmdSourceBlob = '{{**Erreur format**}}';

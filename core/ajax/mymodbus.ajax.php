@@ -47,7 +47,27 @@ try {
   if (init('action') == 'getTemplateList') {
     ajax::success(mymodbus::templateList());
   }
+
+  /* ---------------------------
+  * getTemplateByFile
+  */
+  if (init('action') == 'getTemplateByFile') {
+    ajax::success(mymodbus::templateByFile(init('file')));
+  }
   
+  /* ---------------------------
+  * applyTemplate
+  */
+  if (init('action') == 'applyTemplate') {
+    $eqpt = mymodbus::byId(init('id'));
+    if (!is_object($eqpt) || $eqpt->getEqType_name() != mymodbus::class) {
+      throw new Exception(sprintf(__("Pas d'équipement MyModbus avec l'id %s", __FILE__), init('id')));
+    }
+    $template = mymodbus::templateByName(init('templateName'));
+    $eqpt->applyATemplate($template, init('keepCmd'));
+    ajax::success();
+  }
+
   /* ---------------------------
   * createTemplate
   */
@@ -58,13 +78,6 @@ try {
     }
     $eqpt->createTemplate(init('name'));
     ajax::success();
-  }
-
-  /* ---------------------------
-  * getTemplateByFile
-  */
-  if (init('action') == 'getTemplateByFile') {
-    ajax::success(mymodbus::templateByFile(init('file')));
   }
 
   /* ---------------------------

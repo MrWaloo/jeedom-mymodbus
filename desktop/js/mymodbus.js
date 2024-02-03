@@ -24,19 +24,92 @@ $("#table_cmd").sortable({
   forcePlaceholderSize: true
 });
 
-/*
- * Fonction pour l'ajout de commande, appellé automatiquement par plugin.template
- */
+$('.eqLogicAction[data-action=bt_addMymodbusEq]').off('click').on('click', function() {
+  let dialog_message = '<label class="control-label">{{Nom du nouvel équipement :}}</label>';
+  dialog_message += '<input class="bootbox-input bootbox-input-text form-control" autocomplete="nope" type="text" id="addMymodbusEqName"><br><br>';
+  dialog_message += '<label class="control-label">{{Utiliser un template :}}</label>';
+  dialog_message += '<select class="bootbox-input bootbox-input-select form-control" id="addMymodbusTplSelector">';
+  dialog_message += '</select>';
+  bootbox.confirm({
+    title: "{{Ajouter un nouvel équipement MyModbus}}",
+    message: dialog_message,
+    callback: function (result) {
+      if (result) {
+        var eqName = $('#addMymodbusEqName').value();
+        if (eqName === undefined || eqName == null || eqName === '' || eqName == false) {
+          $.fn.showAlert({message: "{{Le nom de l'équipement ne peut pas être vide !}}", level: 'warning'});
+          return false;
+        }
+        var eqTemplate = $('#addMymodbusTplSelector').val();
+        jeedom.eqLogic.save({
+          type: 'mymodbus',
+          eqLogics: [ {name: eqName} ],
+          error: function (error) {
+            $.fn.showAlert({message: error.message, level: 'danger'});
+          },
+          success: function(savedEq) {
+            if (eqTemplate != '') {
+              mymodbus.callPluginAjax({
+                data: {
+                  action: "applyTemplate",
+                  id: savedEq.id,
+                  templateName : eqTemplate,
+                  keepCmd: false
+                },
+                success: function () {
+                  var vars = getUrlVars();
+                  var url = 'index.php?';
+                  for (var i in vars) {
+                    if (i != 'id' && i != 'saveSuccessFull' && i != 'removeSuccessFull') {
+                      url += i + '=' + vars[i].replace('#', '') + '&';
+                    }
+                  }
+                  modifyWithoutSave = false;
+                  url += 'id=' + savedEq.id + '&saveSuccessFull=1';
+                  jeedomUtils.loadPage(url);
+                }
+              });
+            }
+            if (eqTemplate == '') {
+              var vars = getUrlVars();
+              var url = 'index.php?';
+              for (var i in vars) {
+                if (i != 'id' && i != 'saveSuccessFull' && i != 'removeSuccessFull') {
+                  url += i + '=' + vars[i].replace('#', '') + '&';
+                }
+              }
+              modifyWithoutSave = false;
+              url += 'id=' + savedEq.id + '&saveSuccessFull=1';
+              jeedomUtils.loadPage(url);
+            }
+          }
+        });
+      }
+    }
+  });
+  mymodbus.callPluginAjax({
+    data: {
+      action: "getTemplateList",
+    },
+    error: function(error) {},
+    success: function (dataresult) {
+      opts = '<option value="">{{Aucun}}</option>';
+      for (var i in dataresult)
+        opts += '<option value="' + dataresult[i][0] + '">' + dataresult[i][0] + '</option>';
+      $('#addMymodbusTplSelector').html(opts);
+    }
+  });
+});
+
 $('.eqLogicAction[data-action=bt_docSpecific]').on('click', function () {
   window.open('https://bebel27a.github.io/jeedom-mymobdus.github.io/fr_FR/');
 });
-$('.pluginAction[data-action=openLink]').on('click', function () {
-  window.open($(this).attr("data-location"), "_blank", null);
-});
+
 $('#bt_healthmymodbus').on('click', function () {
   $('#md_modal').dialog({title: "{{Santé mymodbus}}"});
   $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=health').dialog('open');
 });
+
 $('.eqLogicAction[data-action=createTemplate]').off('click').on('click', function () {
   bootbox.prompt({
     title: "{{Nom du nouveau template ?}}",
@@ -54,14 +127,8 @@ $('.eqLogicAction[data-action=createTemplate]').off('click').on('click', functio
   });
 });
 
-
-$('.eqLogicAction[data-action=export]').off('click').on('click', function() {
-  window.open('core/php/export.php?type=eqLogic&id=' + $('.eqLogicAttr[data-l1key=id]').value(), "_blank", null)
-})
-
-
 $('#bt_templatesMymodbus').on('click', function () {
-  $('#md_modal').dialog({title: "{{Gestion des templates d'équipements MyMobus}}"});
+  $('#md_modal').dialog({title: "{{Gestion des templates d'équipement MyMobus}}"});
   $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=templates').dialog('open');
 });
 
@@ -126,7 +193,6 @@ function printEqLogic(_eqLogic) {
   
   // Afficher la partie variable de la configuration de l'équipement en fonction du protocole choisi
   $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqProtocol]').off().on('change', function () {
-    //console.log('sel_val = ' + $(this).val());
     if ($(this).val() != '' && !is_null($(this).val())) {
       $('#div_protocolParameters').load('index.php?v=d&plugin=mymodbus&modal=eqConfig_' + $(this).val(), function () {
         $('#div_protocolParameters').setValues(_eqLogic, '.eqLogicAttr');
@@ -600,7 +666,7 @@ function addCmdToTable(_cmd) {
   
   var tr = $('#table_cmd tbody tr:last');
   listSourceBlobs({
-    id:  $('.eqLogicAttr[data-l1key=id]').value(),
+    id:  mymodbus.getEqId(),
     error: function (error) {
       $('#div_alert').showAlert({message: error.message, level: 'danger'});
     },
@@ -611,7 +677,7 @@ function addCmdToTable(_cmd) {
   });
   
   listSourceValues({
-    id:  $('.eqLogicAttr[data-l1key=id]').value(),
+    id:  mymodbus.getEqId(),
     error: function (error) {
       $('#div_alert').showAlert({message: error.message, level: 'danger'});
     },

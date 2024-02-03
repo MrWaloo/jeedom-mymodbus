@@ -15,37 +15,30 @@ $eqLogics = eqLogic::byType($plugin->getId());
     <legend><i class="fas fa-cog"></i>  {{Gestion}}</legend>
     <!-- Boutons de gestion du plugin -->
     <div class="eqLogicThumbnailContainer">
-      <div class="cursor eqLogicAction logoPrimary" data-action="add">
-        <i class="fas fa-plus-circle"style="font-size:6em;color:#0F9DE8;"></i>
+      <div class="cursor eqLogicAction logoPrimary" data-action="bt_addMymodbusEq">
+        <i class="fas fa-plus-circle"></i>
         <br>
         <span>{{Ajouter}}</span>
       </div>
       <div class="cursor eqLogicAction logoSecondary" data-action="gotoPluginConf">
-        <i class="fas fa-wrench"style="font-size:6em;color:#0F9DE8;"></i>
+        <i class="fas fa-wrench" style="color:#0F9DE8;"></i>
         <br>
         <span>{{Configuration}}</span>
       </div>
-      <div class="cursor eqLogicAction logoSecondary" data-action="bt_docSpecific" >
-        <i class="fas fa-book"style="font-size:6em;color:#0F9DE8;"></i>
-        <br>
-        <span>{{Documentation}}</span>
-      </div>
-      <!--
-      <div class="cursor pluginAction" data-action="openLink" data-location="https://community.jeedom.com/t/plugin-<?=$plugin->getId()?>/9395" >
-        <i class="fas fa-comments" style="font-size:6em;color:#0F9DE8;"></i>
-        <br>
-        <span>{{Commmunity}}</span>
-      </div>
-      -->
       <div class="cursor logoSecondary" id="bt_healthmymodbus">
-        <i class="fas fa-medkit"style="font-size:6em;color:#0F9DE8;"></i>
+        <i class="fas fa-medkit" style="color:#0F9DE8;"></i>
         <br/>
         <span>{{Santé}}</span>
       </div>
       <div class="cursor logoSecondary" id="bt_templatesMymodbus">
-        <i class="fas fa-cubes"style="font-size:6em;color:#0F9DE8;"></i>
+        <i class="fas fa-cubes" style="color:#0F9DE8;"></i>
         <br/>
         <span>{{Templates}}</span>
+      </div>
+      <div class="cursor eqLogicAction logoSecondary" data-action="bt_docSpecific" >
+        <i class="fas fa-book" style="color:#0F9DE8;"></i>
+        <br>
+        <span>{{Documentation}}</span>
       </div>
     </div>
     <legend><i class="fas fa-table"></i> {{Mes équipements}}</legend>
@@ -90,7 +83,9 @@ $eqLogics = eqLogic::byType($plugin->getId());
       <span class="input-group-btn">
         <a class="btn btn-primary btn-sm eqLogicAction roundedLeft tooltips" data-action="createTemplate" title="{{Créer Template}}"><i class="fas fa-cubes"></i></a>
         <a class="btn btn-warning btn-sm eqLogicAction tooltips" data-action="applyTemplate" title="{{Appliquer Template}}"><i class="fas fa-share"></i></a>
+        <!-- DEBUG Export à supprimer !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
         <a class="btn btn-warning btn-sm eqLogicAction tooltips" data-action="export" title="{{TEST Exporter TEST}}"><i class="fas fa-share"></i></a>
+        <!-- DEBUG Export à supprimer !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
         <a class="btn btn-primary btn-sm bt_showExpressionTest tooltips" title="{{Expression}}"><i class="fas fa-check"></i></a>
         <a class="btn btn-default btn-sm eqLogicAction tooltips" data-action="configure" title="{{Configuration avancée}}"><i class="fas fa-cogs"></i></a>
         <a class="btn btn-default btn-sm eqLogicAction tooltips" data-action="copy" title="{{Dupliquer}}"><i class="fas fa-copy"></i></a>
