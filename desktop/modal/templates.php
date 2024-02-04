@@ -24,7 +24,7 @@ if (!isConnect('admin')) {
   <div class="bs-sidebar nav nav-list bs-sidenav" style="height:calc(100%);overflow:auto;overflow-x:hidden;">
     <div class="form-group">
       <span class="btn btn-default btn-file" style="width:100%;">
-        <i class="fas fa-upload"></i> {{Importer un template depuis un fichier}}<input id="bt_MyModbusTemplateUp" type="file" name="file" accept=".json" data-url="plugins/mymodbus/core/ajax/mymodbus.ajax.php?action=fileupload&amp;dir=template" style="display : inline-block;width:100%;">
+        <i class="fas fa-upload"></i> {{Importer un template depuis un fichier}}<input id="bt_MyModbusTemplateUp" type="file" name="file" accept=".json" data-url="plugins/mymodbus/core/ajax/mymodbus.ajax.php?action=fileupload" style="display : inline-block;width:100%;">
       </span>
     </div>
     <legend>{{Templates existants}}</legend>
@@ -33,7 +33,7 @@ if (!isConnect('admin')) {
 </div>
 <div class="col-lg-10 col-md-10 col-sm-10" id="div_MyModbusTemplate" style="display:none;height:100%">
   <form class="form-horizontal" style="height:calc(100%);overflow:auto;overflow-x:hidden;">
-    <a class="btn btn-sm btn-primary" id="bt_MyModbusTemplateDownload"><i class="fas fa-cloud-download-alt"></i> {{Télécharger}}</a>
+    <a class="btn btn-sm btn-primary" id="bt_MyModbusTemplateDownload" hidden><i class="fas fa-cloud-download-alt"></i> {{Télécharger}}</a>
     <a class="btn btn-sm btn-danger" id="bt_MyModbusTemplateDelete"><i class="fas fa-times"></i> {{Supprimer}}</a>
     <br>
     <legend><i class="fas fa-tachometer-alt"></i> {{Aperçu de l'équipement}}</legend>
@@ -62,7 +62,7 @@ if (!isConnect('admin')) {
 
 <script>
 // TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-$('#bt_jmqttTemplateUp').fileupload({
+$('#bt_MyModbusTemplateUp').fileupload({
   dataType: 'json',
   replaceFileInput: false,
   done: function (e, data) {
@@ -70,9 +70,9 @@ $('#bt_jmqttTemplateUp').fileupload({
       $.fn.showAlert({message: data.result.result, level: 'danger'});
     } else {
       $.fn.showAlert({message: 'Template ajouté avec succès', level: 'success'});
-      refreshJmqttTemplateList();
+      refreshMymodbusTemplateList();
     }
-    $('#bt_jmqttTemplateUp').val(null);
+    $('#bt_MyModbusTemplateUp').val(null);
   }
 });
 
@@ -98,14 +98,15 @@ function refreshMymodbusTemplateList() {
 refreshMymodbusTemplateList();
 
 $('#ul_MyModbusTemplateList').on('click', '.li_mymodbusTemplate', function(event) {
+  $('#bt_MyModbusTemplateDownload').show();
   $('#div_MyModbusTemplate').hide();
   $('#ul_MyModbusTemplateList .li_mymodbusTemplate').removeClass('active');
   $('#table_MyModbusTemplateCmds tbody').empty();
   $(this).addClass('active');
   if ($('#ul_MyModbusTemplateList li.active').attr('data-name').startsWith('[Perso] '))
-    $('#bt_jmqttTemplateDelete').show();
+    $('#bt_MyModbusTemplateDelete').show();
   else
-    $('#bt_jmqttTemplateDelete').hide();
+    $('#bt_MyModbusTemplateDelete').hide();
   mymodbus.callPluginAjax({
     data: {
       action: "getTemplateByFile",
@@ -165,8 +166,44 @@ $('#ul_MyModbusTemplateList').on('click', '.li_mymodbusTemplate', function(event
   });
 });
 
+$('#bt_MyModbusTemplateDownload').on('click', function() {
+  filename = $('#ul_MyModbusTemplateList li.active').attr('data-file');
+  if ($('#ul_MyModbusTemplateList li.active').attr('data-name') == undefined) {
+    $.fn.showAlert({message: "{{Sélectionnez d'abord un template}}", level: 'danger'});
+    return;
+  }
+  window.open('core/php/downloadFile.php?pathfile=' + filename, "_blank", null);
+});
+
+$('#bt_MyModbusTemplateDelete').on('click', function() {
+  filename = $('#ul_MyModbusTemplateList li.active').attr('data-file');
+  dataname = $('#ul_MyModbusTemplateList li.active').attr('data-name');
+  console.log('filename', filename);
+  console.log('dataname', dataname);
+  if (dataname == undefined) {
+    $.fn.showAlert({message: "{{Sélectionnez d'abord un template}}", level: 'danger'});
+    return;
+  }
+  bootbox.confirm('{{Êtes-vous sûr de vouloir supprimer ce template :}}' + ' \'' + dataname + '\' ?', function(result) {
+    if (result) {
+      mymodbus.callPluginAjax({
+        data: {
+          action: "deleteTemplateByFile",
+          file: filename,
+        },
+        error: function(error) {
+          $.fn.showAlert({message: error.message, level: 'danger'});
+        },
+        success: function(data) {
+          if (data) {
+            $.fn.showAlert({message: '{{Template supprimé.}}', level: 'success'});
+          } else
+            $.fn.showAlert({message: '{{Ce template ne peut pas être supprimé.}}', level: 'danger'});
+          refreshMymodbusTemplateList();
+        }
+      });
+    }
+  });
+});
+
 </script>
-
-<?php
-
-?>

@@ -302,6 +302,16 @@ class mymodbus extends eqLogic {
     }
   }
 
+  // Fonction inspirée du plugin jMQTT pour son nom
+  public static function deleteTemplateByFile($_filename = null) {
+    if (!$_filename ||
+        !file_exists($_filename) ||
+        !is_file($_filename) ||
+        dirname($_filename) != realpath(__DIR__ . '/../../' . mymodbusConst::PATH_TEMPLATES_PERSO))
+      return false;
+    return unlink($_filename);
+  }
+
   // Fonction inspirée du plugin jMQTT
   public function createTemplate($_tName) {
     $export = $this->export();
@@ -320,16 +330,21 @@ class mymodbus extends eqLogic {
     }
     unset($cmd);
     
+    self::saveTemplateToFile($_tName, $export);
+  }
+  
+  // Fonction inspirée du plugin jMQTT
+  public static function saveTemplateToFile($_tName, $_template) {
     // Cleanup template name
     $_tName = ucfirst(str_replace('  ', ' ', trim($_tName)));
     $_tName = preg_replace('/[^a-zA-Z0-9 ()_-]+/', '', $_tName);
-    
-    $exportedTemplate[$_tName] = $export;
-    $exportedTemplate[$_tName]['name'] = $_tName;
+
+    $template[$_tName] = $_template;
+    $template[$_tName]['name'] = $_tName;
 
     // Convert and save to file
     $jsonExport = json_encode(
-      $exportedTemplate,
+      $template,
       JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
     );
     file_put_contents(
@@ -337,7 +352,7 @@ class mymodbus extends eqLogic {
       $jsonExport
     );
   }
-  
+
   // Fonction inspirée du plugin jMQTT
   public function applyATemplate($_template, $_keepCmd = true) {
     // import template
