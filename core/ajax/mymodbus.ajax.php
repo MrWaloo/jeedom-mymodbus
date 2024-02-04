@@ -125,6 +125,7 @@ try {
     
     // After template file imported
     [$templateKey, $templateValue] = mymodbus::templateRead($uploaddir . '/' . $fname);
+    mymodbus::deleteTemplateByFile($uploaddir . '/' . $fname);
     mymodbus::saveTemplateToFile($templateKey, $templateValue);
     log::add('mymodbus', 'info', sprintf(__("Template '%s' correctement téléversée", __FILE__), $fname));
     ajax::success($fname);
