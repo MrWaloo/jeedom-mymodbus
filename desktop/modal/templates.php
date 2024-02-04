@@ -168,7 +168,8 @@ $('#ul_MyModbusTemplateList').on('click', '.li_mymodbusTemplate', function(event
 
 $('#bt_MyModbusTemplateDownload').on('click', function() {
   filename = $('#ul_MyModbusTemplateList li.active').attr('data-file');
-  if ($('#ul_MyModbusTemplateList li.active').attr('data-name') == undefined) {
+  dataname = $('#ul_MyModbusTemplateList li.active').attr('data-name');
+  if (dataname == undefined) {
     $.fn.showAlert({message: "{{Sélectionnez d'abord un template}}", level: 'danger'});
     return;
   }
@@ -178,8 +179,6 @@ $('#bt_MyModbusTemplateDownload').on('click', function() {
 $('#bt_MyModbusTemplateDelete').on('click', function() {
   filename = $('#ul_MyModbusTemplateList li.active').attr('data-file');
   dataname = $('#ul_MyModbusTemplateList li.active').attr('data-name');
-  console.log('filename', filename);
-  console.log('dataname', dataname);
   if (dataname == undefined) {
     $.fn.showAlert({message: "{{Sélectionnez d'abord un template}}", level: 'danger'});
     return;
