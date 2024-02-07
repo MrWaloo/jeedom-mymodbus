@@ -302,7 +302,7 @@ class mymodbus extends eqLogic {
     }
   }
 
-  // Fonction inspirée du plugin jMQTT pour son nom
+  // Fonction inspirée du plugin jMQTT
   public static function deleteTemplateByFile($_filename = null) {
     if (!$_filename ||
         !file_exists($_filename) ||
