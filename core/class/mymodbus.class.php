@@ -347,8 +347,14 @@ class mymodbus extends eqLogic {
       $template,
       JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
     );
+    $templateDir = __DIR__ . '/../../' . mymodbusConst::PATH_TEMPLATES_PERSO;
+    log::add('mymodbus', 'debug', sprintf(__("Répertoire des templates '%s'", __FILE__), $templateDir));
+    if (!file_exists($templateDir)) {
+      if (!mkdir($templateDir, 0775, true))
+        throw new Exception(__('Impossible de créer le répertoire de téléversement :', __FILE__) . ' ' . $templateDir);
+    }
     file_put_contents(
-      __DIR__ . '/../../' . mymodbusConst::PATH_TEMPLATES_PERSO . str_replace(' ', '_', $_tName) . '.json',
+      $templateDir . str_replace(' ', '_', $_tName) . '.json',
       $jsonExport
     );
   }

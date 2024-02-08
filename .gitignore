@@ -7,3 +7,4 @@ docs/.sass-cache/
 __pycache__
 ressources/_pyenv
 data/template
+ressources/mymodbusd/.python-version
