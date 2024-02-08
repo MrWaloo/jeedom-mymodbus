@@ -316,6 +316,15 @@ class mymodbus extends eqLogic {
   public function createTemplate($_tName) {
     $export = $this->export();
     
+    // Suppression des paramètres d'équipement à spécifier
+    if ($export['configuration']['eqProtocol'] === 'serial') {
+      $export['configuration']['eqSerialInterface'] = '';
+    } elseif ($export['configuration']['eqProtocol'] === 'tcp') {
+      $export['configuration']['eqTcpAddr'] = '';
+    } elseif ($export['configuration']['eqProtocol'] === 'udp') {
+      $export['configuration']['eqUdpAddr'] = '';
+    }
+
     // Remplacement des id des plages de registres par leur '#[Nom]#'
     foreach ($export['commands'] as &$cmd) {
       if ($cmd['type'] == 'info' && $cmd['configuration']['cmdFctModbus'] == 'fromBlob') {
@@ -348,7 +357,6 @@ class mymodbus extends eqLogic {
       JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
     );
     $templateDir = __DIR__ . '/../../' . mymodbusConst::PATH_TEMPLATES_PERSO;
-    log::add('mymodbus', 'debug', sprintf(__("Répertoire des templates '%s'", __FILE__), $templateDir));
     if (!file_exists($templateDir)) {
       if (!mkdir($templateDir, 0775, true))
         throw new Exception(__('Impossible de créer le répertoire de téléversement :', __FILE__) . ' ' . $templateDir);
@@ -468,7 +476,7 @@ class mymodbus extends eqLogic {
       
     } elseif ($eqProtocol == 'udp') {
       // Vérification du paramétrage d'une connexion UDP
-      if (!in_array('eqUdpAddr', $configKeys) && !in_array('eqUdpPort', $configKeys) && !in_array('eqUdpRtu', $configKeys))
+      if (!in_array('eqUdpAddr', $configKeys) && !in_array('eqUdpPort', $configKeys))
         throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Veuillez définir la configuration UDP de l\'équipement', __FILE__));
       $eqUdpAddr = $this->getConfiguration('eqUdpAddr');
       $eqUdpPort = $this->getConfiguration('eqUdpPort');
