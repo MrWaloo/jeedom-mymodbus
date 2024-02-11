@@ -147,7 +147,7 @@ command -v pyenv >/dev/null || export PATH="\$PYENV_ROOT/bin:\$PATH"
 eval "\$(pyenv init -)"
 EOF
 echo "****  Suppression des anciennes versions de pyenv..."
-for version in `"$PYENV_ROOT"/bin/pyenv versions --bare`; do
+for version in $("$PYENV_ROOT"/bin/pyenv versions --bare); do
   if [ ! "$version" = "$PYENV_VERSION" ]; then
     "$PYENV_ROOT"/bin/pyenv uninstall -f "$version"
   fi
