@@ -61,11 +61,17 @@ fi
 if [ -f desktop/modal/tcpip.configuration.php ]; then
   rm desktop/modal/tcpip.configuration.php
 fi
-if [ -f desktop/modal/templates.php ]; then
-  rm desktop/modal/templates.php
-fi
 if [ -f desktop/modal/wago.configuration.php ]; then
   rm desktop/modal/wago.configuration.php
+fi
+if [ -f desktop/modal/configuration.serial.php ]; then
+  rm desktop/modal/configuration.serial.php
+fi
+if [ -f desktop/modal/configuration.tcp.php ]; then
+  rm desktop/modal/configuration.tcp.php
+fi
+if [ -f desktop/modal/configuration.udp.php ]; then
+  rm desktop/modal/configuration.udp.php
 fi
 if [ -f ressources/Biblio.zip ]; then
   rm ressources/Biblio.zip
