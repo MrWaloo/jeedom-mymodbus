@@ -18,6 +18,7 @@
 
 /* * ***************************Includes********************************* */
 require_once __DIR__  . '/../../../../core/php/core.inc.php';
+require_once 'mymodbusConst.class.php';
 
 class mymodbus extends eqLogic {
   /*   * *************************Attributs****************************** */
@@ -35,8 +36,6 @@ class mymodbus extends eqLogic {
   */
 
   public static $_version = '2.0';
-  
-  public static $_DEFAULT_SOCKET_PORT = 55502;
 
   /*   * ***********************Methode static*************************** */
   
@@ -104,7 +103,7 @@ class mymodbus extends eqLogic {
       return true;
     }
     
-    $socketPort = is_numeric(config::byKey('socketport', __CLASS__, self::$_DEFAULT_SOCKET_PORT, True)) ? config::byKey('socketport', __CLASS__, self::$_DEFAULT_SOCKET_PORT) : self::$_DEFAULT_SOCKET_PORT;
+    $socketPort = is_numeric(config::byKey('socketport', __CLASS__, mymodbusConst::DEFAULT_SOCKET_PORT, True)) ? config::byKey('socketport', __CLASS__, mymodbusConst::DEFAULT_SOCKET_PORT) : mymodbusConst::DEFAULT_SOCKET_PORT;
     $daemonLoglevel = escapeshellarg(log::convertLogLevel(log::getLogLevel(__CLASS__)));
     $daemonApikey = escapeshellarg(jeedom::getApiKey(__CLASS__));
     $daemonCallback = escapeshellarg(self::getCallbackUrl());
@@ -117,8 +116,8 @@ class mymodbus extends eqLogic {
     
     $request = ' --socketport ' . $socketPort . ' --loglevel ' . $daemonLoglevel . ' --apikey ' . $daemonApikey . ' --callback ' . $daemonCallback . ' --json ' . $jsonEqConfig;
     
-    $mymodbus_path = realpath(dirname(__FILE__) . '/../../ressources/mymodbusd');
-    $pyenv_path = realpath(dirname(__FILE__) . '/../../ressources/_pyenv');
+    $mymodbus_path = realpath(__DIR__ . '/../../ressources/mymodbusd');
+    $pyenv_path = realpath(__DIR__ . '/../../ressources/_pyenv');
     $cmd = 'export PYENV_ROOT="' . $pyenv_path . '"; command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"; eval "$(pyenv init -)"; ';
     $cmd .= 'cd ' . $mymodbus_path . '; ';
     $cmd .= 'nice -n 19 python3 mymodbusd.py' . $request;
@@ -156,7 +155,7 @@ class mymodbus extends eqLogic {
     $params['dt'] = date(DATE_ATOM);
     $payLoad = json_encode($params);
     $socket = socket_create(AF_INET, SOCK_STREAM, 0);
-    $socket_port = is_numeric(config::byKey('socketport', __CLASS__, self::$_DEFAULT_SOCKET_PORT, True)) ? config::byKey('socketport', __CLASS__, self::$_DEFAULT_SOCKET_PORT) : self::$_DEFAULT_SOCKET_PORT;
+    $socket_port = is_numeric(config::byKey('socketport', __CLASS__, mymodbusConst::DEFAULT_SOCKET_PORT, True)) ? config::byKey('socketport', __CLASS__, mymodbusConst::DEFAULT_SOCKET_PORT) : mymodbusConst::DEFAULT_SOCKET_PORT;
     socket_connect($socket, '127.0.0.1', config::byKey('socketport', __CLASS__, $socket_port));
     $socket_ok = socket_write($socket, $payLoad, strlen($payLoad));
     if (!$socket_ok) {
@@ -176,11 +175,11 @@ class mymodbus extends eqLogic {
     self::sendToDaemon($message);
   }
   
-  // Supported protocols are in desktop/modal/configuration.[protocol].php
+  // Supported protocols are in desktop/modal/eqConfig_[protocol].php
   public static function supportedProtocols() {
     $protocols = array();
-    foreach (glob(dirname(__FILE__) . '/../../desktop/modal/configuration.*.php') as $file) {
-      $protocols[] = substr(basename($file), strlen('configuration.'), strlen('.php') * -1);
+    foreach (glob(__DIR__ . '/../../desktop/modal/eqConfig_*.php') as $file) {
+      $protocols[] = substr(basename($file), strlen('eqConfig_'), strlen('.php') * -1);
     }
     return $protocols;
   }
@@ -219,6 +218,165 @@ class mymodbus extends eqLogic {
     self::sendToDaemon($message);
   }
   
+  /*
+  * =-=-=-=-=-=-=-=-=-=-=-=-= Templates =-=-=-=-=-=-=-=-=-=-=-=-=
+  * Les fonctions sont copiées ou inspirées du plugin jMQTT pour
+  * la gestion des templates.
+  */
+  
+  // Fonction copiée du plugin jMQTT
+  public static function templateRead($_file) {
+    $content = file_get_contents($_file);
+    $templateContent = json_decode($content, true);
+    $templateKey = array_keys($templateContent)[0];
+    return [$templateKey, $templateContent[$templateKey]];
+  }
+
+  // Fonction inspirée du plugin jMQTT
+  public static function templateList() {
+    // Get personal and official templates
+    $perso = self::getTemplateList(mymodbusConst::PATH_TEMPLATES_PERSO, mymodbusConst::PREFIX_TEMPLATE_PERSO);
+    $official = self::getTemplateList(mymodbusConst::PATH_TEMPLATES_MYMODBUS);
+    return array_merge($perso, $official);
+  }
+
+  // Fonction inspirée du plugin jMQTT
+  public static function getTemplateList($_patern, $_prefix = '') {
+    $return = array();
+    foreach (glob(__DIR__ . '/../../' . $_patern . '*.json') as $file) {
+      try {
+        $file = realpath($file);
+        [$templateKey, $templateValue] = self::templateRead($file);
+        $return[] = array($_prefix . $templateKey, $file);
+      } catch (Throwable $e) {
+        log::add('mymodbus', 'warning', sprintf(__("Erreur lors de la lecture du Template '%s'", __FILE__), $file));
+      }
+    }
+    return $return;
+  }
+
+  // Fonction inspirée du plugin jMQTT
+  public static function templateByName($_name) {
+    if (strpos($_name , mymodbusConst::PREFIX_TEMPLATE_PERSO) === 0) {
+      // Get personal templates
+      $name = substr($_name, strlen(mymodbusConst::PREFIX_TEMPLATE_PERSO));
+      $folder = '/../../' . mymodbusConst::PATH_TEMPLATES_PERSO;
+    } else {
+      // Get official templates
+      $name = $_name;
+      $folder = '/../../' . mymodbusConst::PATH_TEMPLATES_MYMODBUS;
+    }
+    foreach (glob(__DIR__ . $folder . '*.json') as $file) {
+      try {
+        $file = realpath($file);
+        [$templateKey, $templateValue] = self::templateRead($file);
+        if ($templateKey == $name)
+          return $templateValue;
+      } catch (Throwable $e) {
+      }
+    }
+    log::add('mymodbus', 'warning', sprintf(__("Erreur lors de la lecture du Template '%s'", __FILE__), $_name));
+    throw new Exception($log);
+  }
+
+  // Fonction inspirée du plugin jMQTT
+  public static function templateByFile($_filename = ''){
+    $existing_files = self::templateList();
+    $exists = false;
+    foreach ($existing_files as list($n, $f))
+      if ($f == $_filename) {
+        $exists = true;
+        break;
+      }
+    if (!$exists)
+      throw new Exception(__("Le template demandé n'existe pas !", __FILE__));
+    try {
+      [$templateKey, $templateValue] = self::templateRead($_filename);
+      return $templateValue;
+    } catch (Throwable $e) {
+      throw new Exception(sprintf(
+          __("Erreur lors de la lecture du Template '%s'", __FILE__),
+          $_filename
+        )
+      );
+    }
+  }
+
+  // Fonction inspirée du plugin jMQTT
+  public static function deleteTemplateByFile($_filename = null) {
+    if (!$_filename ||
+        !file_exists($_filename) ||
+        !is_file($_filename) ||
+        dirname($_filename) != realpath(__DIR__ . '/../../' . mymodbusConst::PATH_TEMPLATES_PERSO))
+      return false;
+    return unlink($_filename);
+  }
+
+  // Fonction inspirée du plugin jMQTT
+  public function createTemplate($_tName) {
+    $export = $this->export();
+    
+    // Suppression des paramètres d'équipement à spécifier
+    if ($export['configuration']['eqProtocol'] === 'serial') {
+      $export['configuration']['eqSerialInterface'] = '';
+    } elseif ($export['configuration']['eqProtocol'] === 'tcp') {
+      $export['configuration']['eqTcpAddr'] = '';
+    } elseif ($export['configuration']['eqProtocol'] === 'udp') {
+      $export['configuration']['eqUdpAddr'] = '';
+    }
+
+    // Remplacement des id des plages de registres par leur '#[Nom]#'
+    foreach ($export['commands'] as &$cmd) {
+      if ($cmd['type'] == 'info' && $cmd['configuration']['cmdFctModbus'] == 'fromBlob') {
+        if ($cmd['subType'] == 'binary')
+          $cmdSourceBlob_type = 'cmdSourceBlobBin';
+        else
+          $cmdSourceBlob_type = 'cmdSourceBlobNum';
+        $sourceBlob_id = $cmd['configuration'][$cmdSourceBlob_type];
+        $sourceBlob = mymodbusCmd::byId($sourceBlob_id);
+        $cmd['configuration'][$cmdSourceBlob_type] = '#[' . $sourceBlob->getName() . ']#';
+      }
+    }
+    unset($cmd);
+    
+    self::saveTemplateToFile($_tName, $export);
+  }
+  
+  // Fonction inspirée du plugin jMQTT
+  public static function saveTemplateToFile($_tName, $_template) {
+    // Cleanup template name
+    $_tName = ucfirst(str_replace('  ', ' ', trim($_tName)));
+    $_tName = preg_replace('/[^a-zA-Z0-9 ()_-]+/', '', $_tName);
+
+    $template[$_tName] = $_template;
+    $template[$_tName]['name'] = $_tName;
+
+    // Convert and save to file
+    $jsonExport = json_encode(
+      $template,
+      JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+    );
+    $templateDir = __DIR__ . '/../../' . mymodbusConst::PATH_TEMPLATES_PERSO;
+    if (!file_exists($templateDir)) {
+      if (!mkdir($templateDir, 0775, true))
+        throw new Exception(__('Impossible de créer le répertoire de téléversement :', __FILE__) . ' ' . $templateDir);
+    }
+    file_put_contents(
+      $templateDir . str_replace(' ', '_', $_tName) . '.json',
+      $jsonExport
+    );
+  }
+
+  // Fonction inspirée du plugin jMQTT
+  public function applyATemplate($_template, $_keepCmd = true) {
+    // import template
+    $this->import($_template, $_keepCmd);
+    $this->save();
+
+    foreach ($this->getCmd() as $cmd)
+      $cmd->save();
+  }
+
   /*   * *********************Méthodes d'instance************************* */
   
   public function copy($_name) {
@@ -280,7 +438,7 @@ class mymodbus extends eqLogic {
       return True;
     if (!in_array('eqProtocol', $configKeys) || !in_array('eqKeepopen', $configKeys) || !in_array('eqRefreshMode', $configKeys)
         || !in_array('eqPolling', $configKeys) || !in_array('eqWriteCmdCheckTimeout', $configKeys) || !in_array('eqFirstDelay', $configKeys))
-      throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Veuillez définir la configuration de base de l\'équipement', __FILE__));
+      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Veuillez définir la configuration de base de l\'équipement', __FILE__));
     
     $eqProtocol = $this->getConfiguration('eqProtocol');
     $eqRefreshMode = $this->getConfiguration('eqRefreshMode');
@@ -288,51 +446,51 @@ class mymodbus extends eqLogic {
     $eqWriteCmdCheckTimeout = $this->getConfiguration('eqWriteCmdCheckTimeout');
     $eqFirstDelay = $this->getConfiguration('eqFirstDelay');
     if (!in_array($eqProtocol, self::supportedProtocols()))
-      throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Le protocol n\'est pas défini correctement.', __FILE__));
+      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le protocol n\'est pas défini correctement.', __FILE__));
     if (!in_array($eqRefreshMode, array('polling', 'cyclic', 'on_event')))
-      throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Le mode de rafraîchissement n\'est pas défini correctement.', __FILE__));
+      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le mode de rafraîchissement n\'est pas défini correctement.', __FILE__));
     if (!is_numeric($eqPolling))
-      throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Le paramètre "Polling" doit être un nombre.', __FILE__));
+      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Polling" doit être un nombre.', __FILE__));
     if ($eqPolling < 1)
-      throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Le paramètre "Polling" doit être au moins à 1 seconde', __FILE__));
+      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Polling" doit être au moins à 1 seconde', __FILE__));
     if (!is_numeric($eqWriteCmdCheckTimeout))
-      throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Le paramètre "Timeout pour vérification d\'une commande action" doit être un nombre.', __FILE__));
+      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Timeout pour vérification d\'une commande action" doit être un nombre.', __FILE__));
     if ($eqWriteCmdCheckTimeout < 0.1)
-      throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Le paramètre "Timeout pour vérification d\'une commande action" doit être au moins à 0.1 seconde', __FILE__));
+      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Timeout pour vérification d\'une commande action" doit être au moins à 0.1 seconde', __FILE__));
     if (!is_numeric($eqFirstDelay))
-      throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Le paramètre "Temps entre la connexion et la première requête" doit être un nombre.', __FILE__));
+      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Temps entre la connexion et la première requête" doit être un nombre.', __FILE__));
     if ($eqFirstDelay < 0)
-      throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Le paramètre "Temps entre la connexion et la première requête" doit être positif.', __FILE__));
+      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Temps entre la connexion et la première requête" doit être positif.', __FILE__));
     
     if ($eqProtocol == 'tcp') {
       // Vérification du paramétrage d'une connexion TCP
       if (!in_array('eqTcpAddr', $configKeys) && !in_array('eqTcpPort', $configKeys) && !in_array('eqTcpRtu', $configKeys)) {
-        throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Veuillez définir la configuration TCP de l\'équipement', __FILE__));
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Veuillez définir la configuration TCP de l\'équipement', __FILE__));
       }
       $eqTcpAddr = $this->getConfiguration('eqTcpAddr');
       $eqTcpPort = $this->getConfiguration('eqTcpPort');
       if (!filter_var($eqTcpAddr, FILTER_VALIDATE_IP))
-        throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('L\'adresse IP n\'est pas valide', __FILE__));
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'adresse IP n\'est pas valide', __FILE__));
       if (!is_numeric($eqTcpPort))
-        throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Le port doit être un nombre.', __FILE__));
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le port doit être un nombre.', __FILE__));
       
     } elseif ($eqProtocol == 'udp') {
       // Vérification du paramétrage d'une connexion UDP
-      if (!in_array('eqUdpAddr', $configKeys) && !in_array('eqUdpPort', $configKeys) && !in_array('eqUdpRtu', $configKeys))
-        throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Veuillez définir la configuration UDP de l\'équipement', __FILE__));
+      if (!in_array('eqUdpAddr', $configKeys) && !in_array('eqUdpPort', $configKeys))
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Veuillez définir la configuration UDP de l\'équipement', __FILE__));
       $eqUdpAddr = $this->getConfiguration('eqUdpAddr');
       $eqUdpPort = $this->getConfiguration('eqUdpPort');
       if (!filter_var($eqUdpAddr, FILTER_VALIDATE_IP))
-        throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('L\'adresse IP n\'est pas valide', __FILE__));
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'adresse IP n\'est pas valide', __FILE__));
       if (!is_numeric($eqUdpPort))
-        throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Le port doit être un nombre.', __FILE__));
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le port doit être un nombre.', __FILE__));
       
     } elseif ($eqProtocol == 'serial') {
       // Vérification du paramétrage d'une connexion série
       if (!in_array('eqSerialInterface', $configKeys) || !in_array('eqSerialMethod', $configKeys) ||
           !in_array('eqSerialBaudrate', $configKeys) || !in_array('eqSerialBytesize', $configKeys) ||
           !in_array('eqSerialParity', $configKeys) || !in_array('eqSerialStopbits', $configKeys))
-        throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Veuillez définir la configuration série de l\'équipement', __FILE__));
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Veuillez définir la configuration série de l\'équipement', __FILE__));
       $eqSerialInterface = $this->getConfiguration('eqSerialInterface');
       $eqSerialMethod = $this->getConfiguration('eqSerialMethod');
       $eqSerialBaudrate = $this->getConfiguration('eqSerialBaudrate');
@@ -340,17 +498,17 @@ class mymodbus extends eqLogic {
       $eqSerialParity = $this->getConfiguration('eqSerialParity');
       $eqSerialStopbits = $this->getConfiguration('eqSerialStopbits');
       if ($eqSerialInterface == '')
-        throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('L\'interface doit être définie correctement.', __FILE__));
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'interface doit être définie correctement.', __FILE__));
       if (!in_array($eqSerialMethod, array('rtu', 'ascii', 'binary')))
-        throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('La méthode de transport n\'est pas définie correctement.', __FILE__));
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La méthode de transport n\'est pas définie correctement.', __FILE__));
       if (!is_numeric($eqSerialBaudrate))
-        throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('La vitesse de transmission Modbus doit être un nombre.', __FILE__));
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La vitesse de transmission Modbus doit être un nombre.', __FILE__));
       if (!in_array($eqSerialBytesize, array('7', '8')))
-        throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Le nombre de bits par octet n\'est pas défini correctement.', __FILE__));
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le nombre de bits par octet n\'est pas défini correctement.', __FILE__));
       if (!in_array($eqSerialParity, array('E', 'O', 'N')))
-        throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('La parité n\'est pas définie correctement.', __FILE__));
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La parité n\'est pas définie correctement.', __FILE__));
       if (!in_array($eqSerialStopbits, array('0', '1', '2')))
-        throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Le nombre de bits de stop n\'est pas défini correctement.', __FILE__));
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le nombre de bits de stop n\'est pas défini correctement.', __FILE__));
     }
     
     if ($this->getId() != '') {
@@ -406,6 +564,15 @@ class mymodbus extends eqLogic {
         unset($this->configuration[$attribut]);
         $this->_changed = true;
       }
+    // Suppression des éléments de configuration inutiles
+    $confOK = $this->getEqConfiguration();
+    $conf = $this->getConfiguration();
+    foreach ($conf as $key => $value) {
+      if (substr($key, 0, 2) == 'eq' && !in_array($key, array_keys($confOK))) {
+        unset($this->configuration[$key]);
+        $this->_changed = true;
+      }
+    }
     //log::add('mymodbus', 'debug', 'Validation de la configuration pour l\'équipement *' . $this->getHumanName() . '* : OK');
   }
 
@@ -445,7 +612,7 @@ class mymodbus extends eqLogic {
       
       $completeConfig[] = $eqMymodbus->getEqConfiguration();
     }
-    log::add('mymodbus', 'debug', 'eqLogic mymodbus getCompleteConfiguration: ' . json_encode($completeConfig));
+    log::add(__CLASS__, 'debug', 'eqLogic mymodbus getCompleteConfiguration: ' . json_encode($completeConfig));
     return $completeConfig;
   }
   
@@ -483,25 +650,8 @@ class mymodbus extends eqLogic {
     foreach ($this->getCmd() as $cmdMymodbus) { // boucle sur les commandes
       if (in_array($cmdMymodbus->getLogicalId(), array('refresh', 'refresh time')))
         continue;
-      $cmdConfig = array();
-      $cmdConfig['id'] = $cmdMymodbus->getId();
-      $cmdConfig['name'] = $cmdMymodbus->getName();
-      $cmdConfig['type'] = $cmdMymodbus->getType();
-      $cmdConfig['cmdSlave'] = $cmdMymodbus->getConfiguration('cmdSlave');
-      $cmdConfig['cmdFctModbus'] = $cmdMymodbus->getConfiguration('cmdFctModbus');
-      if ($cmdConfig['cmdFctModbus'] == 'fromBlob') {
-        if ($cmdMymodbus->getSubType() == 'binary')
-          $cmdConfig['cmdSourceBlob'] = $cmdMymodbus->getConfiguration('cmdSourceBlobBin');
-        else
-          $cmdConfig['cmdSourceBlob'] = $cmdMymodbus->getConfiguration('cmdSourceBlobNum');
-      }
-      $cmdConfig['cmdFormat'] = $cmdMymodbus->getConfiguration('cmdFormat');
-      $cmdConfig['cmdAddress'] = $cmdMymodbus->getConfiguration('cmdAddress');
-      $cmdConfig['cmdFrequency'] = $cmdMymodbus->getConfiguration('cmdFrequency');
-      $cmdConfig['cmdInvertBytes'] = $cmdMymodbus->getConfiguration('cmdInvertBytes');
-      $cmdConfig['cmdInvertWords'] = $cmdMymodbus->getConfiguration('cmdInvertWords');
-      $cmdConfig['repeat'] = $cmdMymodbus->getConfiguration('repeatEventManagement', 'never') === 'always' ? '1' : '0';
-      $eqConfig['cmds'][] = $cmdConfig;
+      
+      $eqConfig['cmds'][] = $cmdMymodbus->getCmdConfiguration();
     }
     return $eqConfig;
   }
@@ -621,6 +771,36 @@ class mymodbusCmd extends cmd {
   // Fonction exécutée automatiquement avant la sauvegarde de la commande (création ou mise à jour)
   // La levée d'une exception invalide la sauvegarde
   public function preSave() {
+    // Suppression de l'ancienne configuration
+    foreach (array('type', 'datatype', 'location', 'request', 'parameters') as $attribut)
+      if (isset($this->configuration[$attribut])) {
+        unset($this->configuration[$attribut]);
+        $this->_changed = true;
+      }
+    
+    // Suppression des éléments de configuration inutiles
+    $confOK = $this->getCmdConfiguration();
+    $conf = $this->getConfiguration();
+    foreach ($conf as $key => $value) {
+      if (substr($key, 0, 3) == 'cmd' && !in_array($key, array_keys($confOK)) && substr($key, 0, 13) !== 'cmdSourceBlob' && $key !== 'cmdOption' || 
+          substr($key, 0, 13) === 'cmdSourceBlob' && $conf['cmdFctModbus'] != 'fromBlob' ||
+          $conf['cmdFctModbus'] == 'fromBlob' && $this->getSubType() == 'binary' && $key === 'cmdSourceBlobNum' ||
+          $conf['cmdFctModbus'] == 'fromBlob' && $this->getSubType() !== 'binary' && $key === 'cmdSourceBlobBin' ||
+          $key === 'cmdSourceBlob') {
+        unset($this->configuration[$key]);
+        $this->_changed = true;
+      }
+    }
+    
+    if (is_null($this->getLogicalId())) {
+      $this->setLogicalId('');
+      $this->_changed = true;
+    }
+    if (is_null($this->getValue())) {
+      $this->setValue('');
+      $this->_changed = true;
+    }
+
     if (in_array($this->getLogicalId(), array('refresh', 'refresh time')))
       return true;
     $cmdSlave = $this->getConfiguration('cmdSlave');
@@ -634,79 +814,112 @@ class mymodbusCmd extends cmd {
       $this->setConfiguration('cmdSlave', $cmdSlave);
     }
     if (!is_numeric($cmdSlave))
-      throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('L\'adresse esclave doit être un nombre.</br>\'0\' si pas de bus série.', __FILE__));
+      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'adresse esclave doit être un nombre.<br>\'0\' si pas de bus série.', __FILE__));
     if ($this->getType() == 'info' && $cmdFrequency == '') {
       $cmdFrequency = '1';
       $this->setConfiguration('cmdFrequency', $cmdFrequency);
     }
     if ($this->getType() == 'info' && !is_numeric($cmdFrequency))
-      throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('La configuration \'Lecture 1x sur\' doit être un nombre.', __FILE__));
+      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La configuration \'Lecture 1x sur\' doit être un nombre.', __FILE__));
     if ($this->getType() == 'info' && $this->getSubType() == 'binary' && in_array($cmdFctModbus, array('3', '4')) && !preg_match('/#value# & \d+/', $cmdOption))
-      throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Pour pouvoir utiliser une fonction de lecture de registre numérique, une commande de type binaire doit avoir un filtre en option', __FILE__));
+      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Pour pouvoir utiliser une fonction de lecture de registre numérique, une commande de type binaire doit avoir un filtre en option', __FILE__));
     if (!is_numeric($cmdAddress) && $cmdFormat != 'string' && $cmdFormat != 'blob' && !strstr($cmdFormat, 'sp-sf'))
-      throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('L\'adresse Modbus doit être un nombre.', __FILE__));
+      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'adresse Modbus doit être un nombre.', __FILE__));
     if ($cmdFormat == 'string' && !preg_match('/\d+\s*\[\s*\d+\s*\]/', $cmdAddress))
-      throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('L\'adresse Modbus d\'une chaine de caractère doit être de la forme</br>adresse[longueur]', __FILE__));
+      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'adresse Modbus d\'une chaine de caractère doit être de la forme<br>adresse[longueur]', __FILE__));
     if ($cmdFormat == 'blob' && !preg_match('/\d+\s*\[\s*\d+\s*\]/', $cmdAddress))
-      throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('L\'adresse Modbus d\'une plage de registres doit être de la forme</br>adresse[longueur]', __FILE__));
+      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'adresse Modbus d\'une plage de registres doit être de la forme<br>adresse[longueur]', __FILE__));
     if (strstr($cmdFormat, 'sp-sf') && !preg_match('/\d+\s*sf\s*\d+/i', $cmdAddress))
-      throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('L\'adresse Modbus d\'un scale factor doit être de la forme&nbsp;:</br><i>adresse_valeur </i>sf<i> adresse_scale_factor</i>', __FILE__));
+      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'adresse Modbus d\'un scale factor doit être de la forme&nbsp;:<br><i>adresse_valeur </i>sf<i> adresse_scale_factor</i>', __FILE__));
     if ($cmdOption != '' && (!strstr($cmdOption, '#value#') || strstr($cmdOption, ';')))
-      throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Le paramètre \'Option\' doit contenir \'#value#\' et aucun \';\'.', __FILE__));
+      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre \'Option\' doit contenir \'#value#\' et aucun \';\'.', __FILE__));
     if ($this->getType() == 'action') {
       if ($cmdFctModbus == '6' && (strstr($cmdFormat, '32') || strstr($cmdFormat, '64')))
-        throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('La fonction "[0x06] Write register" ne permet pas d\'écrire une variable de cette longueur.', __FILE__));
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La fonction "[0x06] Write register" ne permet pas d\'écrire une variable de cette longueur.', __FILE__));
       if (strstr($cmdFormat, '8') || $cmdFormat == 'blob' || $cmdFctModbus == 'fromBlob')
-        log::add('mymodbus', 'warning', $this->getHumanName() . '&nbsp;:</br>' . __('L\'écriture sera ignorée.', __FILE__));
+        log::add('mymodbus', 'warning', $this->getHumanName() . '&nbsp;:<br>' . __('L\'écriture sera ignorée.', __FILE__));
     }
     if ($cmdFctModbus == 'fromBlob') {
       if ($cmdFormat == 'blob')
-        throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('On ne peut pas extraire une plage de registres d\'une plage de registres.', __FILE__));
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('On ne peut pas extraire une plage de registres d\'une plage de registres.', __FILE__));
       if ($this->getSubtype() == 'binary')
         $cmdSourceBlob = $this->getConfiguration('cmdSourceBlobBin');
       else
         $cmdSourceBlob = $this->getConfiguration('cmdSourceBlobNum');
-      $blobCmd = mymodbusCmd::byId($cmdSourceBlob);
-      $blobAddress = $blobCmd->getConfiguration('cmdAddress');
-      preg_match('/(\d+)\s*\[\s*(\d+)\s*\]/', $blobAddress, $matches);
-      $minAddr = intval($matches[1]);
-      $maxAddr = $minAddr + intval($matches[2]) - 1;
       
-      if ($cmdFormat != 'string' && !strstr($cmdFormat, 'sp-sf')) {
-        $cmdAddress = intval($cmdAddress);
-        if ($cmdAddress < $minAddr or $cmdAddress > $maxAddr)
-          throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Adresse Modbus en dehors de la plage de registres.', __FILE__));
-        if ($this->getSubtype() == 'binary') {
-          if ($blobCmd->getSubtype() == 'numeric' && !preg_match('/#value# & \d+/', $cmdOption))
-            throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Pour pouvoir utiliser une plage de lecture de registre numérique, une commande de type binaire doit avoir un filtre en option', __FILE__));
+      if (!is_numeric($cmdSourceBlob) && preg_match('/#\[.*\]#/', $cmdSourceBlob)) {
+        // Create a replacement array with cmd names & id for further use
+        $eqMymodbus = $this->getEqLogic();
+        foreach ($eqMymodbus->getCmd() as $cmd) {
+          if ($cmdSourceBlob == '#[' . $cmd->getName() . ']#') {
+            $cmdSourceBlob = $cmd->getId();
+            if ($this->getSubtype() == 'binary')
+              $this->setConfiguration('cmdSourceBlobBin', $cmdSourceBlob);
+            else
+              $this->setConfiguration('cmdSourceBlobNum', $cmdSourceBlob);
+          }
         }
       }
-      if ($cmdFormat == 'string') {
-        preg_match('/(\d+)\s*\[\s*(\d+)\s*\]/', $cmdAddress, $matches);
-        $startAddr = intval($matches[1]);
-        $endAddr = $startAddr + intval($matches[2]);
-        if ($startAddr < $minAddr or $startAddr > $maxAddr or $endAddr < $minAddr or $endAddr > $maxAddr)
-          throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Adresse Modbus en dehors de la plage de registres.', __FILE__));
-      }
-      if (strstr($cmdFormat, 'sp-sf')) {
-        preg_match('/(\d+)\s*sf\s*(\d+)/i', $cmdAddress, $matches);
-        $startAddr = intval($matches[1]);
-        $endAddr = intval($matches[2]);
-        if ($startAddr < $minAddr or $startAddr > $maxAddr or $endAddr < $minAddr or $endAddr > $maxAddr)
-          throw new Exception($this->getHumanName() . '&nbsp;:</br>' . __('Adresse Modbus en dehors de la plage de registres.', __FILE__));
+      
+      if (is_numeric($cmdSourceBlob)) {
+        $blobCmd = mymodbusCmd::byId($cmdSourceBlob);
+        $blobAddress = $blobCmd->getConfiguration('cmdAddress');
+        preg_match('/(\d+)\s*\[\s*(\d+)\s*\]/', $blobAddress, $matches);
+        $minAddr = intval($matches[1]);
+        $maxAddr = $minAddr + intval($matches[2]) - 1;
+        
+        if ($cmdFormat != 'string' && !strstr($cmdFormat, 'sp-sf')) {
+          $cmdAddress = intval($cmdAddress);
+          if ($cmdAddress < $minAddr or $cmdAddress > $maxAddr)
+            throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Adresse Modbus en dehors de la plage de registres.', __FILE__));
+          if ($this->getSubtype() == 'binary') {
+            if ($blobCmd->getSubtype() == 'numeric' && !preg_match('/#value# & \d+/', $cmdOption))
+              throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Pour pouvoir utiliser une plage de lecture de registre numérique, une commande de type binaire doit avoir un filtre en option', __FILE__));
+          }
+        }
+        if ($cmdFormat == 'string') {
+          preg_match('/(\d+)\s*\[\s*(\d+)\s*\]/', $cmdAddress, $matches);
+          $startAddr = intval($matches[1]);
+          $endAddr = $startAddr + intval($matches[2]);
+          if ($startAddr < $minAddr or $startAddr > $maxAddr or $endAddr < $minAddr or $endAddr > $maxAddr)
+            throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Adresse Modbus en dehors de la plage de registres.', __FILE__));
+        }
+        if (strstr($cmdFormat, 'sp-sf')) {
+          preg_match('/(\d+)\s*sf\s*(\d+)/i', $cmdAddress, $matches);
+          $startAddr = intval($matches[1]);
+          $endAddr = intval($matches[2]);
+          if ($startAddr < $minAddr or $startAddr > $maxAddr or $endAddr < $minAddr or $endAddr > $maxAddr)
+            throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Adresse Modbus en dehors de la plage de registres.', __FILE__));
+        }
       }
     }
-    
-    // Suppression de l'ancienne configuration
-    foreach (array('type', 'datatype', 'location', 'request', 'parameters') as $attribut)
-      if (isset($this->configuration[$attribut])) {
-        unset($this->configuration[$attribut]);
-        $this->_changed = true;
-      }
     
     //log::add('mymodbus', 'debug', 'Validation de la configuration pour la commande *' . $this->getHumanName() . '* : OK');
   }
 
+  public function getCmdConfiguration() {
+    $return = array();
+    $return['id'] = $this->getId();
+    $return['name'] = $this->getName();
+    $return['type'] = $this->getType();
+    $return['cmdSlave'] = $this->getConfiguration('cmdSlave');
+    $return['cmdFctModbus'] = $this->getConfiguration('cmdFctModbus');
+    if ($return['cmdFctModbus'] == 'fromBlob') {
+      if ($this->getSubType() == 'binary')
+        $return['cmdSourceBlob'] = $this->getConfiguration('cmdSourceBlobBin');
+      else
+        $return['cmdSourceBlob'] = $this->getConfiguration('cmdSourceBlobNum');
+    }
+    $return['cmdFormat'] = $this->getConfiguration('cmdFormat');
+    $return['cmdAddress'] = $this->getConfiguration('cmdAddress');
+    $return['cmdFrequency'] = $this->getConfiguration('cmdFrequency');
+    $return['cmdInvertBytes'] = $this->getConfiguration('cmdInvertBytes');
+    $return['cmdInvertWords'] = $this->getConfiguration('cmdInvertWords');
+    $return['repeat'] = $this->getConfiguration('repeatEventManagement', 'never') === 'always' ? '1' : '0';
+
+    return $return;
+  }
+  
   /*   * **********************Getteur Setteur*************************** */
 }
 

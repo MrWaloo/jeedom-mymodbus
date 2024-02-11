@@ -4,6 +4,7 @@ if (!isConnect('admin')) {
 }
 $plugin = plugin::byId('mymodbus');
 sendVarToJS('eqType', $plugin->getId());
+include_file('desktop', 'mymodbus.functions', 'js', 'mymodbus');
 $eqLogics = eqLogic::byType($plugin->getId());
 
 ?>
@@ -14,37 +15,30 @@ $eqLogics = eqLogic::byType($plugin->getId());
     <legend><i class="fas fa-cog"></i>  {{Gestion}}</legend>
     <!-- Boutons de gestion du plugin -->
     <div class="eqLogicThumbnailContainer">
-      <div class="cursor eqLogicAction logoPrimary" data-action="add">
-        <i class="fas fa-plus-circle"style="font-size:6em;color:#0F9DE8;"></i>
+      <div class="cursor eqLogicAction logoPrimary" data-action="bt_addMymodbusEq">
+        <i class="fas fa-plus-circle"></i>
         <br>
         <span>{{Ajouter}}</span>
       </div>
       <div class="cursor eqLogicAction logoSecondary" data-action="gotoPluginConf">
-        <i class="fas fa-wrench"style="font-size:6em;color:#0F9DE8;"></i>
+        <i class="fas fa-wrench" style="color:#0F9DE8;"></i>
         <br>
         <span>{{Configuration}}</span>
       </div>
-      <div class="cursor eqLogicAction logoSecondary" data-action="bt_docSpecific" >
-        <i class="fas fa-book"style="font-size:6em;color:#0F9DE8;"></i>
-        <br>
-        <span>{{Documentation}}</span>
-      </div>
-      <!--
-      <div class="cursor pluginAction" data-action="openLink" data-location="https://community.jeedom.com/t/plugin-<?=$plugin->getId()?>/9395" >
-        <i class="fas fa-comments" style="font-size:6em;color:#0F9DE8;"></i>
-        <br>
-        <span>{{Commmunity}}</span>
-      </div>
-      -->
       <div class="cursor logoSecondary" id="bt_healthmymodbus">
-        <i class="fas fa-medkit"style="font-size:6em;color:#0F9DE8;"></i>
+        <i class="fas fa-medkit" style="color:#0F9DE8;"></i>
         <br/>
         <span>{{Santé}}</span>
       </div>
       <div class="cursor logoSecondary" id="bt_templatesMymodbus">
-        <i class="fas fa-cubes"style="font-size:6em;color:#0F9DE8;"></i>
+        <i class="fas fa-cubes" style="color:#0F9DE8;"></i>
         <br/>
         <span>{{Templates}}</span>
+      </div>
+      <div class="cursor eqLogicAction logoSecondary" data-action="bt_docSpecific" >
+        <i class="fas fa-book" style="color:#0F9DE8;"></i>
+        <br>
+        <span>{{Documentation}}</span>
       </div>
     </div>
     <legend><i class="fas fa-table"></i> {{Mes équipements}}</legend>
@@ -87,13 +81,13 @@ $eqLogics = eqLogic::byType($plugin->getId());
   <div class="col-xs-12 eqLogic" style="display:none;" id="eqLogic">
     <div class="input-group pull-right" style="display:inline-flex">
       <span class="input-group-btn">
-        <!-- Les balises <a></a> sont volontairement fermées à la ligne suivante pour éviter les espaces entre les boutons. Ne pas modifier -->
-        <a class="btn btn-primary btn-sm bt_showExpressionTest roundedLeft"><i class="fas fa-check"></i> {{Expression}}
-        </a><a <a class="btn btn-default btn-sm eqLogicAction" data-action="configure"><i class="fas fa-cogs"></i> {{Configuration avancée}}
-        </a><a class="btn btn-default btn-sm eqLogicAction" data-action="copy"><i class="fas fa-copy"></i> {{Dupliquer}}
-        </a><a class="btn btn-sm btn-success eqLogicAction" data-action="save"><i class="fas fa-check-circle"></i> {{Sauvegarder}}
-        </a><a class="btn btn-danger btn-sm eqLogicAction roundedRight" data-action="remove"><i class="fas fa-minus-circle"></i> {{Supprimer}}
-        </a>
+        <a class="btn btn-primary btn-sm eqLogicAction roundedLeft tooltips" data-action="createTemplate" title="{{Créer Template}}"><i class="fas fa-cubes"></i></a>
+        <a class="btn btn-warning btn-sm eqLogicAction tooltips" data-action="applyTemplate" title="{{Appliquer Template}}"><i class="fas fa-share"></i></a>
+        <a class="btn btn-primary btn-sm bt_showExpressionTest tooltips" title="{{Expression}}"><i class="fas fa-check"></i></a>
+        <a class="btn btn-default btn-sm eqLogicAction tooltips" data-action="configure" title="{{Configuration avancée}}"><i class="fas fa-cogs"></i></a>
+        <a class="btn btn-default btn-sm eqLogicAction tooltips" data-action="copy" title="{{Dupliquer}}"><i class="fas fa-copy"></i></a>
+        <a class="btn btn-success btn-sm eqLogicAction" data-action="save"><i class="fas fa-check-circle"></i> {{Sauvegarder}}</a>
+        <a class="btn btn-danger btn-sm eqLogicAction roundedRight" data-action="remove"><i class="fas fa-minus-circle"></i> {{Supprimer}}</a>
       </span>
     </div>
     <!-- Onglets -->
@@ -107,117 +101,10 @@ $eqLogics = eqLogic::byType($plugin->getId());
       <div role="tabpanel" class="tab-pane active" id="eqlogictab">
         <form class="form-horizontal">
           <fieldset>
-            <!-- Partie gauche de l'onglet "Equipement" -->
-            <div class="col-lg-6">
-              <legend><i class="fa fa-wrench"></i> {{Equipement :}}</legend>
-              <div class="form-group">
-                <label class="col-sm-4 control-label">{{Nom de l'équipement}}</label>
-                <div class="col-sm-6">
-                  <input type="text" class="eqLogicAttr form-control" data-l1key="id" style="display:none;" />
-                  <input type="text" class="eqLogicAttr form-control" data-l1key="name" placeholder="{{Nom de l'équipement}}"/>
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="col-sm-4 control-label">{{Objet parent}}</label>
-                <div class="col-sm-6">
-                  <select id="sel_object" class="eqLogicAttr form-control" data-l1key="object_id">
-                    <option value="">{{Aucun}}</option>
-                    <?php
-                    foreach ((jeeObject::buildTree(null, false)) as $object)
-                      echo '<option value="' . $object->getId() . '">' . str_repeat('&nbsp;&nbsp;', $object->getConfiguration('parentNumber')) . $object->getName() . '</option>';
-                    ?>
-                  </select>
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="col-sm-4 control-label">{{Catégorie}}</label>
-                <div class="col-sm-6">
-                  <?php
-                  foreach (jeedom::getConfiguration('eqLogic:category') as $key => $value) {
-                    echo '<label class="checkbox-inline">';
-                    echo '<input type="checkbox" class="eqLogicAttr" data-l1key="category" data-l2key="' . $key . '" >' . $value['name'];
-                    echo '</label>';
-                  }
-                  ?>
-                 </div>
-              </div>
-              <div class="form-group">
-                <label class="col-sm-4 control-label">{{Options}}</label>
-                <div class="col-sm-6">
-                  <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isEnable" checked/>{{Activer}}</label>
-                  <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isVisible" checked/>{{Visible}}</label>
-                </div>
-              </div>
-              
-              <!--   ***********************************  -->
-              <legend><i class="fa fa-list-alt"></i> {{Configuration :}}</legend>
-              <div class="form-group">
-                <label class="col-sm-4 control-label">{{Protocol de connexion}}</label>
-                <div class="col-sm-6">
-                  <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqProtocol">
-                    <option disabled selected value>-- {{Choisir un protocol de connexion}} --</option>
-                    <?php
-                    foreach (mymodbus::supportedProtocols() as $protocol)
-                      echo '<option value="' . $protocol . '">' . $protocol . '</option>';
-                    ?>
-                  </select>
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="col-sm-4 control-label"></label>
-                <div class="col-sm-6">
-                  <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="configuration" data-l2key="eqKeepopen"/>{{Garder la connexion ouverte}}</label>
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="col-sm-4 control-label">{{Mode de rafraîchissement}}</label>
-                <div class="col-sm-6">
-                  <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRefreshMode">
-                    <option disabled selected value>-- {{Selectionnez un mode}} --</option>
-                    <option value="polling">{{Polling}}</option>
-                    <option value="cyclic">{{Cyclique}}</option>
-                     <option value="on_event">{{Sur événement}}</option>
-                  </select>
-                </div>
-              </div>
-              <div class="form-group" id="eqPolling">
-                <label class="col-sm-4 control-label">{{Polling en secondes}}
-                  <sup><i class="fas fa-question-circle tooltips" title="{{En mode Polling: raffraichissement des valeurs toutes les n secondes, minimum 1}}"></i></sup>
-                </label>
-                <div class="col-sm-6">
-                  <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqPolling" placeholder="60"/>
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="col-sm-4 control-label">{{Timeout pour vérification d'une commande action}}
-                  <sup><i class="fas fa-question-circle tooltips" title="{{Temps aloué à la vérification de l'envoi d'une commande action par Jeedom, minimum 0.1}}"></i></sup>
-                </label>
-                <div class="col-sm-6">
-                  <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqWriteCmdCheckTimeout" placeholder="1"/>
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="col-sm-4 control-label">{{Temps entre la connexion et la première requête}}</label>
-                <div class="col-sm-6">
-                  <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqFirstDelay" placeholder="0"/>
-                </div>
-              </div>
-              
-              <!-- Paramètres propres au protocol "desktop/modal/configuration.*.php" -->
-              <div id="div_protocolParameters"></div>
-              
-            </div>
             
-            <!-- Partie basse ou droite de l'onglet "Équipement" -->
-            <div class="col-lg-6">
-              <legend><i class="fas fa-info"></i>{{Informations}}</legend>
-              <div class="form-group">
-                <label class="col-sm-2 control-label">{{Notes}}</label>
-                <div class="col-sm-8">
-                  <textarea class="form-control eqLogicAttr autogrow" data-l1key="comment"></textarea>
-                </div>
-              </div>
-            </div>
+            <!-- Affichage de la configuration de l'équipement -->
+            <div id='div_MyModbusEqlogic'></div>
+
           </fieldset>
         </form>
       </div><!-- /.tabpanel #eqlogictab-->
@@ -261,6 +148,12 @@ $eqLogics = eqLogic::byType($plugin->getId());
     </div><!-- /.tab-content -->
   </div><!-- /.eqLogic -->
 </div><!-- /.row row-overflow -->
+
+<script>
+
+$('#div_MyModbusEqlogic').load('index.php?v=d&plugin=mymodbus&modal=eqConfig');
+
+</script>
 
 <?php
 include_file('desktop', 'mymodbus', 'js', 'mymodbus');

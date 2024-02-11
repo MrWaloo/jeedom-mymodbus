@@ -75,24 +75,24 @@ class Main():
     ''' Reads arguments from the command line and set self.param
     '''
     # Initialisation with hard coded parameters
-    self._socket_host   = 'localhost'
+    self._socket_host = 'localhost'
     self._pidfile     = '/tmp/mymodbusd.pid'
-    self._cycle     = 0.3
+    self._cycle       = 0.3
     # These parameters can be passed as arguments:
-    self._socket_port   = 55502
+    self._socket_port = 55502
     self._log_level   = 'error'
-    self._apikey    = ''
+    self._apikey      = ''
     self._callback    = ''
-    self._json      = ''
+    self._json        = ''
     
     # Parameters passed as command line arguments
     parser = argparse.ArgumentParser(description='Mymodbus parameters')
     
     parser.add_argument('--socketport', help='Communication socket to Jeedom',  type=int)
-    parser.add_argument('--loglevel',   help='Log Level for the daemon',    type=str)
-    parser.add_argument('--apikey',   help='Apikey from Jeedom',        type=str)
-    parser.add_argument('--callback',   help='Callback url',          type=str)
-    parser.add_argument('--json',     help='MyModbus json data',        type=str)
+    parser.add_argument('--loglevel',   help='Log Level for the daemon',        type=str)
+    parser.add_argument('--apikey',     help='Apikey from Jeedom',              type=str)
+    parser.add_argument('--callback',   help='Callback url',                    type=str)
+    parser.add_argument('--json',       help='MyModbus json data',              type=str)
     args = parser.parse_args()
     
     if args.socketport:
