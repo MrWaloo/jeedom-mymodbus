@@ -755,6 +755,9 @@ class mymodbusCmd extends cmd {
         $value = trim(str_replace('#select#', $_option['select'], $value));
       } 
       $command['cmdWriteValue'] = jeedom::evaluateExpression($value);
+      if ($command['cmdWriteValue'] == '')
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La valeur à écrire est vide. L\'écriture est ignorée.', __FILE__));
+
       $command['cmdId'] = $this->getId();
       
       $message = array();
@@ -815,14 +818,16 @@ class mymodbusCmd extends cmd {
     }
     if (!is_numeric($cmdSlave))
       throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'adresse esclave doit être un nombre.<br>\'0\' si pas de bus série.', __FILE__));
-    if ($this->getType() == 'info' && $cmdFrequency == '') {
-      $cmdFrequency = '1';
-      $this->setConfiguration('cmdFrequency', $cmdFrequency);
+    if ($this->getType() == 'info') {
+      if ($cmdFrequency == '') {
+        $cmdFrequency = '1';
+        $this->setConfiguration('cmdFrequency', $cmdFrequency);
+      }
+      if (!is_numeric($cmdFrequency))
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La configuration \'Lecture 1x sur\' doit être un nombre.', __FILE__));
+      if ($this->getSubType() == 'binary' && in_array($cmdFctModbus, array('3', '4')) && !preg_match('/#value# & \d+/', $cmdOption))
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Pour pouvoir utiliser une fonction de lecture de registre numérique, une commande de type binaire doit avoir un filtre en option', __FILE__));
     }
-    if ($this->getType() == 'info' && !is_numeric($cmdFrequency))
-      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La configuration \'Lecture 1x sur\' doit être un nombre.', __FILE__));
-    if ($this->getType() == 'info' && $this->getSubType() == 'binary' && in_array($cmdFctModbus, array('3', '4')) && !preg_match('/#value# & \d+/', $cmdOption))
-      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Pour pouvoir utiliser une fonction de lecture de registre numérique, une commande de type binaire doit avoir un filtre en option', __FILE__));
     if (!is_numeric($cmdAddress) && $cmdFormat != 'string' && $cmdFormat != 'blob' && !strstr($cmdFormat, 'sp-sf'))
       throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'adresse Modbus doit être un nombre.', __FILE__));
     if ($cmdFormat == 'string' && !preg_match('/\d+\s*\[\s*\d+\s*\]/', $cmdAddress))
@@ -838,6 +843,30 @@ class mymodbusCmd extends cmd {
         throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La fonction "[0x06] Write register" ne permet pas d\'écrire une variable de cette longueur.', __FILE__));
       if (strstr($cmdFormat, '8') || $cmdFormat == 'blob' || $cmdFctModbus == 'fromBlob')
         log::add('mymodbus', 'warning', $this->getHumanName() . '&nbsp;:<br>' . __('L\'écriture sera ignorée.', __FILE__));
+      if ($this->getConfiguration('cmdWriteValue') == '') {
+        if ($this->getSubType() == 'slider') {
+            $this->setConfiguration('cmdWriteValue', '#slider#');
+            $this->_changed = true;
+        }
+        if ($this->getSubType() == 'select') {
+            $this->setConfiguration('cmdWriteValue', '#select#');
+            $this->_changed = true;
+        }
+        if ($this->getSubType() == 'color') {
+            $this->setConfiguration('cmdWriteValue', '#color#');
+            $this->_changed = true;
+        }
+        if ($this->getConfiguration('cmdWriteValue') == '')
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La valeur à écrire est vide.', __FILE__));
+      } else {
+        $cmdWriteValue = $this->getConfiguration('cmdWriteValue');
+        if ($this->getSubType() == 'slider' && !strstr($cmdWriteValue, '#slider#'))
+          log::add('mymodbus', 'error', $this->getHumanName() . '&nbsp;:<br>' . __('Le champ valeur ne contient pas \'#slider#\'.', __FILE__));
+        if ($this->getSubType() == 'select' && !strstr($cmdWriteValue, '#select#'))
+          log::add('mymodbus', 'error', $this->getHumanName() . '&nbsp;:<br>' . __('Le champ valeur ne contient pas \'#select#\'.', __FILE__));
+        if ($this->getSubType() == 'color' && !strstr($cmdWriteValue, '#color#'))
+          log::add('mymodbus', 'error', $this->getHumanName() . '&nbsp;:<br>' . __('Le champ valeur ne contient pas \'#color#\'.', __FILE__));
+      }
     }
     if ($cmdFctModbus == 'fromBlob') {
       if ($cmdFormat == 'blob')
@@ -848,7 +877,6 @@ class mymodbusCmd extends cmd {
         $cmdSourceBlob = $this->getConfiguration('cmdSourceBlobNum');
       
       if (!is_numeric($cmdSourceBlob) && preg_match('/#\[.*\]#/', $cmdSourceBlob)) {
-        // Create a replacement array with cmd names & id for further use
         $eqMymodbus = $this->getEqLogic();
         foreach ($eqMymodbus->getCmd() as $cmd) {
           if ($cmdSourceBlob == '#[' . $cmd->getName() . ']#') {
