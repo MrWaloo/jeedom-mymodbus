@@ -19,15 +19,15 @@
 require_once dirname(__FILE__) . '/../../../core/php/core.inc.php';
 
 function mymodbus_update() {
-    
-	do {
-		$cron = cron::byClassAndFunction('mymodbus', 'cronDaily');
-		if (is_object($cron))
+
+  do {
+    $cron = cron::byClassAndFunction('mymodbus', 'cronDaily');
+    if (is_object($cron))
       $cron->remove(true);
-		else
-      break;
-	} while (true);
-  
+  else
+    break;
+  } while (true);
+
 }
 
 /*
