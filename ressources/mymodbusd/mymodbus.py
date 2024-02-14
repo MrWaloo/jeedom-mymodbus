@@ -441,7 +441,7 @@ class PyModbusClient():
         await self.client.connect()
       ret = True
     except Exception as e:
-      logging.error('PyModbusClient: *' + self.eqConfig['name'] + '* Something went wrong while connecting to equipment id ' + self.eqConfig['id'] + ': ' + repr(e) + ' - ' + e.string)
+      logging.error('PyModbusClient: *' + self.eqConfig['name'] + '* Something went wrong while connecting to equipment id ' + self.eqConfig['id'] + ': ' + type(e).__name__ + ' -- ' + repr(e) + ' - ' + str(e))
       ret = False
     delay = float(self.eqConfig['eqFirstDelay'])
     await asyncio.sleep(delay)
@@ -454,7 +454,7 @@ class PyModbusClient():
     try:
       await self.client.close()
     except Exception as e:
-      logging.error('PyModbusClient: *' + self.eqConfig['name'] + '* Something went wrong while closing connection to equipment id ' + self.eqConfig['id'] + ': ' + repr(e) + ' - ' + e.string)
+      logging.error('PyModbusClient: *' + self.eqConfig['name'] + '* Something went wrong while closing connection to equipment id ' + self.eqConfig['id'] + ': ' + type(e).__name__ + ' -- ' + repr(e) + ' - ' + str(e))
     return False
     
   async def read_all(self):
@@ -808,7 +808,7 @@ class PyModbusClient():
               logging.warning('PyModbusClient: *' + self.eqConfig['name'] + '* Cannot write ' + request['name'] + ' (command id ' + write_cmd['cmdId'] + '), the registers aren\'t consecutive.')
           
         except Exception as e:
-          logging.error('PyModbusClient: *' + self.eqConfig['name'] + '* Something went wrong while building the write request for ' + request['name'] + ' (command id ' + write_cmd['cmdId'] + '): ' + repr(e))
+          logging.error('PyModbusClient: *' + self.eqConfig['name'] + '* Something went wrong while building the write request for ' + request['name'] + ' (command id ' + write_cmd['cmdId'] + '): ' + type(e).__name__ + ' -- ' + repr(e) + ' - ' + str(e))
           
         else:
           # build registers
