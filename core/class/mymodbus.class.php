@@ -782,7 +782,7 @@ class mymodbusCmd extends cmd {
     $confOK = $this->getCmdConfiguration();
     $conf = $this->getConfiguration();
     foreach ($conf as $key => $value) {
-      if (substr($key, 0, 3) == 'cmd' && !in_array($key, array_keys($confOK)) && substr($key, 0, 13) !== 'cmdSourceBlob' && $key !== 'cmdOption' || 
+      if (substr($key, 0, 3) == 'cmd' && !in_array($key, array_keys($confOK)) && substr($key, 0, 13) !== 'cmdSourceBlob' && $key !== 'cmdOption' && $key !== 'cmdWriteValue' ||
           substr($key, 0, 13) === 'cmdSourceBlob' && $conf['cmdFctModbus'] != 'fromBlob' ||
           $conf['cmdFctModbus'] == 'fromBlob' && $this->getSubType() == 'binary' && $key === 'cmdSourceBlobNum' ||
           $conf['cmdFctModbus'] == 'fromBlob' && $this->getSubType() !== 'binary' && $key === 'cmdSourceBlobBin' ||
