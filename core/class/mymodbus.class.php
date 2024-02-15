@@ -634,7 +634,6 @@ class mymodbus extends eqLogic {
       $eqConfig['eqSerialBytesize'] = $this->getConfiguration('eqSerialBytesize');
       $eqConfig['eqSerialParity'] = $this->getConfiguration('eqSerialParity');
       $eqConfig['eqSerialStopbits'] = $this->getConfiguration('eqSerialStopbits');
-      $eqConfig['eqSerialBiMaster'] = $this->getConfiguration('eqSerialBiMaster');
       
     } elseif ($eqConfig['eqProtocol'] == 'tcp') {
       $eqConfig['eqTcpAddr'] = $this->getConfiguration('eqTcpAddr');

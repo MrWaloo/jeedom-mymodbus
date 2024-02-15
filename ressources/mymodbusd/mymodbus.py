@@ -54,8 +54,6 @@ bar = PyModbusClient(config[1])
 
 # -----------------------------------------------------------------------------
 
-MAX_RETRY = 60
-
 class PyModbusClient():
   def __init__(self, config, jcom=None, log_level='debug'):
     """ For pymodbus client
@@ -368,7 +366,7 @@ class PyModbusClient():
       
       # Polling time
       elapsed_time = time.time() - t_begin
-      if elapsed_time >= self.polling and not (self.eqConfig['eqProtocol'] == 'serial' and self.eqConfig['eqSerialBiMaster'] == '1'):
+      if elapsed_time >= self.polling:
         self.polling = (elapsed_time // self.polling_config + 1) * self.polling_config
         logging.warning('PyModbusClient: *' + self.eqConfig['name'] + '* -------------------------------- the polling time is too short, setting it to ' + str(self.polling) + ' s.')
       while self.polling - elapsed_time > 0 and not self.should_stop.is_set():
@@ -448,8 +446,6 @@ class PyModbusClient():
     return ret
     
   async def disconnect(self):
-    if self.eqConfig['eqProtocol'] == 'serial' and self.eqConfig['eqSerialBiMaster'] == '1':
-      return self.connected
     logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* disconnect called')
     try:
       await self.client.close()
@@ -463,8 +459,6 @@ class PyModbusClient():
     read_results = {}
     self.cycle += 1
     
-    eqSerialBiMaster = self.eqConfig['eqProtocol'] == 'serial' and self.eqConfig['eqSerialBiMaster'] == '1'
-    
     for cmd_id, request in self.requests.items():
       # Only read requests in the loop
       if request['type'] == 'action':
@@ -475,7 +469,6 @@ class PyModbusClient():
         continue
       
       request_ok = False
-      retry = 0
       value = None
       exception = None
       
@@ -485,43 +478,18 @@ class PyModbusClient():
         if request['data_type'] == 'blob':
           count = int(request['count'])
         
-        while not request_ok and retry < MAX_RETRY and not self.should_stop.is_set():
-          if eqSerialBiMaster:
-            logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* --eqSerialBiMaster-- read in while loop (command id ' + cmd_id + ') / retry = ' + str(retry))
-            if not self.queue.empty():
-              self.check_queue()
-            if not self.connected or not self.client.connected:
-              self.connected = await self.connect()
+        try:
+          if request['fct_modbus'] == '1':
+            response = await self.client.read_coils(address=request['addr'], count=count, slave=request['slave'])
+          elif request['fct_modbus'] == '2':
+            response = await self.client.read_discrete_inputs(address=request['addr'], count=count, slave=request['slave'])
           
-          try:
-            if request['fct_modbus'] == '1':
-              response = await self.client.read_coils(address=request['addr'], count=count, slave=request['slave'])
-            elif request['fct_modbus'] == '2':
-              response = await self.client.read_discrete_inputs(address=request['addr'], count=count, slave=request['slave'])
-            
-            request_ok = PyModbusClient.check_response(response, self.eqConfig['name'])
-          
-          except Exception as e:
-            request_ok = False
-            exception = e
-            self.connected = False
-          
-          if eqSerialBiMaster:
-            if not request_ok:
-              retry += 1
-              if retry % 10 == 0:
-                self.connected = await self.disconnect()
-                await asyncio.sleep(5)
-              await asyncio.sleep(1)
-          else:
-            break
-          
-        if eqSerialBiMaster:
-          logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* --eqSerialBiMaster-- read exit while loop after ' + str(retry) + ' tries. request_ok = ' + str(request_ok) + ' - ' + request['name'] + ' (command id ' + cmd_id + ')')
-          if retry == MAX_RETRY:
-            logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* --eqSerialBiMaster-- too many tries -> restarting daemon...')
-            self.should_stop.set()
-            break
+          request_ok = PyModbusClient.check_response(response, self.eqConfig['name'])
+        
+        except Exception as e:
+          request_ok = False
+          exception = e
+          self.connected = False
         
         if request_ok:
           value = response.bits[0]
@@ -541,47 +509,20 @@ class PyModbusClient():
       # Read holding registers (code 0x03) || Read input registers (code 0x04)
       elif request['fct_modbus'] in ('3', '4'):
         normal_number, count, sp_sf = PyModbusClient.request_info(request)
-        if eqSerialBiMaster:
-          logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* --eqSerialBiMaster-- read before while loop (command id ' + cmd_id + ')')
         
-        while not request_ok and retry < MAX_RETRY and not self.should_stop.is_set():
-          if eqSerialBiMaster:
-            logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* --eqSerialBiMaster-- read in while loop (command id ' + cmd_id + ') / retry = ' + str(retry))
-            if not self.queue.empty():
-              self.check_queue()
-            if not self.connected or not self.client.connected:
-              self.connected = await self.connect()
+        try:
+          if request['fct_modbus'] == '3':
+            response = await self.client.read_holding_registers(address=request['addr'], count=count, slave=request['slave'])
+          elif request['fct_modbus'] == '4':
+            response = await self.client.read_input_registers(address=request['addr'], count=count, slave=request['slave'])
           
-          try:
-            if request['fct_modbus'] == '3':
-              response = await self.client.read_holding_registers(address=request['addr'], count=count, slave=request['slave'])
-            elif request['fct_modbus'] == '4':
-              response = await self.client.read_input_registers(address=request['addr'], count=count, slave=request['slave'])
-            
-            request_ok = PyModbusClient.check_response(response, self.eqConfig['name'])
-            
-          except Exception as e:
-            request_ok = False
-            exception = e
-            self.connected = False
+          request_ok = PyModbusClient.check_response(response, self.eqConfig['name'])
           
-          if eqSerialBiMaster:
-            if not request_ok:
-              retry += 1
-              if retry % 10 == 0:
-                self.connected = await self.disconnect()
-                await asyncio.sleep(5)
-              await asyncio.sleep(1)
-          else:
-            break
-          
-        if eqSerialBiMaster:
-          logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* --eqSerialBiMaster-- read exit while loop after ' + str(retry) + ' tries. request_ok = ' + str(request_ok) + ' - ' + request['name'] + ' (command id ' + cmd_id + ')')
-          if retry == MAX_RETRY:
-            logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* --eqSerialBiMaster-- too many tries -> restarting daemon...')
-            self.should_stop.set()
-            break
-          
+        except Exception as e:
+          request_ok = False
+          exception = e
+          self.connected = False
+        
         if request_ok:
           decoder = BinaryPayloadDecoder.fromRegisters(response.registers, request['byteorder'], request['wordorder'])
           
@@ -692,8 +633,6 @@ class PyModbusClient():
     re_pause = re.compile(r"(.*)\s*?pause\s*?(\d+([\.\,]\d+)?)\s*?$", re.IGNORECASE)
     write_connected = connected
     
-    eqSerialBiMaster = self.eqConfig['eqProtocol'] == 'serial' and self.eqConfig['eqSerialBiMaster'] == '1'
-    
     if connect or not write_connected or not self.client.connected:
       logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* connect to execute write commands')
       write_connected = await self.connect()
@@ -718,7 +657,6 @@ class PyModbusClient():
         value_to_write = write_cmd['cmdWriteValue']
       
       request_ok = False
-      retry = 0
       exception = None
       
       # Write single coil (code 0x05) || Write coils (code 0x0F)
@@ -728,43 +666,18 @@ class PyModbusClient():
         if request['data_type'] == 'bin-inv':
           value = not value
         
-        while not request_ok and retry < MAX_RETRY and not self.should_stop.is_set():
-          if eqSerialBiMaster:
-            logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* --eqSerialBiMaster-- write in while loop (command id ' + write_cmd['cmdId'] + ') / retry = ' + str(retry))
-            if not self.queue.empty():
-              self.check_queue()
-            if not write_connected or not self.client.connected:
-              write_connected = await self.connect()
+        try:
+          if request['fct_modbus'] == '5':
+            response = await self.client.write_coil(address=request['addr'], value=value, slave=request['slave'])
+          elif request['fct_modbus'] == '15':
+            response = await self.client.write_coils(address=request['addr'], values=[value], slave=request['slave'])
           
-          try:
-            if request['fct_modbus'] == '5':
-              response = await self.client.write_coil(address=request['addr'], value=value, slave=request['slave'])
-            elif request['fct_modbus'] == '15':
-              response = await self.client.write_coils(address=request['addr'], values=[value], slave=request['slave'])
-            
-            request_ok = PyModbusClient.check_response(response, self.eqConfig['name'])
-          
-          except Exception as e:
-            request_ok = False
-            exception = e
-            write_connected = False
-          
-          if eqSerialBiMaster:
-            if not request_ok:
-              retry += 1
-              if retry % 10 == 0:
-                self.connected = await self.disconnect()
-                await asyncio.sleep(5)
-              await asyncio.sleep(1)
-          else:
-            break
-          
-        if eqSerialBiMaster:
-          logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* --eqSerialBiMaster-- write exit while loop after ' + str(retry) + ' tries. request_ok = ' + str(request_ok) + ' - ' + request['name'] + ' (command id ' + write_cmd['cmdId'] + ')')
-          if retry == MAX_RETRY:
-            logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* --eqSerialBiMaster-- too many tries -> restarting daemon...')
-            self.should_stop.set()
-            break
+          request_ok = PyModbusClient.check_response(response, self.eqConfig['name'])
+        
+        except Exception as e:
+          request_ok = False
+          exception = e
+          write_connected = False
           
         if not request_ok:
           error_log = 'PyModbusClient: *' + self.eqConfig['name'] + '* Something went wrong while writing ' + request['name'] + ' (command id ' + write_cmd['cmdId'] + ')'
@@ -814,43 +727,18 @@ class PyModbusClient():
           # build registers
           registers = builder.to_registers()
           if len(registers):
-            while not request_ok and retry < MAX_RETRY and not self.should_stop.is_set():
-              if eqSerialBiMaster:
-                logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* --eqSerialBiMaster-- write in while loop (command id ' + write_cmd['cmdId'] + ') / retry = ' + str(retry))
-                if not self.queue.empty():
-                  self.check_queue()
-                if not write_connected or not self.client.connected:
-                  write_connected = await self.connect()
+            try:
+              if request['fct_modbus'] == '6':
+                response = await self.client.write_register(address=request['addr'], value=registers[0], slave=request['slave'])
+              elif request['fct_modbus'] == '16':
+                response = await self.client.write_registers(address=request['addr'], values=registers, slave=request['slave'])
               
-              try:
-                if request['fct_modbus'] == '6':
-                  response = await self.client.write_register(address=request['addr'], value=registers[0], slave=request['slave'])
-                elif request['fct_modbus'] == '16':
-                  response = await self.client.write_registers(address=request['addr'], values=registers, slave=request['slave'])
-                
-                request_ok = PyModbusClient.check_response(response, self.eqConfig['name'])
-              
-              except Exception as e:
-                request_ok = False
-                exception = e
-                write_connected = False
+              request_ok = PyModbusClient.check_response(response, self.eqConfig['name'])
             
-              if eqSerialBiMaster:
-                if not request_ok:
-                  retry += 1
-                  if retry % 10 == 0:
-                    self.connected = await self.disconnect()
-                    await asyncio.sleep(5)
-                  await asyncio.sleep(1)
-              else:
-                break
-              
-            if eqSerialBiMaster:
-              logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* --eqSerialBiMaster-- write exit while loop after ' + str(retry) + ' tries. request_ok = ' + str(request_ok) + ' - ' + request['name'] + ' (command id ' + write_cmd['cmdId'] + ')')
-              if retry == MAX_RETRY:
-                logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* --eqSerialBiMaster-- too many tries -> restarting daemon...')
-                self.should_stop.set()
-                break
+            except Exception as e:
+              request_ok = False
+              exception = e
+              write_connected = False
               
             if not request_ok:
               error_log = 'PyModbusClient: *' + self.eqConfig['name'] + '* Something went wrong while writing ' + request['name'] + ' (command id ' + write_cmd['cmdId'] + ')'
