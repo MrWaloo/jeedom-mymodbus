@@ -752,9 +752,9 @@ class mymodbusCmd extends cmd {
         $value = trim(str_replace('#color#', $_option['color'], $value));
       }elseif ($this->getSubtype() == 'select') {
         $value = trim(str_replace('#select#', $_option['select'], $value));
-      } 
+      }
       $command['cmdWriteValue'] = jeedom::evaluateExpression($value);
-      if ($command['cmdWriteValue'] == '')
+      if ($command['cmdWriteValue'] === '')
         throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La valeur à écrire est vide. L\'écriture est ignorée.', __FILE__));
 
       $command['cmdId'] = $this->getId();
