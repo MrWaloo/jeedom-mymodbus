@@ -58,14 +58,14 @@ if (!isConnect()) {
 
 <script>
   $('#bt_RemovePyenv').on('click', function() { // bouton sauvegarde des modifs mode de log
-    bootbox.confirm('{{Êtes-vous sûr de vouloir supprimer}} <b>' + $('#sel_backupJMqtt option:selected').text() + '</b>{{ ?}}', function(result) {
+    bootbox.confirm('{{Êtes-vous sûr de vouloir supprimer pyenv ?}}', function(result) {
       if (!result)
         return;
       $.ajax({// fonction permettant de faire de l'ajax
         type: "POST", // methode de transmission des données au fichier php
         url: "plugins/mymodbus/core/ajax/mymodbus.ajax.php", // url du fichier php
         data: {
-          action: "RemovePyenv",
+          action: "RemovePyenv"
         },
         dataType: 'json',
         error: function (request, status, error) {
