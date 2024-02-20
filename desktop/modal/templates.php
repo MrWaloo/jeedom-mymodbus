@@ -37,9 +37,7 @@ if (!isConnect('admin')) {
     <a class="btn btn-sm btn-danger" id="bt_MyModbusTemplateDelete"><i class="fas fa-times"></i> {{Supprimer}}</a>
     <br>
     <legend><i class="fas fa-tachometer-alt"></i> {{Aperçu de l'équipement}}</legend>
-    <div>
-      <div id='div_MyModbusTemplateEqlogic'></div>
-    </div>
+    <div id='div_MyModbusTemplateEqlogic'></div>
     <br>
     <legend><i class="fas fa-list-alt"></i> {{Aperçu des commandes}}</legend>
     <table id="table_MyModbusTemplateCmds" class="table tree table-bordered table-condensed table-striped">
@@ -61,7 +59,9 @@ if (!isConnect('admin')) {
 </div>
 
 <script>
-// TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+$('#div_MyModbusTemplateEqlogic').load('index.php?v=d&plugin=mymodbus&modal=eqConfig&template=1');
+
 $('#bt_MyModbusTemplateUp').fileupload({
   dataType: 'json',
   replaceFileInput: false,
@@ -118,8 +118,9 @@ $('#ul_MyModbusTemplateList').on('click', '.li_mymodbusTemplate', function(event
     success: function (data) {
       // Configuration de l'équipement
       $('#div_MyModbusTemplate').show();
-      $('#div_MyModbusTemplateEqlogic').load('index.php?v=d&plugin=mymodbus&modal=eqConfig&template=1', function () {
-        $('#div_MyModbusTemplateEqlogic').setValues(data, '.eqLogicAttr');
+      $('#div_protocolTmplParameters').load('index.php?v=d&plugin=mymodbus&modal=eqConfig_' + data.configuration.eqProtocol, function () {
+        console.log('paramètres :', $('#div_protocolTmplParameters').html());
+        $('#div_MyModbusTemplate').setValues(data, '.eqLogicAttr');
       });
 
       // Configuration des commandes

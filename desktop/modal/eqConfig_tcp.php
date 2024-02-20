@@ -18,6 +18,11 @@
 if (!isConnect('admin')) {
   throw new Exception('{{401 - Accès non autorisé}}');
 }
+
+$disabled = '';
+if (init('template') !== '') {
+  $disabled = ' disabled';
+}
 ?>
 <!-- 
 <div class="form-group">
@@ -30,20 +35,20 @@ if (!isConnect('admin')) {
 <div class="form-group">
   <label class="col-sm-4 control-label">{{Adresse IP}}</label>
   <div class="col-sm-6">
-    <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqTcpAddr" placeholder="{{192.168.1.55}}"/>
+    <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqTcpAddr" placeholder="{{192.168.1.55}}<?= $disabled ?>"/>
   </div>
 </div>
 
 <div class="form-group">
   <label class="col-sm-4 control-label">{{Port}}</label>
   <div class="col-sm-6">
-    <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqTcpPort" placeholder="{{502}}"/>
+    <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqTcpPort" placeholder="{{502}}"<?= $disabled ?>/>
   </div>
 </div>
 
 <div class="form-group">
   <label class="col-sm-4 control-label"></label>
   <div class="col-sm-6">
-    <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="configuration" data-l2key="eqTcpRtu"/>{{RTU sur TCP}}</label>
+    <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="configuration" data-l2key="eqTcpRtu"<?= $disabled ?>/>{{RTU sur TCP}}</label>
   </div>
 </div>

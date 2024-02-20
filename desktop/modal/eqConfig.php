@@ -128,10 +128,18 @@ if (init('template') !== '') {
       <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqFirstDelay" placeholder="0"<?= $disabled ?>/>
     </div>
   </div>
-  
   <!-- Paramètres propres au protocol "desktop/modal/eqConfig_*.php" -->
+  <?php
+  if (init('template') === '') {
+  ?>
   <div id="div_protocolParameters"></div>
-  
+  <?php
+  } else {
+  ?>
+  <div id="div_protocolTmplParameters"></div>
+  <?php
+  }
+  ?>
 </div>
 
 <div class="<?= $colSmClass ?>">
