@@ -18,6 +18,11 @@
 if (!isConnect('admin')) {
   throw new Exception('{{401 - Accès non autorisé}}');
 }
+
+$disabled = '';
+if (init('template') !== '') {
+  $disabled = ' disabled';
+}
 ?>
 <!-- 
 <div class="form-group">
@@ -30,7 +35,7 @@ if (!isConnect('admin')) {
 <div class="form-group">
   <label class="col-sm-4 control-label">{{Interface}}</label>
   <div class="col-sm-6">
-    <select class="eqLogicAttr form-control" data-toggle="tooltip" data-placement="top" data-html="true" data-l1key="configuration" data-l2key="eqSerialInterface">
+    <select class="eqLogicAttr form-control" data-toggle="tooltip" data-placement="top" data-html="true" data-l1key="configuration" data-l2key="eqSerialInterface"<?= $disabled ?>>
       <?php
       foreach (mymodbus::getTtyInterfaces() as $key => $value) {
         echo '<option title="' . $value . '" value="' . $value . '">' . $key . '</option>';
@@ -43,7 +48,7 @@ if (!isConnect('admin')) {
 <div class="form-group">
   <label class="col-sm-4 control-label">{{Méthode de transport}}</label>
   <div class="col-sm-6">
-    <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqSerialMethod">
+    <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqSerialMethod"<?= $disabled ?>>
       <option value="rtu">{{RTU}}</option>
       <option value="ascii">{{ASCII}}</option>
       <option value="binary">{{Binaire}}</option>
@@ -54,7 +59,7 @@ if (!isConnect('admin')) {
 <div class="form-group">
   <label class="col-sm-4 control-label">{{Vitesse de transmission}}</label>
   <div class="col-sm-6">
-    <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqSerialBaudrate">
+    <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqSerialBaudrate"<?= $disabled ?>>
       <option disabled selected value>-- {{Selectionnez une valeur}} --</option>
       <option value="300">300</option>
       <option value="600">600</option>
@@ -78,7 +83,7 @@ if (!isConnect('admin')) {
 <div class="form-group">
   <label class="col-sm-4 control-label">{{Nombre de bit par octet}}</label>
   <div class="col-sm-6">
-    <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqSerialBytesize">
+    <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqSerialBytesize"<?= $disabled ?>>
       <option disabled selected value>-- {{Selectionnez une valeur}} --</option>
       <option value="7">7</option>
       <option value="8">8</option>
@@ -89,7 +94,7 @@ if (!isConnect('admin')) {
 <div class="form-group">
   <label class="col-sm-4 control-label">{{Parité}}</label>
   <div class="col-sm-6">
-    <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqSerialParity">
+    <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqSerialParity"<?= $disabled ?>>
       <option disabled selected value>-- {{Selectionnez une valeur}} --</option>
       <option value="E">{{Paire}}</option>
       <option value="O">{{Impaire}}</option>
@@ -101,7 +106,7 @@ if (!isConnect('admin')) {
 <div class="form-group">
   <label class="col-sm-4 control-label">{{Bits de stop}}</label>
   <div class="col-sm-6">
-    <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqSerialStopbits">
+    <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqSerialStopbits"<?= $disabled ?>>
       <option disabled selected value>-- {{Selectionnez une valeur}} --</option>
       <option value="0">0</option>
       <option value="1">1</option>
