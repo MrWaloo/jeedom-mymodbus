@@ -669,6 +669,7 @@ class mymodbus extends eqLogic {
   
   public static function getDeamonLaunchable() {
     // Si 2 équipements utilisent la même connexion -> nok (workaround provisoire)
+    $eqConfig = $this->getEqConfiguration();
     if ($eqConfig != '') {
       $serialIntf = array();
       foreach ($eqConfig as $config) {
