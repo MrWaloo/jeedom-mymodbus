@@ -35,12 +35,14 @@ function install_pyenv() {
   $update->doUpdate();
   $plugin = plugin::byId($pluginId);
   if (!is_object($plugin)) {
-    log::add('mymodbus', 'error', sprintf(__("** Installation ** : plugin non trouvé : %s", __FILE__), $pluginId));
+    log::add($myModbusId, 'error', sprintf(__("** Installation ** : plugin non trouvé : %s", __FILE__), $pluginId));
     die();
   }
   $plugin->setIsEnable(1);
   $plugin->dependancy_install();
-  log::add('mymodbus', 'info', sprintf(__("** Installation ** : installation terminée : %s", __FILE__), $pluginId));
+  log::add($myModbusId, 'info', sprintf(__("** Installation ** : installation terminée : %s", __FILE__), $pluginId));
+
+  mymodbus::init_pyenv();
 }
 
 function mymodbus_update() {
