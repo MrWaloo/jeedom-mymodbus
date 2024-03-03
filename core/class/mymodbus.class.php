@@ -35,8 +35,6 @@ class mymodbus extends eqLogic {
   public static $_encryptConfigKey = array('param1', 'param2');
   */
 
-  public static $_version = '2.0';
-
   /*   * ***********************Methode static*************************** */
   
    /*
@@ -96,6 +94,10 @@ class mymodbus extends eqLogic {
       throw new Exception(__('Le plugin Mymodbus n\'est pas actif.', __FILE__));
     
     $eqConfig = self::getCompleteConfiguration();
+
+    $virtualenv = self::init_pyenv();
+    if (is_null($virtualenv))
+      throw new Exception(__('L\'environnement pyenv n\'a pas pu être installé', __FILE__));
     
     // Pas de démarrage si ce n'est pas possible
     if (self::getDeamonLaunchable() != 'ok') {
@@ -114,15 +116,12 @@ class mymodbus extends eqLogic {
     log::add('mymodbus', 'debug', 'deamon_start callbackURL *' . $daemonCallback . '*');
     log::add('mymodbus', 'debug', 'deamon_start config *' . $jsonEqConfig . '*');
     
-    $request = ' --socketport ' . $socketPort . ' --loglevel ' . $daemonLoglevel . ' --apikey ' . $daemonApikey . ' --callback ' . $daemonCallback . ' --json ' . $jsonEqConfig;
+    $args = '--socketport ' . $socketPort . ' --loglevel ' . $daemonLoglevel . ' --apikey ' . $daemonApikey . ' --callback ' . $daemonCallback . ' --json ' . $jsonEqConfig;
     
-    $mymodbus_path = realpath(__DIR__ . '/../../ressources/mymodbusd');
-    $pyenv_path = realpath(__DIR__ . '/../../ressources/_pyenv');
-    $cmd = 'export PYENV_ROOT="' . $pyenv_path . '"; command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"; eval "$(pyenv init -)"; ';
-    $cmd .= 'cd ' . $mymodbus_path . '; ';
-    $cmd .= 'nice -n 19 python3 mymodbusd.py' . $request;
-    log::add('mymodbus', 'info', 'Lancement du démon mymodbus : ' . $cmd);     
-    $result = exec($cmd . ' >> ' . log::getPathToLog('mymodbus') . ' 2>&1 &');
+    $script = realpath(__DIR__ . '/../../ressources/mymodbusd/mymodbusd.py');
+
+    log::add('mymodbus', 'info', 'Lancement du démon mymodbus : ' . $script);
+    $result = pyenv::runPyenv($script, $args, $virtualenv, true);
     
     if (strpos(strtolower($result), 'error') !== false || strpos(strtolower($result), 'traceback') !== false) {
       log::add('mymodbus', 'error', $result);
@@ -173,6 +172,56 @@ class mymodbus extends eqLogic {
     $message['CMD'] = 'newDaemonConfig';
     $message['config'] = self::getCompleteConfiguration();
     self::sendToDaemon($message);
+  }
+
+  public static function init_pyenv() {
+    $requirements = array('requests', 'pyserial', 'pyudev', 'pymodbus==3.2.2');
+    try {
+      pyenv::createVirtualenv(__CLASS__, mymodbusConst::PYENV_PYTHON, implode("\n", $requirements), mymodbusConst::PYENV_SUFFIX);
+    } catch (Exception $e) {
+      // Déjà installé
+    }
+    
+    try {
+      $virtualenvs = pyenv::getVirtualenvNames(__CLASS__, mymodbusConst::PYENV_PYTHON, mymodbusConst::PYENV_SUFFIX);
+    } catch (Exception $e) {
+      throw new Exception(__('Impossible de lister les virtualenv du plugin pyenv4Jeedom', __FILE__));
+    }
+
+    $ret = null;
+
+    foreach ($virtualenvs as $virtualenv) {
+      if ($virtualenv['suffix'] !== mymodbusConst::PYENV_SUFFIX || $virtualenv['python'] !== mymodbusConst::PYENV_PYTHON) {
+        try {
+          pyenv::deleteVirtualenv(__CLASS__, $virtualenv['suffix']);
+        } catch (Exception $e) {
+          throw new Exception(sprintf(__("Impossible de supprimer le virtualenv avec le suffixe '%s' du plugin pyenv4Jeedom", __FILE__), $virtualenv['suffix']));
+        }
+      } else {
+        $ret = $virtualenv['fullname'];
+      }
+    }
+    return $ret;
+  }
+
+  public static function check_pyenv() {
+    if (self::getDeamonState() === 'ok')
+      return true;
+
+    try {
+      $virtualenvs = pyenv::getVirtualenvNames(__CLASS__, mymodbusConst::PYENV_PYTHON, mymodbusConst::PYENV_SUFFIX);
+
+    } catch (Exception $e) {
+      throw new Exception(__('Impossible de lister les virtualenv du plugin pyenv4Jeedom', __FILE__));
+    }
+
+    if (count($virtualenvs) === 1) {
+      foreach ($virtualenvs as $virtualenv) {
+        if ($virtualenv['suffix'] === mymodbusConst::PYENV_SUFFIX && $virtualenv['python'] === mymodbusConst::PYENV_PYTHON)
+          return true;
+      }
+    }
+    return false;
   }
   
   // Supported protocols are in desktop/modal/eqConfig_[protocol].php
@@ -612,7 +661,7 @@ class mymodbus extends eqLogic {
       
       $completeConfig[] = $eqMymodbus->getEqConfiguration();
     }
-    log::add(__CLASS__, 'debug', 'eqLogic mymodbus getCompleteConfiguration: ' . json_encode($completeConfig));
+    //log::add(__CLASS__, 'debug', 'eqLogic mymodbus getCompleteConfiguration: ' . json_encode($completeConfig));
     return $completeConfig;
   }
   
@@ -669,18 +718,20 @@ class mymodbus extends eqLogic {
   
   public static function getDeamonLaunchable() {
     // Si 2 équipements utilisent la même connexion -> nok (workaround provisoire)
-    if ($eqConfig != '') {
-      $serialIntf = array();
-      foreach ($eqConfig as $config) {
-        if ($config['eqProtocol'] == 'serial') {
-          $intf = $config['eqSerialInterface'];
-          if (in_array($intf, $serialIntf))
-            return 'nok';
-          $serialIntf[] = $intf;
-        } 
-      }
+    $eqConfigs = self::getCompleteConfiguration();
+    $serialIntf = array();
+    foreach ($eqConfig as $config) {
+      if ($config['eqProtocol'] == 'serial') {
+        $intf = $config['eqSerialInterface'];
+        if (in_array($intf, $serialIntf))
+          return 'nok';
+        $serialIntf[] = $intf;
+      } 
     }
     
+    if (!self::check_pyenv())
+      self::init_pyenv();
+
     foreach (self::byType('mymodbus') as $eqMymodbus) { // boucle sur les équipements
       if ($eqMymodbus->getIsEnable()) {
         foreach ($eqMymodbus->getCmd('info') as $cmd) {

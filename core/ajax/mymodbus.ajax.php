@@ -40,13 +40,6 @@ try {
         ajax::success(mymodbus::changeLogLevel($log_level));
     }
   }
-
-  /* ---------------------------
-  * RemovePyenv
-  */
-  if (init('action') == 'RemovePyenv') {
-    ajax::success(rrmdir(realpath(dirname(__FILE__) . '/../../ressources/_pyenv')));
-  }
   
   /* ---------------------------
   * getTemplateList
