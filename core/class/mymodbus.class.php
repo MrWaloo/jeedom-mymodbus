@@ -92,18 +92,25 @@ class mymodbus extends eqLogic {
     
     if (!plugin::byId('mymodbus')->isActive())
       throw new Exception(__('Le plugin Mymodbus n\'est pas actif.', __FILE__));
-    
-    $eqConfig = self::getCompleteConfiguration();
 
     $virtualenv = self::init_pyenv();
     if (is_null($virtualenv))
       throw new Exception(__('L\'environnement pyenv n\'a pas pu être installé', __FILE__));
     
+    $eqPyenv = pyenv::byLogicalId('pyenv', 'pyenv');
+    if (!is_object($eqPyenv))
+      throw new Exception(__('pyenv4Jeedom n\'a pas été initialisé correctement', __FILE__));
+    
+    if ($eqPyenv->getConfiguration(pyenv::LOCK, 'false') !== 'false')
+      throw new Exception(__('Une commande pyenv bloquante est en cours d\'exécution', __FILE__));
+
     // Pas de démarrage si ce n'est pas possible
     if (self::getDeamonLaunchable() != 'ok') {
       log::add('mymodbus', 'error', __('Démarrage du démon impossible, veuillez vérifier la configuration de MyModbus', __FILE__));
       return true;
     }
+    
+    $eqConfig = self::getCompleteConfiguration();
     
     $socketPort = is_numeric(config::byKey('socketport', __CLASS__, mymodbusConst::DEFAULT_SOCKET_PORT, True)) ? config::byKey('socketport', __CLASS__, mymodbusConst::DEFAULT_SOCKET_PORT) : mymodbusConst::DEFAULT_SOCKET_PORT;
     $daemonLoglevel = escapeshellarg(log::convertLogLevel(log::getLogLevel(__CLASS__)));
