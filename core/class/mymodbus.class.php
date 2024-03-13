@@ -78,41 +78,44 @@ class mymodbus extends eqLogic {
    */
 
   public static function deamon_info() {
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     $daemon_info = array();
     $daemon_info['state'] = self::getDeamonState();
     $daemon_info['launchable'] = self::getDeamonLaunchable();
-    
-    log::add('mymodbus', 'debug', 'deamon_info = ' . json_encode($daemon_info));
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . sprintf(" * daemon_info = '%s'", json_encode($daemon_info)));
     return $daemon_info;
   }
   
   public static function deamon_start() {
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     // Always stop first.
     self::deamon_stop();
     
-    if (!plugin::byId('mymodbus')->isActive())
-      throw new Exception(__('Le plugin Mymodbus n\'est pas actif.', __FILE__));
+    if (!plugin::byId('mymodbus')->isActive()) {
+      log::add(__CLASS__, 'error', __('Le plugin Mymodbus n\'est pas actif.', __FILE__));
+      return;
+    }
   
     $virtualenv = self::init_pyenv();
     if (is_null($virtualenv)) {
-      log::add('mymodbus', 'error', __('L\'environnement pyenv n\'a pas pu être installé, vérifiez la page de pyenv4Jeedom', __FILE__));
+      log::add(__CLASS__, 'error', __('L\'environnement pyenv n\'a pas pu être installé, vérifiez la page de pyenv4Jeedom', __FILE__));
       return;
     }
     
     $eqPyenv = pyenv::byLogicalId('pyenv', 'pyenv');
     if (!is_object($eqPyenv)) {
-      log::add('mymodbus', 'error', __('pyenv4Jeedom n\'a pas été initialisé correctement', __FILE__));
+      log::add(__CLASS__, 'error', __('pyenv4Jeedom n\'a pas été initialisé correctement', __FILE__));
       return;
     }
     
     if ($eqPyenv->getConfiguration(pyenv::LOCK, 'false') !== 'false') {
-      log::add('mymodbus', 'error', __('Une commande pyenv bloquante est en cours d\'exécution', __FILE__));
+      log::add(__CLASS__, 'error', __('Une commande pyenv bloquante est en cours d\'exécution', __FILE__));
       return;
     }
 
     // Pas de démarrage si ce n'est pas possible
     if (self::getDeamonLaunchable() != 'ok') {
-      log::add('mymodbus', 'error', __('Démarrage du démon impossible, veuillez vérifier la configuration de MyModbus', __FILE__));
+      log::add(__CLASS__, 'error', __('Démarrage du démon impossible, veuillez vérifier la configuration de MyModbus', __FILE__));
       return true;
     }
     
@@ -124,42 +127,43 @@ class mymodbus extends eqLogic {
     $daemonCallback = escapeshellarg(self::getCallbackUrl());
     $jsonEqConfig = escapeshellarg(json_encode($eqConfig));
     
-    log::add('mymodbus', 'debug', 'deamon_start socketport *' . $socketPort . '*');
-    log::add('mymodbus', 'debug', 'deamon_start API-key *' . $daemonApikey . '*');
-    log::add('mymodbus', 'debug', 'deamon_start callbackURL *' . $daemonCallback . '*');
-    log::add('mymodbus', 'debug', 'deamon_start config *' . $jsonEqConfig . '*');
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * socketport *' . $socketPort . '*');
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * API-key *' . $daemonApikey . '*');
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * callbackURL *' . $daemonCallback . '*');
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * config *' . $jsonEqConfig . '*');
     
     $args = '--socketport ' . $socketPort . ' --loglevel ' . $daemonLoglevel . ' --apikey ' . $daemonApikey . ' --callback ' . $daemonCallback . ' --json ' . $jsonEqConfig;
     
     $script = realpath(__DIR__ . '/../../ressources/mymodbusd/mymodbusd.py');
 
-    log::add('mymodbus', 'info', 'Lancement du démon mymodbus : ' . $script);
+    log::add(__CLASS__, 'info', __CLASS__ . '::' . __FUNCTION__ . ' * Lancement du démon mymodbus : ' . $script);
     $result = pyenv::runPyenv($script, $args, $virtualenv, true);
     
     if (strpos(strtolower($result), 'error') !== false || strpos(strtolower($result), 'traceback') !== false) {
-      log::add('mymodbus', 'error', $result);
+      log::add(__CLASS__, 'error', $result);
       return false;
     }
   }
   
   public static function deamon_stop() {
-    log::add('mymodbus', 'info', 'deamon_stop: Début');
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     
     $deamon_state = self::getDeamonState();
-    log::add('mymodbus', 'debug', 'deamon_stop $deamon_state ' . $deamon_state);
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * $deamon_state ' . $deamon_state);
     if ($deamon_state == 'nok')
       return true;
     
-    log::add('mymodbus', 'info', 'deamon_stop: Arrêt du démon...');
+    log::add(__CLASS__, 'info', __CLASS__ . '::' . __FUNCTION__ . ' * Arrêt du démon...');
     $message = array();
     $message['CMD'] = 'quit';
     self::sendToDaemon($message);
     sleep(3);
     
-    log::add('mymodbus', 'info', 'deamon_stop: Démon arrêté');
+    log::add(__CLASS__, 'info', __CLASS__ . '::' . __FUNCTION__ . ' * Démon arrêté');
   }
   
   public static function sendToDaemon($params) {
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * params = ' . var_export($params, true));
     if (self::getDeamonState() != 'ok') {
       throw new Exception("Le démon n'est pas démarré");
     }
@@ -172,12 +176,13 @@ class mymodbus extends eqLogic {
     $socket_ok = socket_write($socket, $payLoad, strlen($payLoad));
     if (!$socket_ok) {
       $err = socket_last_error($socket);
-      log::add('mymodbus', 'error', 'sendToDaemon: socket_write ERROR: ' . socket_strerror($err));
+      log::add(__CLASS__, 'error', __CLASS__ . '::' . __FUNCTION__ . ' * socket_write ERROR: ' . socket_strerror($err));
     }
     socket_close($socket);
   }
 
   public function sendNewConfig() {
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     if (self::getDeamonState() != 'ok')
       return True;
     
@@ -188,6 +193,7 @@ class mymodbus extends eqLogic {
   }
 
   public static function init_pyenv() {
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     pyenv::init();
     $requirements = array('requests', 'pyserial', 'pyudev', 'pymodbus==3.2.2');
     try {
@@ -199,7 +205,7 @@ class mymodbus extends eqLogic {
     try {
       $virtualenvs = pyenv::getVirtualenvNames(__CLASS__, mymodbusConst::PYENV_PYTHON, mymodbusConst::PYENV_SUFFIX);
     } catch (Exception $e) {
-      log::add('mymodbus', 'error', __('Impossible de lister les virtualenv du plugin pyenv4Jeedom', __FILE__));
+      log::add(__CLASS__, 'error', __('Impossible de lister les virtualenv du plugin pyenv4Jeedom', __FILE__));
       return;
     }
 
@@ -210,7 +216,7 @@ class mymodbus extends eqLogic {
         try {
           pyenv::deleteVirtualenv(__CLASS__, $virtualenv['suffix']);
         } catch (Exception $e) {
-          log::add('mymodbus', 'error', sprintf(__("Impossible de supprimer le virtualenv avec le suffixe '%s' du plugin pyenv4Jeedom", __FILE__), $virtualenv['suffix']));
+          log::add(__CLASS__, 'error', sprintf(__("Impossible de supprimer le virtualenv avec le suffixe '%s' du plugin pyenv4Jeedom", __FILE__), $virtualenv['suffix']));
         }
       } else {
         $ret = $virtualenv['fullname'];
@@ -220,6 +226,7 @@ class mymodbus extends eqLogic {
   }
 
   public static function check_pyenv() {
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     if (self::getDeamonState() === 'ok')
       return true;
 
@@ -227,7 +234,7 @@ class mymodbus extends eqLogic {
       $virtualenvs = pyenv::getVirtualenvNames(__CLASS__, mymodbusConst::PYENV_PYTHON, mymodbusConst::PYENV_SUFFIX);
 
     } catch (Exception $e) {
-      log::add('mymodbus', 'error', __('Impossible de lister les virtualenv du plugin pyenv4Jeedom', __FILE__));
+      log::add(__CLASS__, 'error', __('Impossible de lister les virtualenv du plugin pyenv4Jeedom', __FILE__));
       return;
     }
 
@@ -242,6 +249,7 @@ class mymodbus extends eqLogic {
   
   // Supported protocols are in desktop/modal/eqConfig_[protocol].php
   public static function supportedProtocols() {
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     $protocols = array();
     foreach (glob(__DIR__ . '/../../desktop/modal/eqConfig_*.php') as $file) {
       $protocols[] = substr(basename($file), strlen('eqConfig_'), strlen('.php') * -1);
@@ -251,6 +259,7 @@ class mymodbus extends eqLogic {
   
   // tty interfaces
   public static function getTtyInterfaces() {
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     $interfaces = jeedom::getUsbMapping('', True);
     for ($i = 0; $i<10; $i++) {
       $tty = '/dev/ttyS' . strval($i);
@@ -275,6 +284,7 @@ class mymodbus extends eqLogic {
   }
   
   public static function changeLogLevel($level=null) {
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . sprintf(" * level = '%s'", $level));
     $message = array();
     $message['CMD'] = 'setLogLevel';
     $message['level'] = is_null($level) ? log::getLogLevel(__class__) : $level;
@@ -291,6 +301,7 @@ class mymodbus extends eqLogic {
   
   // Fonction copiée du plugin jMQTT
   public static function templateRead($_file) {
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . sprintf(" * file = '%s'", $_file));
     $content = file_get_contents($_file);
     $templateContent = json_decode($content, true);
     $templateKey = array_keys($templateContent)[0];
@@ -299,6 +310,7 @@ class mymodbus extends eqLogic {
 
   // Fonction inspirée du plugin jMQTT
   public static function templateList() {
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     // Get personal and official templates
     $perso = self::getTemplateList(mymodbusConst::PATH_TEMPLATES_PERSO, mymodbusConst::PREFIX_TEMPLATE_PERSO);
     $official = self::getTemplateList(mymodbusConst::PATH_TEMPLATES_MYMODBUS);
@@ -307,6 +319,7 @@ class mymodbus extends eqLogic {
 
   // Fonction inspirée du plugin jMQTT
   public static function getTemplateList($_patern, $_prefix = '') {
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . sprintf(" * patern = '%s', prefix = '%s'", $_patern, $_prefix));
     $return = array();
     foreach (glob(__DIR__ . '/../../' . $_patern . '*.json') as $file) {
       try {
@@ -314,7 +327,7 @@ class mymodbus extends eqLogic {
         [$templateKey, $templateValue] = self::templateRead($file);
         $return[] = array($_prefix . $templateKey, $file);
       } catch (Throwable $e) {
-        log::add('mymodbus', 'warning', sprintf(__("Erreur lors de la lecture du Template '%s'", __FILE__), $file));
+        log::add(__CLASS__, 'warning', sprintf(__("Erreur lors de la lecture du Template '%s'", __FILE__), $file));
       }
     }
     return $return;
@@ -322,6 +335,7 @@ class mymodbus extends eqLogic {
 
   // Fonction inspirée du plugin jMQTT
   public static function templateByName($_name) {
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . sprintf(" * name = '%s'", $_name));
     if (strpos($_name , mymodbusConst::PREFIX_TEMPLATE_PERSO) === 0) {
       // Get personal templates
       $name = substr($_name, strlen(mymodbusConst::PREFIX_TEMPLATE_PERSO));
@@ -340,12 +354,13 @@ class mymodbus extends eqLogic {
       } catch (Throwable $e) {
       }
     }
-    log::add('mymodbus', 'warning', sprintf(__("Erreur lors de la lecture du Template '%s'", __FILE__), $_name));
+    log::add(__CLASS__, 'warning', sprintf(__("Erreur lors de la lecture du Template '%s'", __FILE__), $_name));
     throw new Exception($log);
   }
 
   // Fonction inspirée du plugin jMQTT
-  public static function templateByFile($_filename = ''){
+  public static function templateByFile($_filename = '') {
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . sprintf(" * filename = '%s'", $_filename));
     $existing_files = self::templateList();
     $exists = false;
     foreach ($existing_files as list($n, $f))
@@ -369,6 +384,7 @@ class mymodbus extends eqLogic {
 
   // Fonction inspirée du plugin jMQTT
   public static function deleteTemplateByFile($_filename = null) {
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . sprintf(" * filename = '%s'", $_filename));
     if (!$_filename ||
         !file_exists($_filename) ||
         !is_file($_filename) ||
@@ -409,6 +425,7 @@ class mymodbus extends eqLogic {
   
   // Fonction inspirée du plugin jMQTT
   public static function saveTemplateToFile($_tName, $_template) {
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . sprintf(" * tName = '%s', template = '%s'", $_tName, $_template));
     // Cleanup template name
     $_tName = ucfirst(str_replace('  ', ' ', trim($_tName)));
     $_tName = preg_replace('/[^a-zA-Z0-9 ()_-]+/', '', $_tName);
@@ -434,6 +451,7 @@ class mymodbus extends eqLogic {
 
   // Fonction inspirée du plugin jMQTT
   public function applyATemplate($_template, $_keepCmd = true) {
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . sprintf(" * template = '%s', keepCmd = '%s'", $_template, $_keepCmd));
     // import template
     $this->import($_template, $_keepCmd);
     $this->save();
@@ -445,6 +463,7 @@ class mymodbus extends eqLogic {
   /*   * *********************Méthodes d'instance************************* */
   
   public function copy($_name) {
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . sprintf(" * name = '%s'", $_name));
 		$eqLogicCopy = clone $this;
 		$eqLogicCopy->setName($_name);
 		$eqLogicCopy->setId('');
@@ -487,12 +506,14 @@ class mymodbus extends eqLogic {
 
   // Fonction exécutée automatiquement après la suppression de l'équipement
   public function postRemove() {
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     self::sendNewConfig();
   }
   
   // Fonction exécutée automatiquement avant la sauvegarde de l'équipement (création ou mise à jour)
   // La levée d'une exception invalide la sauvegarde
   public function preSave() {
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     $configKeys = array_keys($this->getConfiguration());
     // Equipement non activé, pas de vérification
     if (!$this->getIsEnable())
@@ -580,7 +601,7 @@ class mymodbus extends eqLogic {
       $refreshCmdTest = $this->getCmd('action', 'refresh');
       $refreshTimeCmdTest = $this->getCmd('info', 'refresh time');
       if (!is_object($refreshTimeCmdTest)) {
-        log::add(__CLASS__, 'debug', $this->getHumanName() . ' ' . __('Création de commande : Temps de rafraîchissement', __FILE__));
+        log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('Création de commande : Temps de rafraîchissement', __FILE__));
         $refreshTimeCmd = (new mymodbusCmd)
           ->setLogicalId('refresh time')
           ->setEqLogic_id($this->getId())
@@ -592,7 +613,7 @@ class mymodbus extends eqLogic {
           ->save();
       }
       if (!is_object($refreshCmdTest)) {
-        log::add(__CLASS__, 'debug', $this->getHumanName() . ' ' . __('Création de commande : Rafraîchir', __FILE__));
+        log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('Création de commande : Rafraîchir', __FILE__));
         $refreshCmd = (new mymodbusCmd)
           ->setLogicalId('refresh')
           ->setEqLogic_id($this->getId())
@@ -638,7 +659,7 @@ class mymodbus extends eqLogic {
         $this->_changed = true;
       }
     }
-    //log::add('mymodbus', 'debug', 'Validation de la configuration pour l\'équipement *' . $this->getHumanName() . '* : OK');
+    //log::add(__CLASS__, 'debug', 'Validation de la configuration pour l\'équipement *' . $this->getHumanName() . '* : OK');
   }
 
    /*
@@ -647,6 +668,7 @@ class mymodbus extends eqLogic {
   */
   
   public function postAjax() {
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     self::sendNewConfig();
   }
 
@@ -669,6 +691,7 @@ class mymodbus extends eqLogic {
   
   // Retourne la configuration des équipements et de leurs commandes
   public static function getCompleteConfiguration() {
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     $completeConfig = array();
     foreach (self::byType('mymodbus') as $eqMymodbus) { // boucle sur les équipements
       // ne pas exporter la configuration si l'équipement n'est pas activé
@@ -683,6 +706,7 @@ class mymodbus extends eqLogic {
   
   // Retourne la configuration de l'équipement et de ses commandes
   public function getEqConfiguration() {
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     $eqConfig = array();
     $eqConfig['id'] = $this->getId();
     $eqConfig['name'] = $this->getName();
@@ -724,15 +748,16 @@ class mymodbus extends eqLogic {
     $pid_file = '/tmp/mymodbusd.pid';
     if (file_exists($pid_file)) {
       $pid = file_get_contents($pid_file);
-      //log::add('mymodbus', 'debug', 'getDeamonState $pid: ' . strval($pid));
+      //log::add(__CLASS__, 'debug', 'getDeamonState $pid: ' . strval($pid));
       $running_pid = exec("ps -eo pid,command | grep `cat $pid_file` | grep -v grep | awk '{print $1}'");
-      //log::add('mymodbus', 'debug', 'getDeamonState $running_pid: ' . strval($running_pid));
+      //log::add(__CLASS__, 'debug', 'getDeamonState $running_pid: ' . strval($running_pid));
       return (($running_pid != 0) && (intval($running_pid) == intval($pid)))? 'ok': 'nok';
     }
     return 'nok';
   }
   
   public static function getDeamonLaunchable() {
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     // Si 2 équipements utilisent la même connexion -> nok (workaround provisoire)
     $eqConfigs = self::getCompleteConfiguration();
     $serialIntf = array();
@@ -760,6 +785,7 @@ class mymodbus extends eqLogic {
   }
   
   public static function getCallbackUrl() {
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     $port = config::byKey('internalPort', 'core', 80);
     $comp = trim(config::byKey('internalComplement', 'core', ''), '/');
     if ($comp !== '') $comp .= '/';
@@ -787,8 +813,7 @@ class mymodbusCmd extends cmd {
    */
   
   public function execute($_option=array()) {
-    
-    log::add('mymodbus', 'debug', '**************** execute *****: ' . json_encode($_option));
+    log::add('mymodbus', 'debug', __CLASS__ . '::' . __FUNCTION__ . ' **************** execute *****: ' . json_encode($_option));
     
     if ($this->getType() != 'action')
       return;
@@ -845,6 +870,7 @@ class mymodbusCmd extends cmd {
   // Fonction exécutée automatiquement avant la sauvegarde de la commande (création ou mise à jour)
   // La levée d'une exception invalide la sauvegarde
   public function preSave() {
+    log::add('mymodbus', 'debug', __CLASS__ . '::' . __FUNCTION__);
     // Suppression de l'ancienne configuration
     foreach (array('type', 'datatype', 'location', 'request', 'parameters') as $attribut)
       if (isset($this->configuration[$attribut])) {
@@ -997,6 +1023,7 @@ class mymodbusCmd extends cmd {
   }
 
   public function getCmdConfiguration() {
+    //log::add('mymodbus', 'debug', __CLASS__ . '::' . __FUNCTION__);
     $return = array();
     $return['id'] = $this->getId();
     $return['name'] = $this->getName();
