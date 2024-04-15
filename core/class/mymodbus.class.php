@@ -139,6 +139,7 @@ class mymodbus extends eqLogic {
     log::add(__CLASS__, 'info', __CLASS__ . '::' . __FUNCTION__ . ' * Lancement du démon mymodbus : ' . $script);
     $result = pyenv::runPyenv($script, $args, $virtualenv, true);
     
+    $result = implode("\n", $result);
     if (strpos(strtolower($result), 'error') !== false || strpos(strtolower($result), 'traceback') !== false) {
       log::add(__CLASS__, 'error', $result);
       return false;
