@@ -593,15 +593,15 @@ class PyModbusClient():
             value = '<*ERROR*>'[:request['strlen']]
         
         if isinstance(value, float) and isnan(value):
-          logging.error('PyModbusClient: *' + self.eqConfig['name'] + '* read value for ' + request['name'] + ' (command id ' + cmd_id + '): NaN!')
+          logging.error('PyModbusClient: *' + self.eqConfig['name'] + '* read value for ' + request['name'] + ' (command id ' + str(cmd_id) + '): NaN!')
           
         elif request['repeat'] or value != request['last_value']:
           read_results[cmd_id] = value
           
           self.requests[cmd_id]['last_value'] = read_results[cmd_id]
-          logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* read value for ' + request['name'] + ' (command id ' + cmd_id + '): ' + str(read_results[cmd_id]))
+          logging.debug('PyModbusClient: *' + self.eqConfig['name'] + '* read value for ' + request['name'] + ' (command id ' + str(cmd_id) + '): ' + str(read_results[cmd_id]))
       else:
-        error_log = 'PyModbusClient: *' + self.eqConfig['name'] + '* Something went wrong while reading ' + request['name'] + ' (command id ' + cmd_id + ')'
+        error_log = 'PyModbusClient: *' + self.eqConfig['name'] + '* Something went wrong while reading ' + request['name'] + ' (command id ' + str(cmd_id) + ')'
         if exception:
           logging.error(error_log + f": {type(exception)}  = {exception}. Traceback: {exception.__traceback__}")
         else:
