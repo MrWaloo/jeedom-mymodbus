@@ -16,56 +16,70 @@
  * along with Jeedom. If not, see <http://www.gnu.org/licenses/>.
  */
 
-require_once dirname(__FILE__) . '/../../../core/php/core.inc.php';
+require_once __DIR__ . '/../../../core/php/core.inc.php';
 
-function install_pyenv() {
-  $myModbusId = 'mymodbus';
-  $myModbusUpdate = update::byLogicalId($myModbusId);
-  $myModbusVersion = $myModbusUpdate->getConfiguration('version');
-
-  $pluginId = 'pyenv';
-  $update = update::byLogicalId($pluginId);
-  if (!is_object($update)) {
-    $update = new update();
-    $update->setLogicalId($pluginId);
+function delete_unused_files() {
+  $dir = realpath(__DIR__ . '/..') . '/';
+  $files = [
+    'core/php/mymodbus.inc.php',
+    'desktop/images/adam_icon.png',
+    'desktop/images/crouzet_m3_icon.png',
+    'desktop/images/logo_icon.png',
+    'desktop/images/rtu_icon.png',
+    'desktop/images/rtuovertcp_icon.png',
+    'desktop/images/tcpip_icon.png',
+    'desktop/images/wago_icon.png',
+    'desktop/modal/adam.configuration.php',
+    'desktop/modal/crouzet_m3.configuration.php',
+    'desktop/modal/logo.configuration.php',
+    'desktop/modal/rtu.configuration.php',
+    'desktop/modal/rtuovertcp.configuration.php',
+    'desktop/modal/tcpip.configuration.php',
+    'desktop/modal/wago.configuration.php',
+    'desktop/modal/configuration.serial.php',
+    'desktop/modal/configuration.tcp.php',
+    'desktop/modal/configuration.udp.php',
+    'desktop/modal/eqConfig.php',
+    'desktop/modal/eqConfig_serial.php',
+    'desktop/modal/eqConfig_tcp.php',
+    'desktop/modal/eqConfig_udp.php'
+  ];
+  foreach($files as $file) {
+    if (is_file($dir . $file)) {
+      unlink($dir . $file);
+    }
   }
-  $update->setSource('market');
-  $update->setConfiguration('version', $myModbusVersion);
-  $update->save();
-  $update->doUpdate();
-  $plugin = plugin::byId($pluginId);
-  if (!is_object($plugin)) {
-    log::add($myModbusId, 'error', sprintf(__("** Installation ** : plugin non trouvé : %s", __FILE__), $pluginId));
-    die();
-  }
-  $plugin->setIsEnable(1);
-  $plugin->dependancy_install();
-  log::add($myModbusId, 'info', sprintf(__("** Installation ** : installation terminée : %s", __FILE__), $pluginId));
 
-  mymodbus::init_pyenv();
+  $directories = [
+    'ressources',
+  ];
+  foreach($directories as $directory) {
+    if (is_file($dir . $directory)) {
+      rmdir($dir . $directory);
+    }
+  }
 }
 
 function mymodbus_update() {
 
   do {
     $cron = cron::byClassAndFunction('mymodbus', 'cronDaily');
-    if (is_object($cron))
+    if (is_object($cron)) {
       $cron->remove(true);
-  else
-    break;
+    } else {
+      break;
+    }
   } while (true);
 
-  install_pyenv();
+  delete_unused_files();
 
 }
 
 function mymodbus_install() {
-  install_pyenv();
+  delete_unused_files();
 }
 
 /*
-        
-        
     function mymodbus_remove() {}
  */
 

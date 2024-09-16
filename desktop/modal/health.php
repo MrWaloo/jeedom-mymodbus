@@ -39,14 +39,16 @@ foreach ($eqLogics as $eqLogic) {
 	echo '<tr><td><a href="' . $eqLogic->getLinkToConfiguration() . '" style="text-decoration: none;">' . $eqLogic->getHumanName(true) . '</a></td>';
 	echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . $eqLogic->getId() . '</span></td>';
 	echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . $eqLogic->getConfiguration('eqProtocol') . '</span></td>';
-	if ($eqLogic->getIsEnable() == 0)
+	if ($eqLogic->getIsEnable() == 0) {
 		echo '<td><span class="label label-danger" style="font-size : 1em; cursor : default;">{{NOK}}</span></td>';
-  else
+	} else {
     echo '<td><span class="label label-success" style="font-size : 1em; cursor : default;">{{OK}}</span></td>';
-  if ($eqLogic->getDeamonState() != 'ok')
+	}
+  if ($eqLogic->getDeamonState() != 'ok') {
 		echo '<td><span class="label label-danger" style="font-size : 1em; cursor : default;">{{NOK}}</span></td>';
-	else
+	} else {
     echo '<td><span class="label label-success" style="font-size : 1em; cursor : default;">{{OK}}</span></td>';
+	}
 	echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . $eqLogic->getStatus('lastCommunication') . '</span></td>';
 	echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . $eqLogic->getConfiguration('createtime') . '</span></td></tr>';
 }

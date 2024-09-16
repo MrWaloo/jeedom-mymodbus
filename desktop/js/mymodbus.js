@@ -99,7 +99,7 @@ $('#bt_healthmymodbus').on('click', function () {
 });
 
 $('#bt_templatesMymodbus').on('click', function () {
-  $('#md_modal').dialog({title: "{{Gestion des templates d'équipement MyMobus}}"});
+  $('#md_modal').dialog({title: "{{Gestion des templates d'équipement MyModbus}}"});
   $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=templates').dialog('open');
 });
 
@@ -175,69 +175,98 @@ $("#table_cmd").sortable({
 
 function printEqLogic(_eqLogic) {
   //console.log('eqLogic : ' + init(JSON.stringify(_eqLogic)));
-  if (isset(_eqLogic.configuration.protocol) && !isset(_eqLogic.configuration.eqProtocol)) {
-    if (_eqLogic.configuration.protocol == 'rtu') {
-      _eqLogic.configuration.eqProtocol = 'serial';
-      _eqLogic.configuration.eqSerialMethod = 'rtu';
-      if (isset(_eqLogic.configuration.port)) {
-        _eqLogic.configuration.eqSerialInterface = _eqLogic.configuration.port;
-        delete _eqLogic.configuration.port;
-      }
-      if (isset(_eqLogic.configuration.baudrate)) {
-        _eqLogic.configuration.eqSerialBaudrate = _eqLogic.configuration.baudrate;
-        delete _eqLogic.configuration.baudrate;
-      }
-      if (isset(_eqLogic.configuration.parity)) {
-        _eqLogic.configuration.eqSerialParity = _eqLogic.configuration.parity;
-        delete _eqLogic.configuration.parity;
-      }
-      if (isset(_eqLogic.configuration.bytesize)) {
-        _eqLogic.configuration.eqSerialBytesize = _eqLogic.configuration.bytesize;
-        delete _eqLogic.configuration.bytesize;
-      }
-      if (isset(_eqLogic.configuration.stopbits)) {
-        _eqLogic.configuration.eqSerialStopbits = _eqLogic.configuration.stopbits;
-        delete _eqLogic.configuration.stopbits;
-      }
-    } else {
-      _eqLogic.configuration.eqProtocol = 'tcp';
-      if (_eqLogic.configuration.protocol == 'rtuovertcp')
-        _eqLogic.configuration.eqTcpRtu = 1;
-      if (isset(_eqLogic.configuration.addr)) {
-        _eqLogic.configuration.eqTcpAddr = _eqLogic.configuration.addr;
-        delete _eqLogic.configuration.addr;
-      }
-      if (isset(_eqLogic.configuration.port)) {
-        _eqLogic.configuration.eqTcpPort = _eqLogic.configuration.port;
-        delete _eqLogic.configuration.port;
-      }
-    }
-    delete _eqLogic.configuration.protocol;
-  }
-  if (isset(_eqLogic.configuration.polling) && !isset(_eqLogic.configuration.eqPolling)) {
-    _eqLogic.configuration.eqPolling = _eqLogic.configuration.polling;
-    delete _eqLogic.configuration.polling;
-  }
-  if (isset(_eqLogic.configuration.keepopen) && !isset(_eqLogic.configuration.eqKeepopen)) {
-    _eqLogic.configuration.eqKeepopen = _eqLogic.configuration.keepopen;
+  if (isset(_eqLogic.configuration.keepopen)) {
     delete _eqLogic.configuration.keepopen;
+    modifyWithoutSave = true;
+  }
+  if (isset(_eqLogic.configuration.eqKeepopen)) {
+    delete _eqLogic.configuration.eqKeepopen;
+    modifyWithoutSave = true;
+  }
+  if (isset(_eqLogic.configuration.eqTcpRtu)) {
+    delete _eqLogic.configuration.eqTcpRtu;
+    modifyWithoutSave = true;
+  }
+  if (isset(_eqLogic.configuration.eqTcpPort)) {
+    if (!isset(_eqLogic.configuration.eqPortNetwork)) {
+      _eqLogic.configuration.eqPortNetwork = _eqLogic.configuration.eqTcpPort;
+    }
+    delete _eqLogic.configuration.eqTcpPort;
+    modifyWithoutSave = true;
+  }
+  if (isset(_eqLogic.configuration.eqTcpAddr)) {
+    if (!isset(_eqLogic.configuration.eqAddr)) {
+      _eqLogic.configuration.eqAddr = _eqLogic.configuration.eqTcpAddr;
+    }
+    delete _eqLogic.configuration.eqTcpAddr;
+    modifyWithoutSave = true;
+  }
+  if (isset(_eqLogic.configuration.eqUdpPort)) {
+    if (!isset(_eqLogic.configuration.eqPortNetwork)) {
+      _eqLogic.configuration.eqPortNetwork = _eqLogic.configuration.eqUdpPort;
+    }
+    delete _eqLogic.configuration.eqUdpPort;
+    modifyWithoutSave = true;
+  }
+  if (isset(_eqLogic.configuration.eqUdpAddr)) {
+    if (!isset(_eqLogic.configuration.eqAddr)) {
+      _eqLogic.configuration.eqAddr = _eqLogic.configuration.eqUdpAddr;
+    }
+    delete _eqLogic.configuration.eqUdpAddr;
+    modifyWithoutSave = true;
+  }
+  if (isset(_eqLogic.configuration.eqSerialInterface)) {
+    if (!isset(_eqLogic.configuration.eqPortSerial)) {
+      _eqLogic.configuration.eqPortSerial = _eqLogic.configuration.eqSerialInterface;
+    }
+    delete _eqLogic.configuration.eqSerialInterface;
+    modifyWithoutSave = true;
   }
   // Define the default configuration's value
-  if (!isset(_eqLogic.configuration.eqRefreshMode) || _eqLogic.configuration.eqRefreshMode == '')
+  if (!isset(_eqLogic.configuration.eqRefreshMode) || _eqLogic.configuration.eqRefreshMode == '') {
     _eqLogic.configuration.eqRefreshMode = 'polling';
-  if (!isset(_eqLogic.configuration.eqPolling) || _eqLogic.configuration.eqPolling == '')
+    modifyWithoutSave = true;
+  }
+  if (!isset(_eqLogic.configuration.eqPolling) || _eqLogic.configuration.eqPolling == '') {
     _eqLogic.configuration.eqPolling = '5';
-  if (!isset(_eqLogic.configuration.eqFirstDelay) || _eqLogic.configuration.eqFirstDelay == '')
+    modifyWithoutSave = true;
+  }
+  if (!isset(_eqLogic.configuration.eqTimeout) || _eqLogic.configuration.eqTimeout == '') {
+    _eqLogic.configuration.eqTimeout = '5';
+    modifyWithoutSave = true;
+  }
+  if (!isset(_eqLogic.configuration.eqWriteCmdCheckTimeout) || _eqLogic.configuration.eqWriteCmdCheckTimeout == '') {
+    _eqLogic.configuration.eqWriteCmdCheckTimeout = '0.01';
+    modifyWithoutSave = true;
+  }
+  if (!isset(_eqLogic.configuration.eqRetries) || _eqLogic.configuration.eqRetries == '') {
+    _eqLogic.configuration.eqRetries = '3';
+    modifyWithoutSave = true;
+  }
+  if (!isset(_eqLogic.configuration.eqFirstDelay) || _eqLogic.configuration.eqFirstDelay == '') {
     _eqLogic.configuration.eqFirstDelay = '0';
-  if (!isset(_eqLogic.configuration.eqWriteCmdCheckTimeout) || _eqLogic.configuration.eqWriteCmdCheckTimeout == '')
-    _eqLogic.configuration.eqWriteCmdCheckTimeout = '1';
+    modifyWithoutSave = true;
+  }
+  if (!isset(_eqLogic.configuration.eqErrorDelay) || _eqLogic.configuration.eqErrorDelay == '') {
+    _eqLogic.configuration.eqErrorDelay = '1';
+    modifyWithoutSave = true;
+  }
   
   // Afficher la partie variable de la configuration de l'équipement en fonction du protocole choisi
   $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqProtocol]').off().on('change', function () {
     if ($(this).val() != '' && !is_null($(this).val())) {
-      $('#div_protocolParameters').load('index.php?v=d&plugin=mymodbus&modal=eqConfig_' + $(this).val(), function () {
-        $('#div_protocolParameters').setValues(_eqLogic, '.eqLogicAttr');
-      });
+      var show_network = ($(this).val() !== 'serial');
+      const networkConfig = $('#div_protocolParameters .networkConfig');
+      const serialConfig = $('#div_protocolParameters .serialConfig');
+      if (show_network) {
+        networkConfig.show();
+        serialConfig.hide();
+      } else {
+        networkConfig.hide();
+        serialConfig.show();
+      }
+      networkConfig.prop('disabled', !show_network);
+      serialConfig.prop('disabled', show_network);
     }
   });
   // load values
@@ -348,8 +377,9 @@ listSourceValues = function(_params) {
 }
 
 function actualise_visible(me, source, _template = false) {
-  if (source !== 'first call')
+  if (source !== 'first call') {
     modifyWithoutSave = true;
+  }
   //var cmdName = $(me).closest('tr').find('.cmdAttr[data-l1key=name]').value();
   //console.log(cmdName + ' *-*-*-*-*-*-*-*-*-* ' + source);
   var cmdLogicalId = $(me).closest('tr').find('.cmdAttr[data-l1key=logicalId]').value();
@@ -374,8 +404,9 @@ function actualise_visible(me, source, _template = false) {
   $(me).closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=listValue]').hide();
   
   if (_template || cmdLogicalId == '') { // without a logicalId
-    if (cmdFctModbus != 'fromBlob')
+    if (cmdFctModbus != 'fromBlob') {
       $(me).closest('tr').find('.withSlave').show();
+    }
     
     if (cmdType == 'info') {
       $(me).closest('tr').find('.readFunction').show();
@@ -393,7 +424,6 @@ function actualise_visible(me, source, _template = false) {
       }
       if (cmdFctModbus != 'fromBlob') {
         $(me).closest('tr').find('.notFctBlob').show();
-        
       } else {
         if (subType == 'binary') {
           $(me).closest('tr').find('.FctBlobBin').show();
@@ -495,53 +525,50 @@ function getTrfromCmd(_cmd, _template = false) {
   tr += '   </div>';
   tr += '   <div class="input-group">';
   tr += '     <select class="cmdAttr form-control input-sm" style="width:230px;" data-l1key="configuration" data-l2key="cmdFormat"' + formDisabled + '>';
-  tr += '       <option class="formatBin" value="bit">bit (0 .. 1)</option>';
-  tr += '       <option class="formatBin" value="bit-inv">{{bit inversé}} (1 .. 0)</option>';
+  tr += '       <option class="formatBin" value="bit">bit (0 / 1)</option>';
   tr += '       <optgroup class="formatNum" label="8 bits">';
-  tr += '         <option class="formatNum" value="int8-lsb">int8 LSB (-128 ... 127)</option>';
-  tr += '         <option class="formatNum" value="int8-msb">int8 MSB (-128 ... 127)</option>';
-  tr += '         <option class="formatNum" value="uint8-lsb">uint8 LSB (0 ... 255)</option>';
+  tr += '         <option class="formatNum" value="uint8">uint8 LSB (0 ... 255)</option>';
   tr += '         <option class="formatNum" value="uint8-msb">uint8 MSB (0 ... 255)</option>';
   tr += '       </optgroup>';
   tr += '       <optgroup class="formatNum" label="16 bits">';
-  tr += '         <option class="formatNum" value="int16">int16 (-32 768 ... 32 768)</option>';
-  tr += '         <option class="formatNum" value="uint16">uint16 (0 ... 65 535)</option>';
-  tr += '         <option class="formatNum" value="float16">float16 (Real 16bit)</option>';
+  tr += '         <option class="formatNum" value="h">int16 (-32 768 ... 32 768)</option>';
+  tr += '         <option class="formatNum" value="H">uint16 (0 ... 65 535)</option>';
   tr += '       </optgroup>';
   tr += '       <optgroup class="formatNum" label="32 bits ({{2 registres}})">';
-  tr += '         <option class="formatNum" value="int32">int32 (-2 147 483 648 ... 2 147 483 647)</option>';
-  tr += '         <option class="formatNum" value="uint32">uint32 (0 ... 4 294 967 296)</option>';
-  tr += '         <option class="formatNum" value="float32">float32 (Real 32bit)</option>';
+  tr += '         <option class="formatNum" value="i">int32 (-2 147 483 648 ... 2 147 483 647)</option>';
+  tr += '         <option class="formatNum" value="I">uint32 (0 ... 4 294 967 296)</option>';
+  tr += '         <option class="formatNum" value="f">float32 (Real 32bit)</option>';
   tr += '       </optgroup>';
   tr += '       <optgroup class="formatNum" label="64 bits ({{4 registres}})">';
-  tr += '         <option class="formatNum" value="int64">int64 (-9e18 ... 9e18)</option>';
-  tr += '         <option class="formatNum" value="uint64">uint64 (0 ... 18e18)</option>';
-  tr += '         <option class="formatNum" value="float64">float64 (Real 64bit)</option>';
+  tr += '         <option class="formatNum" value="q">int64 (-9e18 ... 9e18)</option>';
+  tr += '         <option class="formatNum" value="Q">uint64 (0 ... 18e18)</option>';
+  tr += '         <option class="formatNum" value="d">float64 (Real 64bit)</option>';
   tr += '       </optgroup>';
-  tr += '       <option class="formatNum" value="string">{{Chaine de caractères}}</option>';
+  tr += '       <option class="formatNum" value="s">{{Chaine de caractères}}</option>';
   tr += '       <option class="notFctBlob" value="blob">{{Plage de registres}}</option>';
   tr += '       <optgroup class="formatNum" label="{{Spécial}}">';
-  tr += '         <option class="formatNum" value="int16sp-sf">{{SunSpec scale factor int16}}</option>';
-  tr += '         <option class="formatNum" value="uint16sp-sf">{{SunSpec scale factor uint16}}</option>';
-  tr += '         <option class="formatNum" value="uint32sp-sf">{{SunSpec scale factor uint32}}</option>';
+  tr += '         <option class="formatNum" value="h_sf">{{SunSpec scale factor int16}}</option>';
+  tr += '         <option class="formatNum" value="H_sf">{{SunSpec scale factor uint16}}</option>';
+  tr += '         <option class="formatNum" value="i_sf">{{SunSpec scale factor int32}}</option>';
+  tr += '         <option class="formatNum" value="I_sf">{{SunSpec scale factor uint32}}</option>';
   tr += '       </optgroup>';
   tr += '     </select>';
   tr += '   </div>';
   tr += ' </td>';
   // Adresse Modbus
   tr += ' <td>';
-  tr += '   <div class="input-group" style="margin-bottom:5px;">';
+  tr += '   <div class="input-group" style="width:100%;">';
   tr += '     <select class="cmdAttr form-control input-sm FctBlobBin" style="width:100%;" data-l1key="configuration" data-l2key="cmdSourceBlobBin"' + formDisabled + '>';
   tr += '     </select>';
   tr += '     <select class="cmdAttr form-control input-sm FctBlobNum" style="width:100%;" data-l1key="configuration" data-l2key="cmdSourceBlobNum"' + formDisabled + '>';
   tr += '     </select>';
-  tr += '   <input class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="cmdAddress"' + formDisabled + '/>';
-  tr += '   <label class="checkbox-inline notFormatBlob">';
-  tr += '     <input type="checkbox" class="cmdAttr checkbox-inline tooltips" title="{{\'Little endian\' si coché}}" data-l1key="configuration" data-l2key="cmdInvertBytes"' + formDisabled + '/>{{Inverser octets}}';
-  tr += '   </label></br>';
-  tr += '   <label class="checkbox-inline notFormatBlob">';
-  tr += '     <input type="checkbox" class="cmdAttr checkbox-inline tooltips" title="{{\'Little endian\' si coché}}" data-l1key="configuration" data-l2key="cmdInvertWords"' + formDisabled + '/>{{Inverser mots}}';
-  tr += '   </label></br>';
+  tr += '     <input class="cmdAttr form-control input-sm" style="margin-top:5px;" data-l1key="configuration" data-l2key="cmdAddress"' + formDisabled + '/>';
+  tr += '     <label class="checkbox-inline notFormatBlob">';
+  tr += '       <input type="checkbox" class="cmdAttr checkbox-inline tooltips" data-l1key="configuration" data-l2key="cmdInvertBytes"' + formDisabled + '/>{{Inverser octets}}';
+  tr += '     </label></br>';
+  tr += '     <label class="checkbox-inline notFormatBlob">';
+  tr += '       <input type="checkbox" class="cmdAttr checkbox-inline tooltips" data-l1key="configuration" data-l2key="cmdInvertWords"' + formDisabled + '/>{{Inverser mots}}';
+  tr += '     </label></br>';
   tr += '   </div>';
   tr += ' </td>';
   // Paramètre
@@ -555,7 +582,7 @@ function getTrfromCmd(_cmd, _template = false) {
   }
   tr += '   </div>';
   tr += '   <div class="input-group notFctBlob">';
-  tr += '     <label class="label">{{Lecture 1x sur&nbsp;:}}&nbsp;';
+  tr += '     <label class="label">{{Lecture 1x sur :}}&nbsp;';
   tr += '       <input class="cmdAttr form-inline input-sm" style="width:70px;" data-l1key="configuration" data-l2key="cmdFrequency" placeholder="{{1 par défaut}}"' + formDisabled + '/>';
   tr += '     </label>';
   tr += '   </div>';
@@ -602,11 +629,6 @@ $("#bt_add_command_top").on('click', function (event) {
   modifyWithoutSave = true;
 });
 
-$("#bt_add_command_bottom").on('click', function (event) {
-  addCmdToTable({});
-  modifyWithoutSave = true;
-});
-
 function addCmdToTable(_cmd) {
   // Minimal structure for _cmd
   if (!isset(_cmd))
@@ -636,22 +658,45 @@ function addCmdToTable(_cmd) {
         _cmd.configuration.cmdFormat = 'bit';
       } else if (init(_cmd.configuration.type) == 'holding_registers') {
         _cmd.configuration.cmdFctModbus = '3';
-        _cmd.configuration.cmdFormat = 'uint16';
+        _cmd.configuration.cmdFormat = 'H';
       } else if (init(_cmd.configuration.type) == 'input_registers') {
         _cmd.configuration.cmdFctModbus = '4';
-        _cmd.configuration.cmdFormat = 'uint16';
+        _cmd.configuration.cmdFormat = 'H';
       } else if (init(_cmd.configuration.type) == 'sign') {
         _cmd.configuration.cmdFctModbus = '3';
-        _cmd.configuration.cmdFormat = 'int16';
+        _cmd.configuration.cmdFormat = 'h';
       } else if (init(_cmd.configuration.type) == 'virg') {
         _cmd.configuration.cmdFctModbus = '3';
-        _cmd.configuration.cmdFormat = 'float32';
+        _cmd.configuration.cmdFormat = 'f';
       } else if (init(_cmd.configuration.type) == 'swapi32') {
         _cmd.configuration.cmdFctModbus = '4';
-        _cmd.configuration.cmdFormat = 'float32';
+        _cmd.configuration.cmdFormat = 'f';
       }
       
       delete _cmd.configuration.type;
+    }
+    if (isset(_cmd.configuration.cmdFormat)) {
+      format_replace = {
+        'uint8-lsb':   'uint8',
+        'int16':       'h',
+        'uint16':      'H',
+        'int32':       'i',
+        'uint32':      'I',
+        'float32':     'f',
+        'int64':       'q',
+        'uint64':      'Q',
+        'float64':     'd',
+        'string':      's',
+        'int16sp-sf':  'h_sf',
+        'uint16sp-sf': 'H_sf',
+        'uint32sp-sf': 'I_sf'
+      };
+      for (let [search, replace] of Object.entries(format_replace)) {
+        if (_cmd.configuration.cmdFormat == search) {
+          _cmd.configuration.cmdFormat = replace;
+          continue;
+        }
+      }
     }
     // was never used
     delete _cmd.configuration.datatype;
@@ -676,10 +721,10 @@ function addCmdToTable(_cmd) {
         _cmd.configuration.cmdFormat = 'bit';
       } else if (init(_cmd.configuration.type) == 'holding_registers') {
         _cmd.configuration.cmdFctModbus = '6';
-        _cmd.configuration.cmdFormat = 'uint16';
+        _cmd.configuration.cmdFormat = 'H';
       } else if (init(_cmd.configuration.type) == 'Write_Multiple_Holding') {
         _cmd.configuration.cmdFctModbus = '16';
-        _cmd.configuration.cmdFormat = 'uint16';
+        _cmd.configuration.cmdFormat = 'H';
       }
       
       delete _cmd.configuration.type;
@@ -692,12 +737,14 @@ function addCmdToTable(_cmd) {
   // Default value for new added commands
   if (!isset(_cmd.id)) {
     _cmd.configuration.cmdFctModbus = '3';
-    _cmd.configuration.cmdFormat = 'int16';
+    _cmd.configuration.cmdFormat = 'h';
   }
-  if (!isset(_cmd.configuration.cmdSlave))
-    _cmd.configuration.cmdSlave = '0';
-  if (!isset(_cmd.configuration.cmdFrequency))
+  if (!isset(_cmd.configuration.cmdSlave)) {
+    _cmd.configuration.cmdSlave = '1';
+  }
+  if (!isset(_cmd.configuration.cmdFrequency)){
     _cmd.configuration.cmdFrequency = '1';
+  }
   
   //console.log('CMD - ' + init(JSON.stringify(_cmd)));
   

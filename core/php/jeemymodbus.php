@@ -28,8 +28,9 @@ if (init('test') != '') {
 }
 $result = json_decode(file_get_contents("php://input"), true);
 log::add('mymodbus', 'debug', 'jeemymodbus.php: $result *' . json_encode($result) . '* type: ' . gettype($result));
-if (!is_array($result))
+if (!is_array($result)) {
   die();
+}
 
 if (isset($result['heartbeat_request'])) {
   $message = array();
@@ -37,12 +38,17 @@ if (isset($result['heartbeat_request'])) {
   $message['answer'] = $result['heartbeat_request'];
   mymodbus::sendToDaemon($message);
   
+} elseif (isset($result['getConfig'])) {
+  mymodbus::sendNewConfig();
+  
 } elseif (isset($result['values'])) {
   $names = '';
-  $eqlogic = mymodbus::byId($result['eqId']);
   foreach ($result['values'] as $cmd_id => $new_value) {
+    #log::add('mymodbus', 'debug', 'jeemymodbus.php: Traitement cmd_id = ' . $cmd_id . ' -> new value: ' . sprintf("%d", $new_value));
+    
     if (is_numeric($cmd_id)) {
       $cmd = mymodbusCmd::byid($cmd_id);
+      $eqlogic = $cmd->getEqLogic();
       //$old_value = $cmd->execCmd();
       
       $cmdOption = $cmd->getConfiguration('cmdOption');
@@ -52,23 +58,30 @@ if (isset($result['heartbeat_request'])) {
           $eval = str_replace('#value#', '$new_value', $cmdOption);
           $new_value = eval('return ' . $eval . ';');
         } catch (Throwable $t) {
-          log::add('mymodbus', 'error', 'jeemodbus.php: ' . $cmd->getName() . __(' Calcul non effectué. Erreur lors du calcul : ' . $t, __FILE__));
+          log::add('mymodbus', 'error', 'jeemymodbus.php: ' . $cmd->getName() . __('Calcul non effectué. Erreur lors du calcul : ' . $t, __FILE__));
         }
       }
-    } else if ($cmd_id == 'cycle_time') {
-      $cmd = mymodbusCmd::byEqLogicIdAndLogicalId($result['eqId'], 'refresh time');
-      $new_value = number_format($new_value, 3);
+
+    } elseif ($cmd_id === 'cycle_time') {
+      $eqlogic = mymodbus::byId($new_value['eqId']);
+      $cmd = mymodbusCmd::byEqLogicIdAndLogicalId($new_value['eqId'], 'refresh time');
+      $new_value = number_format($new_value['value'], 3);
+      
+    } elseif ($cmd_id === 'cycle_ok') {
+      $eqlogic = mymodbus::byId($new_value['eqId']);
+      $cmd = mymodbusCmd::byEqLogicIdAndLogicalId($new_value['eqId'], 'cycle ok');
+      $new_value = $new_value['value'];
     }
     
-    log::add('mymodbus', 'debug', 'jeemodbus.php: Mise à jour cmd ' . $cmd->getName() . ' -> new value: ' . $new_value, 'config');
+    log::add('mymodbus', 'debug', 'jeemymodbus.php: Mise à jour cmd ' . $cmd->getName() . ' -> new value: ' . $new_value, 'config');
     
     $eqlogic->checkAndUpdateCmd($cmd, $new_value);
     
     $names .= ' \'' . $cmd->getName() . '\'';
   }
-  log::add('mymodbus', 'info', 'jeemodbus.php: Mise à jour des commandes info :' . $names);
+  #log::add('mymodbus', 'debug', 'jeemymodbus.php: Mise à jour des commandes info :' . $names);
 } else {
-  log::add('mymodbus', 'error', 'jeemodbus.php: unknown message received from daemon');
+  log::add('mymodbus', 'error', 'jeemymodbus.php: unknown message received from daemon');
 }
 
 ?>

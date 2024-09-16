@@ -35,51 +35,47 @@ class mymodbus extends eqLogic {
   public static $_encryptConfigKey = array('param1', 'param2');
   */
 
+  const PYTHON_PATH = __DIR__ . '/../../resources/venv/bin/python3';
+
+  const PROTOCOLS = [
+    "serial",
+    "tcp",
+    "udp",
+    "rtuovertcp"
+  ];
+
   /*   * ***********************Methode static*************************** */
   
-   /*
+  /*
   * Fonction exécutée automatiquement toutes les minutes par Jeedom
   public static function cron() {}
-  */
-
-  /*
+  
    * Fonction exécutée automatiquement toutes les 5 minutes par Jeedom
-   public static function cron5() {}
-   */
-
-  /*
+  public static function cron5() {}
+  
    * Fonction exécutée automatiquement toutes les 10 minutes par Jeedom
-   public static function cron10() {}
-   */
-
-  /*
+  public static function cron10() {}
+  
    * Fonction exécutée automatiquement toutes les 15 minutes par Jeedom
-   public static function cron15() {}
-   */
-
-  /*
+  public static function cron15() {}
+  
    * Fonction exécutée automatiquement toutes les 30 minutes par Jeedom
-   public static function cron30() {}
-   */
-
-  /*
+  public static function cron30() {}
+  
    * Fonction exécutée automatiquement toutes les heures par Jeedom
   public static function cronHourly() {}
-   */
-
-  /*
-   * Fonction exécutée automatiquement tous les jours par Jeedom
-  public static function cronDaily() {}
-   */
   
-  /*
-   * Fonction exécutée automatiquement toutes les heures par Jeedom
+  * Fonction exécutée automatiquement tous les jours par Jeedom
+  public static function cronDaily() {}
+  
+  * Fonction exécutée automatiquement toutes les heures par Jeedom
   public static function health() {}
-   */
+  */
 
   public static function deamon_info() {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     $daemon_info = array();
+    $daemon_info['log'] = __CLASS__;
     $daemon_info['state'] = self::getDeamonState();
     $daemon_info['launchable'] = self::getDeamonLaunchable();
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . sprintf(" * daemon_info = '%s'", json_encode($daemon_info)));
@@ -88,30 +84,14 @@ class mymodbus extends eqLogic {
   
   public static function deamon_start() {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
-    // Always stop first.
-    self::deamon_stop();
     
     if (!plugin::byId('mymodbus')->isActive()) {
       log::add(__CLASS__, 'error', __('Le plugin Mymodbus n\'est pas actif.', __FILE__));
       return;
     }
-  
-    $virtualenv = self::init_pyenv();
-    if (is_null($virtualenv)) {
-      log::add(__CLASS__, 'error', __('L\'environnement pyenv n\'a pas pu être installé, vérifiez la page de pyenv4Jeedom', __FILE__));
-      return;
-    }
     
-    $eqPyenv = pyenv::byLogicalId('pyenv', 'pyenv');
-    if (!is_object($eqPyenv)) {
-      log::add(__CLASS__, 'error', __('pyenv4Jeedom n\'a pas été initialisé correctement', __FILE__));
-      return;
-    }
-    
-    if ($eqPyenv->getConfiguration(pyenv::LOCK, 'false') !== 'false') {
-      log::add(__CLASS__, 'error', __('Une commande pyenv bloquante est en cours d\'exécution', __FILE__));
-      return;
-    }
+    // Always stop first.
+    self::deamon_stop();
 
     // Pas de démarrage si ce n'est pas possible
     if (self::getDeamonLaunchable() != 'ok') {
@@ -120,30 +100,36 @@ class mymodbus extends eqLogic {
     }
     
     $eqConfig = self::getCompleteConfiguration();
-    
-    $socketPort = is_numeric(config::byKey('socketport', __CLASS__, mymodbusConst::DEFAULT_SOCKET_PORT, True)) ? config::byKey('socketport', __CLASS__, mymodbusConst::DEFAULT_SOCKET_PORT) : mymodbusConst::DEFAULT_SOCKET_PORT;
-    $daemonLoglevel = escapeshellarg(log::convertLogLevel(log::getLogLevel(__CLASS__)));
-    $daemonApikey = escapeshellarg(jeedom::getApiKey(__CLASS__));
-    $daemonCallback = escapeshellarg(self::getCallbackUrl());
-    $jsonEqConfig = escapeshellarg(json_encode($eqConfig));
-    
-    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * socketport *' . $socketPort . '*');
-    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * API-key *' . $daemonApikey . '*');
-    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * callbackURL *' . $daemonCallback . '*');
-    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * config *' . $jsonEqConfig . '*');
-    
-    $args = '--socketport ' . $socketPort . ' --loglevel ' . $daemonLoglevel . ' --apikey ' . $daemonApikey . ' --callback ' . $daemonCallback . ' --json ' . $jsonEqConfig;
-    
-    $script = realpath(__DIR__ . '/../../ressources/mymodbusd/mymodbusd.py');
 
-    log::add(__CLASS__, 'info', __CLASS__ . '::' . __FUNCTION__ . ' * Lancement du démon mymodbus : ' . $script);
-    $result = pyenv::runPyenv($script, $args, $virtualenv, true);
-    
-    $result = implode("\n", $result);
-    if (strpos(strtolower($result), 'error') !== false || strpos(strtolower($result), 'traceback') !== false) {
-      log::add(__CLASS__, 'error', $result);
+    $path = realpath(__DIR__ . '/../../resources/' . __CLASS__);
+    $daemon_script_name = __CLASS__ . 'd.py';
+    $cmd = self::PYTHON_PATH . " {$path}/{$daemon_script_name}";
+    $cmd .= ' --loglevel ' . escapeshellarg(log::convertLogLevel(log::getLogLevel(__CLASS__)));
+    $cmd .= ' --socketport ' . self::getSocketPort();
+    $cmd .= ' --callback ' . escapeshellarg(self::getCallbackUrl());
+    $cmd .= ' --apikey ' . escapeshellarg(jeedom::getApiKey(__CLASS__));
+    $cmd .= ' --pid ' . jeedom::getTmpFolder(__CLASS__) . '/daemon.pid';
+    $cmd .= ' --json ' . escapeshellarg(json_encode($eqConfig));
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * Ligne de commande : ' . $cmd);
+
+    log::add(__CLASS__, 'info', __CLASS__ . '::' . __FUNCTION__ . ' * Lancement du démon MyModbus');
+    $result = exec($cmd . ' >> ' . log::getPathToLog(__CLASS__ . '_daemon') . ' 2>&1 &');
+
+    $i = 0;
+    while ($i < 10) {
+      sleep(1);
+      if (self::getDeamonState() === 'ok') {
+        break;
+      }
+      $i++;
+    }
+    if ($i >= 10) {
+      log::add(__CLASS__, 'error', __('Impossible de lancer le démon', __FILE__), 'unableStartDeamon');
       return false;
     }
+    message::removeAll(__CLASS__, 'unableStartDeamon');
+
+    return true;
   }
   
   public static function deamon_stop() {
@@ -151,16 +137,35 @@ class mymodbus extends eqLogic {
     
     $deamon_state = self::getDeamonState();
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * $deamon_state ' . $deamon_state);
-    if ($deamon_state == 'nok')
+    if ($deamon_state === 'nok') {
       return true;
+    }
     
     log::add(__CLASS__, 'info', __CLASS__ . '::' . __FUNCTION__ . ' * Arrêt du démon...');
     $message = array();
     $message['CMD'] = 'quit';
     self::sendToDaemon($message);
-    sleep(3);
-    
-    log::add(__CLASS__, 'info', __CLASS__ . '::' . __FUNCTION__ . ' * Démon arrêté');
+
+    $i = 0;
+    while ($i < 10) {
+      sleep(1);
+      if (self::getDeamonState() === 'nok') {
+        log::add(__CLASS__, 'info', __CLASS__ . '::' . __FUNCTION__ . ' * Démon arrêté');
+        break;
+      }
+      $i++;
+    }
+    if ($i >= 10) {
+      $pid_file = jeedom::getTmpFolder(__CLASS__) . '/daemon.pid';
+      if (file_exists($pid_file)) {
+        $pid = intval(trim(file_get_contents($pid_file)));
+        system::kill($pid);
+      }
+      sleep(1);
+      system::kill('mymodbusd.py');
+      sleep(1);
+      log::add(__CLASS__, 'info', __CLASS__ . '::' . __FUNCTION__ . ' * Démon tué');
+    }
   }
   
   public static function sendToDaemon($params) {
@@ -171,7 +176,7 @@ class mymodbus extends eqLogic {
     $params['apikey'] = jeedom::getApiKey(__CLASS__);
     $params['dt'] = date(DATE_ATOM);
     $payLoad = json_encode($params);
-    $socket = socket_create(AF_INET, SOCK_STREAM, 0);
+    $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
     $socket_port = is_numeric(config::byKey('socketport', __CLASS__, mymodbusConst::DEFAULT_SOCKET_PORT, True)) ? config::byKey('socketport', __CLASS__, mymodbusConst::DEFAULT_SOCKET_PORT) : mymodbusConst::DEFAULT_SOCKET_PORT;
     socket_connect($socket, '127.0.0.1', config::byKey('socketport', __CLASS__, $socket_port));
     $socket_ok = socket_write($socket, $payLoad, strlen($payLoad));
@@ -184,78 +189,20 @@ class mymodbus extends eqLogic {
 
   public function sendNewConfig() {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
-    if (self::getDeamonState() != 'ok')
+    if (self::getDeamonState() != 'ok') {
       return True;
+    }
     
     $message = array();
     $message['CMD'] = 'newDaemonConfig';
     $message['config'] = self::getCompleteConfiguration();
     self::sendToDaemon($message);
   }
-
-  public static function init_pyenv() {
-    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
-    pyenv::init();
-    $requirements = array('requests', 'pyserial', 'pyudev', 'pymodbus==3.2.2');
-    try {
-      pyenv::createVirtualenv(__CLASS__, mymodbusConst::PYENV_PYTHON, implode("\n", $requirements), mymodbusConst::PYENV_SUFFIX);
-    } catch (Exception $e) {
-      // Déjà installé
-    }
-    
-    try {
-      $virtualenvs = pyenv::getVirtualenvNames(__CLASS__, mymodbusConst::PYENV_PYTHON, mymodbusConst::PYENV_SUFFIX);
-    } catch (Exception $e) {
-      log::add(__CLASS__, 'error', __('Impossible de lister les virtualenv du plugin pyenv4Jeedom', __FILE__));
-      return;
-    }
-
-    $ret = null;
-
-    foreach ($virtualenvs as $virtualenv) {
-      if ($virtualenv['suffix'] !== mymodbusConst::PYENV_SUFFIX || $virtualenv['python'] !== mymodbusConst::PYENV_PYTHON) {
-        try {
-          pyenv::deleteVirtualenv(__CLASS__, $virtualenv['suffix']);
-        } catch (Exception $e) {
-          log::add(__CLASS__, 'error', sprintf(__("Impossible de supprimer le virtualenv avec le suffixe '%s' du plugin pyenv4Jeedom", __FILE__), $virtualenv['suffix']));
-        }
-      } else {
-        $ret = $virtualenv['fullname'];
-      }
-    }
-    return $ret;
-  }
-
-  public static function check_pyenv() {
-    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
-    if (self::getDeamonState() === 'ok')
-      return true;
-
-    try {
-      $virtualenvs = pyenv::getVirtualenvNames(__CLASS__, mymodbusConst::PYENV_PYTHON, mymodbusConst::PYENV_SUFFIX);
-
-    } catch (Exception $e) {
-      log::add(__CLASS__, 'error', __('Impossible de lister les virtualenv du plugin pyenv4Jeedom', __FILE__));
-      return;
-    }
-
-    if (count($virtualenvs) === 1) {
-      foreach ($virtualenvs as $virtualenv) {
-        if ($virtualenv['suffix'] === mymodbusConst::PYENV_SUFFIX && $virtualenv['python'] === mymodbusConst::PYENV_PYTHON)
-          return true;
-      }
-    }
-    return false;
-  }
   
   // Supported protocols are in desktop/modal/eqConfig_[protocol].php
   public static function supportedProtocols() {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
-    $protocols = array();
-    foreach (glob(__DIR__ . '/../../desktop/modal/eqConfig_*.php') as $file) {
-      $protocols[] = substr(basename($file), strlen('eqConfig_'), strlen('.php') * -1);
-    }
-    return $protocols;
+    return self::PROTOCOLS;
   }
   
   // tty interfaces
@@ -264,36 +211,76 @@ class mymodbus extends eqLogic {
     $interfaces = jeedom::getUsbMapping('', True);
     for ($i = 0; $i<10; $i++) {
       $tty = '/dev/ttyS' . strval($i);
-      if (file_exists($tty))
+      if (file_exists($tty)) {
         $interfaces[$tty] = $tty;
-      else
+      } else {
         break;
+      }
     }
     for ($i = 0; $i<10; $i++) {
       $tty = '/dev/ttyUSB' . strval($i);
-      if (file_exists($tty))
+      if (file_exists($tty)) {
         $interfaces[$tty] = $tty;
-      else
+      } else {
         break;
+      }
     }
     $perso_intf = explode(";", config::byKey('interfaces', __CLASS__, '', True));
     foreach ($perso_intf as $intf) {
-      if ($intf && file_exists($intf))
+      if ($intf && file_exists($intf)) {
         $interfaces[$intf] = $intf;
+      }
     }
     return $interfaces;
   }
   
-  public static function changeLogLevel($level=null) {
-    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . sprintf(" * level = '%s'", $level));
-    $message = array();
-    $message['CMD'] = 'setLogLevel';
-    $message['level'] = is_null($level) ? log::getLogLevel(__class__) : $level;
-    if (is_numeric($message['level'])) // Replace numeric log level with text level
-      $message['level'] = log::convertLogLevel($message['level']);
-    self::sendToDaemon($message);
+  public static function backupExclude() {
+    return [
+        'resources/venv'
+    ];
   }
-  
+
+  public static function dependancy_install() {
+      log::remove(__CLASS__ . '_update');
+      return array('script' => __DIR__ . '/../../resources/install_#stype#.sh', 'log' => log::getPathToLog(__CLASS__ . '_update'));
+  }
+
+  public static function dependancy_info() {
+    $return = array();
+    $return['log'] = log::getPathToLog(__CLASS__ . '_update');
+    $return['progress_file'] = jeedom::getTmpFolder(__CLASS__) . '/dependance';
+    $return['state'] = 'ok';
+    if (file_exists(jeedom::getTmpFolder(__CLASS__) . '/dependance')) {
+      $return['state'] = 'in_progress';
+    } elseif (!self::pythonRequirementsInstalled(self::PYTHON_PATH, __DIR__ . '/../../resources/requirements.txt')) {
+      $return['state'] = 'nok';
+    }
+    return $return;
+  }
+
+  private static function pythonRequirementsInstalled(string $pythonPath, string $requirementsPath) {
+    if (!file_exists($pythonPath) || !file_exists($requirementsPath)) {
+      return false;
+    }
+    exec("{$pythonPath} -m pip freeze", $packages_installed);
+    $packages = join("||", $packages_installed);
+    exec("cat {$requirementsPath}", $packages_needed);
+    foreach ($packages_needed as $line) {
+      if (preg_match('/([^\s]+)[\s]*([>=~]=)[\s]*([\d+\.?]+)$/', $line, $need) === 1) {
+        if (preg_match('/' . $need[1] . '==([\d+\.?]+)/', $packages, $install) === 1) {
+          if ($need[2] === '==' && $need[3] != $install[1]) {
+            return false;
+          } elseif (version_compare($need[3], $install[1], '>')) {
+            return false;
+          }
+        } else {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
   /*
   * =-=-=-=-=-=-=-=-=-=-=-=-= Templates =-=-=-=-=-=-=-=-=-=-=-=-=
   * Les fonctions sont copiées ou inspirées du plugin jMQTT pour
@@ -340,18 +327,19 @@ class mymodbus extends eqLogic {
     if (strpos($_name , mymodbusConst::PREFIX_TEMPLATE_PERSO) === 0) {
       // Get personal templates
       $name = substr($_name, strlen(mymodbusConst::PREFIX_TEMPLATE_PERSO));
-      $folder = realpath(__DIR__ . '/../../') . mymodbusConst::PATH_TEMPLATES_PERSO;
+      $folder = '/../../' . mymodbusConst::PATH_TEMPLATES_PERSO;
     } else {
       // Get official templates
       $name = $_name;
-      $folder = realpath(__DIR__ . '/../../') . mymodbusConst::PATH_TEMPLATES_MYMODBUS;
+      $folder = '/../../' . mymodbusConst::PATH_TEMPLATES_MYMODBUS;
     }
     foreach (glob(__DIR__ . $folder . '*.json') as $file) {
       try {
         $file = realpath($file);
         [$templateKey, $templateValue] = self::templateRead($file);
-        if ($templateKey == $name)
+        if ($templateKey === $name) {
           return $templateValue;
+        }
       } catch (Throwable $e) {
       }
     }
@@ -364,13 +352,15 @@ class mymodbus extends eqLogic {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . sprintf(" * filename = '%s'", $_filename));
     $existing_files = self::templateList();
     $exists = false;
-    foreach ($existing_files as list($n, $f))
-      if ($f == $_filename) {
+    foreach ($existing_files as list($n, $f)) {
+      if ($f === $_filename) {
         $exists = true;
         break;
       }
-    if (!$exists)
+    }
+    if (!$exists) {
       throw new Exception(__("Le template demandé n'existe pas !", __FILE__));
+    }
     try {
       [$templateKey, $templateValue] = self::templateRead($_filename);
       return $templateValue;
@@ -389,8 +379,9 @@ class mymodbus extends eqLogic {
     if (!$_filename ||
         !file_exists($_filename) ||
         !is_file($_filename) ||
-        dirname($_filename) != realpath(__DIR__ . '/../../') . mymodbusConst::PATH_TEMPLATES_PERSO)
+        dirname($_filename) != realpath(__DIR__ . '/../../' . mymodbusConst::PATH_TEMPLATES_PERSO)) {
       return false;
+    }
     return unlink($_filename);
   }
 
@@ -400,20 +391,15 @@ class mymodbus extends eqLogic {
     
     // Suppression des paramètres d'équipement à spécifier
     if ($export['configuration']['eqProtocol'] === 'serial') {
-      $export['configuration']['eqSerialInterface'] = '';
-    } elseif ($export['configuration']['eqProtocol'] === 'tcp') {
-      $export['configuration']['eqTcpAddr'] = '';
-    } elseif ($export['configuration']['eqProtocol'] === 'udp') {
-      $export['configuration']['eqUdpAddr'] = '';
+      $export['configuration']['eqPortSerial'] = '';
+    } else {
+      $export['configuration']['eqAddr'] = '';
     }
 
     // Remplacement des id des plages de registres par leur '#[Nom]#'
     foreach ($export['commands'] as &$cmd) {
-      if ($cmd['type'] == 'info' && $cmd['configuration']['cmdFctModbus'] == 'fromBlob') {
-        if ($cmd['subType'] == 'binary')
-          $cmdSourceBlob_type = 'cmdSourceBlobBin';
-        else
-          $cmdSourceBlob_type = 'cmdSourceBlobNum';
+      if ($cmd['type'] === 'info' && $cmd['configuration']['cmdFctModbus'] === 'fromBlob') {
+        $cmdSourceBlob_type = $cmd['subType'] === 'binary' ? 'cmdSourceBlobBin' : 'cmdSourceBlobNum';
         $sourceBlob_id = $cmd['configuration'][$cmdSourceBlob_type];
         $sourceBlob = mymodbusCmd::byId($sourceBlob_id);
         $cmd['configuration'][$cmdSourceBlob_type] = '#[' . $sourceBlob->getName() . ']#';
@@ -439,11 +425,12 @@ class mymodbus extends eqLogic {
       $template,
       JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
     );
-    $templateDir = realpath(__DIR__ . '/../../') . mymodbusConst::PATH_TEMPLATES_PERSO;
-    
-    if (!file_exists($templateDir) && !mkdir($templateDir, 0775, true))
-      throw new Exception(__('Impossible de créer le répertoire de téléversement :', __FILE__) . ' ' . $templateDir);
-    
+    $templateDir = realpath(__DIR__ . '/../../' . mymodbusConst::PATH_TEMPLATES_PERSO) . '/';
+    if (!file_exists($templateDir)) {
+      if (!mkdir($templateDir, 0775, true)) {
+        throw new Exception(__('Impossible de créer le répertoire de téléversement :', __FILE__) . ' ' . $templateDir);
+      }
+    }
     file_put_contents(
       $templateDir . str_replace(' ', '_', $_tName) . '.json',
       $jsonExport
@@ -457,8 +444,9 @@ class mymodbus extends eqLogic {
     $this->import($_template, $_keepCmd);
     $this->save();
 
-    foreach ($this->getCmd() as $cmd)
+    foreach ($this->getCmd() as $cmd) {
       $cmd->save();
+    }
   }
 
   /*   * *********************Méthodes d'instance************************* */
@@ -477,11 +465,8 @@ class mymodbus extends eqLogic {
 			$cmdCopy = clone $cmd;
 			$cmdCopy->setId('');
 			$cmdCopy->setEqLogic_id($eqLogicCopy->getId());
-      if ($cmd->getType() == 'info' && $cmd->getConfiguration('cmdFctModbus') == 'fromBlob') {
-        if ($cmd->getSubType() == 'binary')
-          $cmdSourceBlob_type = 'cmdSourceBlobBin';
-        else
-          $cmdSourceBlob_type = 'cmdSourceBlobNum';
+      if ($cmd->getType() === 'info' && $cmd->getConfiguration('cmdFctModbus') === 'fromBlob') {
+        $cmdSourceBlob_type = $cmd->getSubType() === 'binary' ? 'cmdSourceBlobBin' : 'cmdSourceBlobNum';
         $sourceBlob_id = $cmd->getConfiguration($cmdSourceBlob_type);
         $sourceBlob = cmd::byId($sourceBlob_id);
         $copySourceBlob = cmd::byEqLogicIdCmdName($eqLogicCopy->getId(), $sourceBlob->getName());
@@ -517,89 +502,120 @@ class mymodbus extends eqLogic {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     $configKeys = array_keys($this->getConfiguration());
     // Equipement non activé, pas de vérification
-    if (!$this->getIsEnable())
-      return True;
-    // Un nouvel équipement vient d'être ajouté, il faut retourner "true" sinon, l'ajout est invalidé
-    if (!in_array('eqProtocol', $configKeys) && !in_array('eqKeepopen', $configKeys) && !in_array('eqRefreshMode', $configKeys)
-        && !in_array('eqPolling', $configKeys) && !in_array('eqWriteCmdCheckTimeout', $configKeys) && !in_array('eqFirstDelay', $configKeys))
-      return True;
-    if (!in_array('eqProtocol', $configKeys) || !in_array('eqKeepopen', $configKeys) || !in_array('eqRefreshMode', $configKeys)
-        || !in_array('eqPolling', $configKeys) || !in_array('eqWriteCmdCheckTimeout', $configKeys) || !in_array('eqFirstDelay', $configKeys))
-      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Veuillez définir la configuration de base de l\'équipement', __FILE__));
-    
-    $eqProtocol = $this->getConfiguration('eqProtocol');
-    $eqRefreshMode = $this->getConfiguration('eqRefreshMode');
-    $eqPolling = $this->getConfiguration('eqPolling');
-    $eqWriteCmdCheckTimeout = $this->getConfiguration('eqWriteCmdCheckTimeout');
-    $eqFirstDelay = $this->getConfiguration('eqFirstDelay');
-    if (!in_array($eqProtocol, self::supportedProtocols()))
-      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le protocol n\'est pas défini correctement.', __FILE__));
-    if (!in_array($eqRefreshMode, array('polling', 'cyclic', 'on_event')))
-      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le mode de rafraîchissement n\'est pas défini correctement.', __FILE__));
-    if (!is_numeric($eqPolling))
-      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Polling" doit être un nombre.', __FILE__));
-    if ($eqPolling < 1)
-      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Polling" doit être au moins à 1 seconde', __FILE__));
-    if (!is_numeric($eqWriteCmdCheckTimeout))
-      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Timeout pour vérification d\'une commande action" doit être un nombre.', __FILE__));
-    if ($eqWriteCmdCheckTimeout < 0.1)
-      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Timeout pour vérification d\'une commande action" doit être au moins à 0.1 seconde', __FILE__));
-    if (!is_numeric($eqFirstDelay))
-      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Temps entre la connexion et la première requête" doit être un nombre.', __FILE__));
-    if ($eqFirstDelay < 0)
-      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Temps entre la connexion et la première requête" doit être positif.', __FILE__));
-    
-    if ($eqProtocol == 'tcp') {
-      // Vérification du paramétrage d'une connexion TCP
-      if (!in_array('eqTcpAddr', $configKeys) && !in_array('eqTcpPort', $configKeys) && !in_array('eqTcpRtu', $configKeys)) {
-        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Veuillez définir la configuration TCP de l\'équipement', __FILE__));
+    if ($this->getIsEnable()) {
+      // Un nouvel équipement vient d'être ajouté, il faut retourner "true" sinon, l'ajout est invalidé
+      if (!in_array('eqProtocol', $configKeys) && !in_array('eqRefreshMode', $configKeys) && !in_array('eqPolling', $configKeys)
+          && !in_array('eqWriteCmdCheckTimeout', $configKeys) && !in_array('eqRetries', $configKeys) && !in_array('eqFirstDelay', $configKeys)
+          && !in_array('eqErrorDelay', $configKeys)) {
+        return True;
       }
-      $eqTcpAddr = $this->getConfiguration('eqTcpAddr');
-      $eqTcpPort = $this->getConfiguration('eqTcpPort');
-      if (!filter_var($eqTcpAddr, FILTER_VALIDATE_IP))
-        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'adresse IP n\'est pas valide', __FILE__));
-      if (!is_numeric($eqTcpPort))
-        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le port doit être un nombre.', __FILE__));
+      if (!in_array('eqProtocol', $configKeys) || !in_array('eqRefreshMode', $configKeys) || !in_array('eqPolling', $configKeys)
+          || !in_array('eqWriteCmdCheckTimeout', $configKeys) || !in_array('eqRetries', $configKeys) || !in_array('eqFirstDelay', $configKeys)
+          || !in_array('eqErrorDelay', $configKeys)) {
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Veuillez définir la configuration de base de l\'équipement', __FILE__));
+      }
       
-    } elseif ($eqProtocol == 'udp') {
-      // Vérification du paramétrage d'une connexion UDP
-      if (!in_array('eqUdpAddr', $configKeys) && !in_array('eqUdpPort', $configKeys))
-        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Veuillez définir la configuration UDP de l\'équipement', __FILE__));
-      $eqUdpAddr = $this->getConfiguration('eqUdpAddr');
-      $eqUdpPort = $this->getConfiguration('eqUdpPort');
-      if (!filter_var($eqUdpAddr, FILTER_VALIDATE_IP))
-        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'adresse IP n\'est pas valide', __FILE__));
-      if (!is_numeric($eqUdpPort))
-        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le port doit être un nombre.', __FILE__));
+      $eqProtocol = $this->getConfiguration('eqProtocol');
+      $eqRefreshMode = $this->getConfiguration('eqRefreshMode');
+      $eqPolling = $this->getConfiguration('eqPolling');
+      $eqTimeout = $this->getConfiguration('eqTimeout');
+      $eqWriteCmdCheckTimeout = $this->getConfiguration('eqWriteCmdCheckTimeout');
+      $eqRetries = $this->getConfiguration('eqRetries');
+      $eqFirstDelay = $this->getConfiguration('eqFirstDelay');
+      $eqErrorDelay = $this->getConfiguration('eqErrorDelay');
+      if (!in_array($eqProtocol, self::supportedProtocols())) {
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le protocol n\'est pas défini correctement.', __FILE__));
+      }
+      if (!in_array($eqRefreshMode, array('polling', 'cyclic', 'on_event'))) {
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le mode de rafraîchissement n\'est pas défini correctement.', __FILE__));
+      }
+      if (!is_numeric($eqPolling)) {
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Polling" doit être un nombre.', __FILE__));
+      }
+      if ($eqPolling < 1) {
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Polling" doit être au moins à 1 seconde.', __FILE__));
+      }
+      if (!is_numeric($eqTimeout)) {
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Timeout" doit être un nombre.', __FILE__));
+      }
+      if ($eqTimeout < 1) {
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Timeout" doit être au moins à 1 seconde.', __FILE__));
+      }
+      if (!is_numeric($eqWriteCmdCheckTimeout)) {
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Temps entre 2 requêtes de lecture (s)" doit être un nombre.', __FILE__));
+      }
+      if ($eqWriteCmdCheckTimeout < 0) {
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Temps entre 2 requêtes de lecture (s)" doit être positif.', __FILE__));
+      }
+      if (!is_numeric($eqRetries)) {
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Nombre de tentatives en cas d\'erreur" doit être un nombre.', __FILE__));
+      }
+      if ($eqRetries <= 0) {
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Nombre de tentatives en cas d\'erreur" doit être positif non nul.', __FILE__));
+      }
+      if (!is_numeric($eqFirstDelay)) {
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Temps d\'attente après la connexion" doit être un nombre.', __FILE__));
+      }
+      if ($eqFirstDelay < 0) {
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Temps d\'attente après la connexion" doit être positif.', __FILE__));
+      }
+      if (!is_numeric($eqErrorDelay)) {
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Temps d\'attente après une erreur de lecture" doit être un nombre.', __FILE__));
+      }
+      if ($eqErrorDelay < 1) {
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Temps d\'attente après une erreur de lecture" doit être au moins à 1 seconde.', __FILE__));
+      }
       
-    } elseif ($eqProtocol == 'serial') {
-      // Vérification du paramétrage d'une connexion série
-      if (!in_array('eqSerialInterface', $configKeys) || !in_array('eqSerialMethod', $configKeys) ||
-          !in_array('eqSerialBaudrate', $configKeys) || !in_array('eqSerialBytesize', $configKeys) ||
-          !in_array('eqSerialParity', $configKeys) || !in_array('eqSerialStopbits', $configKeys))
-        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Veuillez définir la configuration série de l\'équipement', __FILE__));
-      $eqSerialInterface = $this->getConfiguration('eqSerialInterface');
-      $eqSerialMethod = $this->getConfiguration('eqSerialMethod');
-      $eqSerialBaudrate = $this->getConfiguration('eqSerialBaudrate');
-      $eqSerialBytesize = $this->getConfiguration('eqSerialBytesize');
-      $eqSerialParity = $this->getConfiguration('eqSerialParity');
-      $eqSerialStopbits = $this->getConfiguration('eqSerialStopbits');
-      if ($eqSerialInterface == '')
-        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'interface doit être définie correctement.', __FILE__));
-      if (!in_array($eqSerialMethod, array('rtu', 'ascii', 'binary')))
-        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La méthode de transport n\'est pas définie correctement.', __FILE__));
-      if (!is_numeric($eqSerialBaudrate))
-        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La vitesse de transmission Modbus doit être un nombre.', __FILE__));
-      if (!in_array($eqSerialBytesize, array('7', '8')))
-        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le nombre de bits par octet n\'est pas défini correctement.', __FILE__));
-      if (!in_array($eqSerialParity, array('E', 'O', 'N')))
-        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La parité n\'est pas définie correctement.', __FILE__));
-      if (!in_array($eqSerialStopbits, array('0', '1', '2')))
-        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le nombre de bits de stop n\'est pas défini correctement.', __FILE__));
+      if ($eqProtocol === 'serial') {
+        // Vérification du paramétrage d'une connexion série
+        if (!in_array('eqPortSerial', $configKeys) || !in_array('eqSerialMethod', $configKeys) ||
+            !in_array('eqSerialBaudrate', $configKeys) || !in_array('eqSerialBytesize', $configKeys) ||
+            !in_array('eqSerialParity', $configKeys) || !in_array('eqSerialStopbits', $configKeys)) {
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Veuillez définir la configuration série de l\'équipement', __FILE__));
+        }
+        $eqPortSerial = $this->getConfiguration('eqPortSerial');
+        $eqSerialMethod = $this->getConfiguration('eqSerialMethod');
+        $eqSerialBaudrate = $this->getConfiguration('eqSerialBaudrate');
+        $eqSerialBytesize = $this->getConfiguration('eqSerialBytesize');
+        $eqSerialParity = $this->getConfiguration('eqSerialParity');
+        $eqSerialStopbits = $this->getConfiguration('eqSerialStopbits');
+        if ($eqPortSerial === '') {
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'interface doit être définie correctement.', __FILE__));
+        }
+        if (!in_array($eqSerialMethod, array('rtu', 'ascii', 'binary'))) {
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La méthode de transport n\'est pas définie correctement.', __FILE__));
+        }
+        if (!is_numeric($eqSerialBaudrate)) {
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La vitesse de transmission Modbus doit être un nombre.', __FILE__));
+        }
+        if (!in_array($eqSerialBytesize, array('7', '8'))) {
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le nombre de bits par octet n\'est pas défini correctement.', __FILE__));
+        }
+        if (!in_array($eqSerialParity, array('E', 'O', 'N'))) {
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La parité n\'est pas définie correctement.', __FILE__));
+        }
+        if (!in_array($eqSerialStopbits, array('0', '1', '2'))) {
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le nombre de bits de stop n\'est pas défini correctement.', __FILE__));
+        }
+
+      } else {
+        // Vérification du paramétrage d'une connexion TCP
+        if (!in_array('eqAddr', $configKeys) || !in_array('eqPortNetwork', $configKeys)) {
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Veuillez définir la configuration réseau de l\'équipement', __FILE__));
+        }
+        $eqAddr = $this->getConfiguration('eqAddr');
+        $eqPortNetwork = $this->getConfiguration('eqPortNetwork');
+        if (!filter_var($eqAddr, FILTER_VALIDATE_IP)) {
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'adresse IP n\'est pas valide', __FILE__));
+        }
+        log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('***** DEBUG DEBUG DEBUG ***** ', __FILE__) . sprintf("*'%d'*", var_export($eqPortNetwork, true)));
+        if (!is_numeric($eqPortNetwork)) {
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le port doit être un nombre.', __FILE__));
+        }
+      }
     }
-    
+
     if ($this->getId() != '') {
-      $refreshCmdTest = $this->getCmd('action', 'refresh');
       $refreshTimeCmdTest = $this->getCmd('info', 'refresh time');
       if (!is_object($refreshTimeCmdTest)) {
         log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('Création de commande : Temps de rafraîchissement', __FILE__));
@@ -613,6 +629,7 @@ class mymodbus extends eqLogic {
           ->setOrder(0)
           ->save();
       }
+      $refreshCmdTest = $this->getCmd('action', 'refresh');
       if (!is_object($refreshCmdTest)) {
         log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('Création de commande : Rafraîchir', __FILE__));
         $refreshCmd = (new mymodbusCmd)
@@ -627,46 +644,69 @@ class mymodbus extends eqLogic {
         $refreshCmd->setOrder(0);
         $refreshCmd->save();
       }
+      $cycleOkCmdTest = $this->getCmd('info', 'cycle ok');
+      if (!is_object($cycleOkCmdTest)) {
+        log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('Création de commande : Cycle OK', __FILE__));
+        $refreshCmd = (new mymodbusCmd)
+          ->setLogicalId('cycle ok')
+          ->setEqLogic_id($this->getId())
+          ->setName(__('Cycle OK', __FILE__))
+          ->setType('info')
+          ->setSubType('binary')
+          ->save();
+      }
       
       $offset = 0;
-      if (!is_object($refreshTimeCmdTest))
+      if (!is_object($refreshTimeCmdTest)) {
         $offset++;
-      if (!is_object($refreshCmdTest))
+      }
+      if (!is_object($refreshCmdTest)) {
         $offset++;
-      if ($offset > 0)
+      }
+      if ($offset > 0) {
         foreach ($this->getCmd() as $cmdMymodbus) { // boucle sur les commandes
-          if (in_array($cmdMymodbus->getLogicalId(), array('refresh', 'refresh time')))
+          if (in_array($cmdMymodbus->getLogicalId(), array('refresh', 'refresh time', 'cycle ok'))) {
             continue;
+          }
           if ($cmdMymodbus->getId() != '') {
             $cmdMymodbus->setOrder($cmdMymodbus->getOrder() + $offset);
             $cmdMymodbus->save();
           }
         }
-    }
-    
-    // Suppression de l'ancienne configuration
-    $old_config = $this->configuration;
-    foreach (array('protocol', 'addr', 'port', 'keepopen', 'polling', 'mheure', 'auto_cmd', 'unit', 'baudrate', 'parity', 'bytesize', 'stopbits') as $attribut)
-      if (isset($this->configuration[$attribut])) {
-        unset($this->configuration[$attribut]);
-        $this->_changed = true;
       }
+    }
+
+    // Suppression de l'ancienne configuration
+    log::add(__CLASS__, 'info', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('Suppression de la configuration inutile', __FILE__));
+    foreach (array('protocol', 'addr', 'port', 'keepopen', 'polling', 'mheure', 'auto_cmd', 'unit', 'baudrate', 'parity', 'bytesize', 'stopbits',
+        'eqKeepopen', 'eqTcpPort', 'eqTcpAddr', 'eqUdpPort', 'eqUdpAddr', 'eqSerialInterface') as $attribut) {
+      // log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('Check de la conf ', __FILE__) . sprintf("*'%s'*", var_export($attribut, true)));
+      if (isset($this->configuration[$attribut])) {
+        log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('Suppression de la conf ', __FILE__) . sprintf("*'%s'*", var_export($attribut, true)));
+        $this->setConfiguration($attribut, null);
+      }
+    }
     // Suppression des éléments de configuration inutiles
     $confOK = $this->getEqConfiguration();
     $conf = $this->getConfiguration();
+    $serial_com = $conf['eqProtocol'] === 'serial';
     foreach ($conf as $key => $value) {
-      if (substr($key, 0, 2) == 'eq' && !in_array($key, array_keys($confOK))) {
-        unset($this->configuration[$key]);
-        $this->_changed = true;
+      if ((substr($key, 0, 2) === 'eq' && !in_array($key, array_keys($confOK))
+          || $value === '')
+          && (!$serial_com && $key != 'eqPortNetwork' || $serial_com && $key != 'eqPortSerial')) {
+        $this->setConfiguration($key, null);
       }
     }
+
+    //if ($this->getChanged()) {
+    //  $this->save();
+    //}
     //log::add(__CLASS__, 'debug', 'Validation de la configuration pour l\'équipement *' . $this->getHumanName() . '* : OK');
   }
 
-   /*
-  * Fonction exécutée automatiquement après la sauvegarde de l'équipement (création ou mise à jour)
-  public function postSave() {}
-  */
+  // Fonction exécutée automatiquement après la sauvegarde de l'équipement (création ou mise à jour)
+  public function postSave() {
+  }
   
   public function postAjax() {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
@@ -696,8 +736,9 @@ class mymodbus extends eqLogic {
     $completeConfig = array();
     foreach (self::byType('mymodbus') as $eqMymodbus) { // boucle sur les équipements
       // ne pas exporter la configuration si l'équipement n'est pas activé
-      if (!$eqMymodbus->getIsEnable())
+      if (!$eqMymodbus->getIsEnable()) {
         continue;
+      }
       
       $completeConfig[] = $eqMymodbus->getEqConfiguration();
     }
@@ -712,33 +753,31 @@ class mymodbus extends eqLogic {
     $eqConfig['id'] = $this->getId();
     $eqConfig['name'] = $this->getName();
     $eqConfig['eqProtocol'] = $this->getConfiguration('eqProtocol');
-    $eqConfig['eqKeepopen'] = $this->getConfiguration('eqKeepopen');
     $eqConfig['eqRefreshMode'] = $this->getConfiguration('eqRefreshMode', 'polling');
     $eqConfig['eqPolling'] = $this->getConfiguration('eqPolling', '5');
-    $eqConfig['eqWriteCmdCheckTimeout'] = $this->getConfiguration('eqWriteCmdCheckTimeout', '1');
+    $eqConfig['eqTimeout'] = $this->getConfiguration('eqTimeout', '5');
+    $eqConfig['eqWriteCmdCheckTimeout'] = $this->getConfiguration('eqWriteCmdCheckTimeout', '0.01');
+    $eqConfig['eqRetries'] = $this->getConfiguration('eqRetries', '3');
     $eqConfig['eqFirstDelay'] = $this->getConfiguration('eqFirstDelay', '0');
-    if ($eqConfig['eqProtocol'] == 'serial') {
-      $eqConfig['eqSerialInterface'] = $this->getConfiguration('eqSerialInterface');
+    $eqConfig['eqErrorDelay'] = $this->getConfiguration('eqErrorDelay', '1');
+    if ($eqConfig['eqProtocol'] === 'serial') {
+      $eqConfig['eqPort'] = $this->getConfiguration('eqPortSerial');
       $eqConfig['eqSerialMethod'] = $this->getConfiguration('eqSerialMethod');
       $eqConfig['eqSerialBaudrate'] = $this->getConfiguration('eqSerialBaudrate');
       $eqConfig['eqSerialBytesize'] = $this->getConfiguration('eqSerialBytesize');
       $eqConfig['eqSerialParity'] = $this->getConfiguration('eqSerialParity');
       $eqConfig['eqSerialStopbits'] = $this->getConfiguration('eqSerialStopbits');
       
-    } elseif ($eqConfig['eqProtocol'] == 'tcp') {
-      $eqConfig['eqTcpAddr'] = $this->getConfiguration('eqTcpAddr');
-      $eqConfig['eqTcpPort'] = $this->getConfiguration('eqTcpPort');
-      $eqConfig['eqTcpRtu'] = $this->getConfiguration('eqTcpRtu');
-      
-    } elseif  ($eqConfig['eqProtocol'] == 'udp') {
-      $eqConfig['eqUdpAddr'] = $this->getConfiguration('eqUdpAddr');
-      $eqConfig['eqUdpPort'] = $this->getConfiguration('eqUdpPort');
+    } else {
+      $eqConfig['eqAddr'] = $this->getConfiguration('eqAddr');
+      $eqConfig['eqPort'] = $this->getConfiguration('eqPortNetwork');
       
     }
     $eqConfig['cmds'] = array();
     foreach ($this->getCmd() as $cmdMymodbus) { // boucle sur les commandes
-      if (in_array($cmdMymodbus->getLogicalId(), array('refresh', 'refresh time')))
+      if (in_array($cmdMymodbus->getLogicalId(), array('refresh', 'refresh time', 'cycle ok'))) {
         continue;
+      }
       
       $eqConfig['cmds'][] = $cmdMymodbus->getCmdConfiguration();
     }
@@ -746,15 +785,18 @@ class mymodbus extends eqLogic {
   }
   
   public static function getDeamonState() {
-    $pid_file = '/tmp/mymodbusd.pid';
+    $pid_file = jeedom::getTmpFolder(__CLASS__) . '/daemon.pid';
+    $ret = 'nok';
     if (file_exists($pid_file)) {
-      $pid = file_get_contents($pid_file);
-      //log::add(__CLASS__, 'debug', 'getDeamonState $pid: ' . strval($pid));
-      $running_pid = exec("ps -eo pid,command | grep `cat $pid_file` | grep -v grep | awk '{print $1}'");
-      //log::add(__CLASS__, 'debug', 'getDeamonState $running_pid: ' . strval($running_pid));
-      return (($running_pid != 0) && (intval($running_pid) == intval($pid)))? 'ok': 'nok';
+      $pid = trim(file_get_contents($pid_file));
+      if (@posix_getsid($pid)) {
+        $ret = 'ok';
+      } else {
+        shell_exec(system::getCmdSudo() . 'rm -rf ' . $pid_file . ' 2>&1 > /dev/null');
+        $ret = 'nok';
+      }
     }
-    return 'nok';
+    return $ret;
   }
   
   public static function getDeamonLaunchable() {
@@ -763,17 +805,15 @@ class mymodbus extends eqLogic {
     $eqConfigs = self::getCompleteConfiguration();
     $serialIntf = array();
     foreach ($eqConfigs as $config) {
-      if ($config['eqProtocol'] == 'serial') {
-        $intf = $config['eqSerialInterface'];
-        if (in_array($intf, $serialIntf))
+      if ($config['eqProtocol'] === 'serial') {
+        $intf = $config['eqPortSerial'];
+        if (in_array($intf, $serialIntf)) {
           return 'nok';
+        }
         $serialIntf[] = $intf;
       } 
     }
     
-    if (!self::check_pyenv())
-      self::init_pyenv();
-
     foreach (self::byType('mymodbus') as $eqMymodbus) { // boucle sur les équipements
       if ($eqMymodbus->getIsEnable()) {
         foreach ($eqMymodbus->getCmd('info') as $cmd) {
@@ -782,18 +822,19 @@ class mymodbus extends eqLogic {
         }
       }
     }
-    return'nok';
+    return 'nok';
+  }
+  
+  public static function getSocketPort() {
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
+    $default_socket_port = mymodbusConst::DEFAULT_SOCKET_PORT;
+    $config_socket_port = config::byKey('socketport', __CLASS__, $default_socket_port);
+    return is_numeric($config_socket_port) ? $config_socket_port : $default_socket_port;
   }
   
   public static function getCallbackUrl() {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
-    $port = config::byKey('internalPort', 'core', 80);
-    $comp = trim(config::byKey('internalComplement', 'core', ''), '/');
-    if ($comp !== '') $comp .= '/';
-    $callback = 'localhost:' . $port . '/' . $comp . 'plugins/mymodbus/core/php/jeemymodbus.php';
-    if ((file_exists('/.dockerenv') || config::byKey('forceDocker', __CLASS__, '0')) && config::byKey('urlOverrideEnable', __CLASS__, '0') == '1')
-      $callback = config::byKey('urlOverrideValue', __CLASS__, $callback);
-    return $callback;
+    return network::getNetworkAccess('internal', 'proto:127.0.0.1:port:comp') . '/plugins/mymodbus/core/php/jeemymodbus.php';
   }
 }
 
@@ -816,18 +857,16 @@ class mymodbusCmd extends cmd {
   public function execute($_option=array()) {
     log::add('mymodbus', 'debug', __CLASS__ . '::' . __FUNCTION__ . ' **************** execute *****: ' . json_encode($_option));
     
-    if ($this->getType() != 'action')
+    if ($this->getType() != 'action') {
       return;
+    }
     
     $eqMymodbus = $this->getEqLogic();
     
     $command = array();
     $command['eqId'] = $eqMymodbus->getId();
-
-    if (!$eqMymodbus->getIsEnable())
-      return;
     
-    if ($this->getLogicalId() == 'refresh') {
+    if ($this->getLogicalId() === 'refresh') {
       $message = array();
       $message['CMD'] = 'read';
       $message['read_cmd'] = $command;
@@ -835,18 +874,19 @@ class mymodbusCmd extends cmd {
     } else {
       $cmdFormat = $this->getConfiguration('cmdFormat');
       
-      if (strstr($cmdFormat, '8') || $cmdFormat == 'blob')
+      if (strstr($cmdFormat, 'uint8') || $cmdFormat === 'blob') {
         return;
+      }
       
       $value = $this->getConfiguration('cmdWriteValue');
       
-      if ($this->getSubtype() == 'message') {
-        $value = $_option['message']; // the title is ignored
-      } elseif ($this->getSubtype() == 'slider') {
+      if ($this->getSubtype() === 'message') {
+        $value = strval($_option['message']); // the title is ignored
+      } elseif ($this->getSubtype() === 'slider') {
         $value = trim(str_replace('#slider#', $_option['slider'], $value));
-      } elseif ($this->getSubtype() == 'color') {
+      } elseif ($this->getSubtype() === 'color') {
         $value = trim(str_replace('#color#', $_option['color'], $value));
-      }elseif ($this->getSubtype() == 'select') {
+      }elseif ($this->getSubtype() === 'select') {
         $value = trim(str_replace('#select#', $_option['select'], $value));
       }
       if (strstr($value, '#value#') && $this->getValue()) {
@@ -855,8 +895,9 @@ class mymodbusCmd extends cmd {
         $value = trim(str_replace('#value#', $cmdValue, $value));
       }
       $command['cmdWriteValue'] = jeedom::evaluateExpression($value);
-      if ($command['cmdWriteValue'] === '')
+      if ($command['cmdWriteValue'] === '') {
         throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La valeur à écrire est vide. L\'écriture est ignorée.', __FILE__));
+      }
 
       $command['cmdId'] = $this->getId();
       
@@ -876,20 +917,21 @@ class mymodbusCmd extends cmd {
   public function preSave() {
     log::add('mymodbus', 'debug', __CLASS__ . '::' . __FUNCTION__);
     // Suppression de l'ancienne configuration
-    foreach (array('type', 'datatype', 'location', 'request', 'parameters') as $attribut)
+    foreach (array('type', 'datatype', 'location', 'request', 'parameters') as $attribut) {
       if (isset($this->configuration[$attribut])) {
         unset($this->configuration[$attribut]);
         $this->_changed = true;
       }
+    }
     
     // Suppression des éléments de configuration inutiles
     $confOK = $this->getCmdConfiguration();
     $conf = $this->getConfiguration();
     foreach ($conf as $key => $value) {
-      if (substr($key, 0, 3) == 'cmd' && !in_array($key, array_keys($confOK)) && substr($key, 0, 13) !== 'cmdSourceBlob' && $key !== 'cmdOption' && $key !== 'cmdWriteValue' ||
+      if (substr($key, 0, 3) === 'cmd' && !in_array($key, array_keys($confOK)) && substr($key, 0, 13) !== 'cmdSourceBlob' && $key !== 'cmdOption' && $key !== 'cmdWriteValue' ||
           substr($key, 0, 13) === 'cmdSourceBlob' && $conf['cmdFctModbus'] != 'fromBlob' ||
-          $conf['cmdFctModbus'] == 'fromBlob' && $this->getSubType() == 'binary' && $key === 'cmdSourceBlobNum' ||
-          $conf['cmdFctModbus'] == 'fromBlob' && $this->getSubType() !== 'binary' && $key === 'cmdSourceBlobBin' ||
+          $conf['cmdFctModbus'] === 'fromBlob' && $this->getSubType() === 'binary' && $key === 'cmdSourceBlobNum' ||
+          $conf['cmdFctModbus'] === 'fromBlob' && $this->getSubType() !== 'binary' && $key === 'cmdSourceBlobBin' ||
           $key === 'cmdSourceBlob') {
         unset($this->configuration[$key]);
         $this->_changed = true;
@@ -905,87 +947,105 @@ class mymodbusCmd extends cmd {
       $this->_changed = true;
     }
 
-    if (in_array($this->getLogicalId(), array('refresh', 'refresh time')))
+    if (in_array($this->getLogicalId(), array('refresh', 'refresh time', 'cycle ok'))) {
       return true;
+    }
     $cmdSlave = $this->getConfiguration('cmdSlave');
     $cmdAddress = $this->getConfiguration('cmdAddress');
     $cmdFrequency = $this->getConfiguration('cmdFrequency');
     $cmdFormat = $this->getConfiguration('cmdFormat');
     $cmdFctModbus = $this->getConfiguration('cmdFctModbus');
     $cmdOption = $this->getConfiguration('cmdOption');
-    if ($cmdSlave == '') {
-      $cmdSlave = '0';
+    if ($cmdSlave === '') {
+      $cmdSlave = '1';
       $this->setConfiguration('cmdSlave', $cmdSlave);
     }
-    if (!is_numeric($cmdSlave))
-      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'adresse esclave doit être un nombre.<br>\'0\' si pas de bus série.', __FILE__));
-    if ($this->getType() == 'info') {
-      if ($cmdFrequency == '') {
+    if (!is_numeric($cmdSlave)) {
+      throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'adresse esclave doit être un nombre.<br>\'1\' par défaut.', __FILE__));
+    }
+    if ($this->getType() === 'info') {
+      if ($cmdFrequency === '') {
         $cmdFrequency = '1';
         $this->setConfiguration('cmdFrequency', $cmdFrequency);
       }
-      if (!is_numeric($cmdFrequency))
+      if (!is_numeric($cmdFrequency)) {
         throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La configuration \'Lecture 1x sur\' doit être un nombre.', __FILE__));
-      if ($this->getSubType() == 'binary' && in_array($cmdFctModbus, array('3', '4')) && !preg_match('/#value# & \d+/', $cmdOption))
+      }
+      if ($this->getSubType() === 'binary' && in_array($cmdFctModbus, array('3', '4')) && !preg_match('/#value# & \d+/', $cmdOption)) {
         throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Pour pouvoir utiliser une fonction de lecture de registre numérique, une commande de type binaire doit avoir un filtre en option', __FILE__));
+      }
     }
-    if (!is_numeric($cmdAddress) && $cmdFormat != 'string' && $cmdFormat != 'blob' && !strstr($cmdFormat, 'sp-sf'))
+    if (!is_numeric($cmdAddress) && $cmdFormat != 's' && $cmdFormat != 'blob' && !strstr($cmdFormat, '_sf')) {
       throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'adresse Modbus doit être un nombre.', __FILE__));
-    if ($cmdFormat == 'string' && !preg_match('/\d+\s*\[\s*\d+\s*\]/', $cmdAddress))
+    }
+    if ($cmdFormat === 's' && !preg_match('/\d+\s*\[\s*\d+\s*\]/', $cmdAddress)) {
       throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'adresse Modbus d\'une chaine de caractère doit être de la forme<br>adresse[longueur]', __FILE__));
-    if ($cmdFormat == 'blob' && !preg_match('/\d+\s*\[\s*\d+\s*\]/', $cmdAddress))
+    }
+    if ($cmdFormat === 'blob' && !preg_match('/\d+\s*\[\s*\d+\s*\]/', $cmdAddress)) {
       throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'adresse Modbus d\'une plage de registres doit être de la forme<br>adresse[longueur]', __FILE__));
-    if (strstr($cmdFormat, 'sp-sf') && !preg_match('/\d+\s*sf\s*\d+/i', $cmdAddress))
+    }
+    if (strstr($cmdFormat, '_sf') && !preg_match('/\d+\s*sf\s*\d+/i', $cmdAddress)) {
       throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'adresse Modbus d\'un scale factor doit être de la forme&nbsp;:<br><i>adresse_valeur </i>sf<i> adresse_scale_factor</i>', __FILE__));
-    if ($cmdOption != '' && (!strstr($cmdOption, '#value#') || strstr($cmdOption, ';')))
+    }
+    if ($cmdOption != '' && (!strstr($cmdOption, '#value#') || strstr($cmdOption, ';'))) {
       throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre \'Option\' doit contenir \'#value#\' et aucun \';\'.', __FILE__));
-    if ($this->getType() == 'action') {
-      if ($cmdFctModbus == '6' && (strstr($cmdFormat, '32') || strstr($cmdFormat, '64')))
+    }
+    if ($this->getType() === 'action') {
+      if ($cmdFctModbus === '6' && (in_array($cmdFormat, ['i', 'I', 'q', 'Q', 'f', 'd']))) {
         throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La fonction "[0x06] Write register" ne permet pas d\'écrire une variable de cette longueur.', __FILE__));
-      if (strstr($cmdFormat, '8') || $cmdFormat == 'blob' || $cmdFctModbus == 'fromBlob')
+      }
+      if (strstr($cmdFormat, 'uint8') || $cmdFormat === 'blob' || $cmdFctModbus === 'fromBlob') {
         log::add('mymodbus', 'warning', $this->getHumanName() . '&nbsp;:<br>' . __('L\'écriture sera ignorée.', __FILE__));
-      if ($this->getConfiguration('cmdWriteValue') == '') {
-        if ($this->getSubType() == 'slider') {
+      }
+      if ($this->getConfiguration('cmdWriteValue') === '') {
+        if ($this->getSubType() === 'slider') {
             $this->setConfiguration('cmdWriteValue', '#slider#');
             $this->_changed = true;
         }
-        if ($this->getSubType() == 'select') {
+        if ($this->getSubType() === 'select') {
             $this->setConfiguration('cmdWriteValue', '#select#');
             $this->_changed = true;
         }
-        if ($this->getSubType() == 'color') {
+        if ($this->getSubType() === 'color') {
             $this->setConfiguration('cmdWriteValue', '#color#');
             $this->_changed = true;
         }
-        if ($this->getConfiguration('cmdWriteValue') == '')
+        if ($this->getConfiguration('cmdWriteValue') === '') {
           throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La valeur à écrire est vide.', __FILE__));
+        }
       } else {
         $cmdWriteValue = $this->getConfiguration('cmdWriteValue');
-        if ($this->getSubType() == 'slider' && !strstr($cmdWriteValue, '#slider#'))
+        if ($this->getSubType() === 'slider' && !strstr($cmdWriteValue, '#slider#')) {
           log::add('mymodbus', 'error', $this->getHumanName() . '&nbsp;:<br>' . __('Le champ valeur ne contient pas \'#slider#\'.', __FILE__));
-        if ($this->getSubType() == 'select' && !strstr($cmdWriteValue, '#select#'))
+        }
+        if ($this->getSubType() === 'select' && !strstr($cmdWriteValue, '#select#')) {
           log::add('mymodbus', 'error', $this->getHumanName() . '&nbsp;:<br>' . __('Le champ valeur ne contient pas \'#select#\'.', __FILE__));
-        if ($this->getSubType() == 'color' && !strstr($cmdWriteValue, '#color#'))
+        }
+        if ($this->getSubType() === 'color' && !strstr($cmdWriteValue, '#color#')) {
           log::add('mymodbus', 'error', $this->getHumanName() . '&nbsp;:<br>' . __('Le champ valeur ne contient pas \'#color#\'.', __FILE__));
+        }
       }
     }
-    if ($cmdFctModbus == 'fromBlob') {
-      if ($cmdFormat == 'blob')
+    if ($cmdFctModbus === 'fromBlob') {
+      if ($cmdFormat === 'blob') {
         throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('On ne peut pas extraire une plage de registres d\'une plage de registres.', __FILE__));
-      if ($this->getSubtype() == 'binary')
+      }
+      if ($this->getSubtype() === 'binary') {
         $cmdSourceBlob = $this->getConfiguration('cmdSourceBlobBin');
-      else
+      } else {
         $cmdSourceBlob = $this->getConfiguration('cmdSourceBlobNum');
+      }
       
       if (!is_numeric($cmdSourceBlob) && preg_match('/#\[.*\]#/', $cmdSourceBlob)) {
         $eqMymodbus = $this->getEqLogic();
         foreach ($eqMymodbus->getCmd() as $cmd) {
-          if ($cmdSourceBlob == '#[' . $cmd->getName() . ']#') {
+          if ($cmdSourceBlob === '#[' . $cmd->getName() . ']#') {
             $cmdSourceBlob = $cmd->getId();
-            if ($this->getSubtype() == 'binary')
+            if ($this->getSubtype() === 'binary'){
               $this->setConfiguration('cmdSourceBlobBin', $cmdSourceBlob);
-            else
+            } else {
               $this->setConfiguration('cmdSourceBlobNum', $cmdSourceBlob);
+            }
           }
         }
       }
@@ -997,28 +1057,32 @@ class mymodbusCmd extends cmd {
         $minAddr = intval($matches[1]);
         $maxAddr = $minAddr + intval($matches[2]) - 1;
         
-        if ($cmdFormat != 'string' && !strstr($cmdFormat, 'sp-sf')) {
+        if ($cmdFormat != 's' && !strstr($cmdFormat, '_sf')) {
           $cmdAddress = intval($cmdAddress);
-          if ($cmdAddress < $minAddr or $cmdAddress > $maxAddr)
+          if ($cmdAddress < $minAddr or $cmdAddress > $maxAddr) {
             throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Adresse Modbus en dehors de la plage de registres.', __FILE__));
-          if ($this->getSubtype() == 'binary') {
-            if ($blobCmd->getSubtype() == 'numeric' && !preg_match('/#value# & \d+/', $cmdOption))
+          }
+          if ($this->getSubtype() === 'binary') {
+            if ($blobCmd->getSubtype() === 'numeric' && !preg_match('/#value# & \d+/', $cmdOption)) {
               throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Pour pouvoir utiliser une plage de lecture de registre numérique, une commande de type binaire doit avoir un filtre en option', __FILE__));
+            }
           }
         }
-        if ($cmdFormat == 'string') {
+        if ($cmdFormat === 's') {
           preg_match('/(\d+)\s*\[\s*(\d+)\s*\]/', $cmdAddress, $matches);
           $startAddr = intval($matches[1]);
           $endAddr = $startAddr + intval($matches[2]);
-          if ($startAddr < $minAddr or $startAddr > $maxAddr or $endAddr < $minAddr or $endAddr > $maxAddr)
+          if ($startAddr < $minAddr or $startAddr > $maxAddr or $endAddr < $minAddr or $endAddr > $maxAddr) {
             throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Adresse Modbus en dehors de la plage de registres.', __FILE__));
+          }
         }
-        if (strstr($cmdFormat, 'sp-sf')) {
+        if (strstr($cmdFormat, '_sf')) {
           preg_match('/(\d+)\s*sf\s*(\d+)/i', $cmdAddress, $matches);
           $startAddr = intval($matches[1]);
           $endAddr = intval($matches[2]);
-          if ($startAddr < $minAddr or $startAddr > $maxAddr or $endAddr < $minAddr or $endAddr > $maxAddr)
+          if ($startAddr < $minAddr or $startAddr > $maxAddr or $endAddr < $minAddr or $endAddr > $maxAddr) {
             throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Adresse Modbus en dehors de la plage de registres.', __FILE__));
+          }
         }
       }
     }
@@ -1034,11 +1098,12 @@ class mymodbusCmd extends cmd {
     $return['type'] = $this->getType();
     $return['cmdSlave'] = $this->getConfiguration('cmdSlave');
     $return['cmdFctModbus'] = $this->getConfiguration('cmdFctModbus');
-    if ($return['cmdFctModbus'] == 'fromBlob') {
-      if ($this->getSubType() == 'binary')
+    if ($return['cmdFctModbus'] === 'fromBlob') {
+      if ($this->getSubType() === 'binary') {
         $return['cmdSourceBlob'] = $this->getConfiguration('cmdSourceBlobBin');
-      else
+      } else {
         $return['cmdSourceBlob'] = $this->getConfiguration('cmdSourceBlobNum');
+      }
     }
     $return['cmdFormat'] = $this->getConfiguration('cmdFormat');
     $return['cmdAddress'] = $this->getConfiguration('cmdAddress');

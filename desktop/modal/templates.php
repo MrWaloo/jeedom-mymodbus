@@ -18,6 +18,7 @@
 if (!isConnect('admin')) {
   throw new Exception('401 Unauthorized');
 }
+require_once __DIR__ . '/../php/mymodbusEqConfig.class.php';
 ?>
 
 <div class="col-lg-2 col-md-2 col-sm-2" style="height:100%">
@@ -37,7 +38,11 @@ if (!isConnect('admin')) {
     <a class="btn btn-sm btn-danger" id="bt_MyModbusTemplateDelete"><i class="fas fa-times"></i> {{Supprimer}}</a>
     <br>
     <legend><i class="fas fa-tachometer-alt"></i> {{Aperçu de l'équipement}}</legend>
-    <div id='div_MyModbusTemplateEqlogic'></div>
+    <div id='div_MyModbusTemplateEqlogic'>
+      <?php
+        mymodbusEqConfig::show(true);
+      ?>
+    </div>
     <br>
     <legend><i class="fas fa-list-alt"></i> {{Aperçu des commandes}}</legend>
     <table id="table_MyModbusTemplateCmds" class="table tree table-bordered table-condensed table-striped">
@@ -59,8 +64,6 @@ if (!isConnect('admin')) {
 </div>
 
 <script>
-
-$('#div_MyModbusTemplateEqlogic').load('index.php?v=d&plugin=mymodbus&modal=eqConfig&template=1');
 
 $('#bt_MyModbusTemplateUp').fileupload({
   dataType: 'json',
@@ -103,10 +106,12 @@ $('#ul_MyModbusTemplateList').on('click', '.li_mymodbusTemplate', function(event
   $('#ul_MyModbusTemplateList .li_mymodbusTemplate').removeClass('active');
   $('#table_MyModbusTemplateCmds tbody').empty();
   $(this).addClass('active');
-  if ($('#ul_MyModbusTemplateList li.active').attr('data-name').startsWith('[Perso] '))
+  if ($('#ul_MyModbusTemplateList li.active').attr('data-name').startsWith('[Perso] ')) {
     $('#bt_MyModbusTemplateDelete').show();
-  else
+  } else {
     $('#bt_MyModbusTemplateDelete').hide();
+  }
+  
   mymodbus.callPluginAjax({
     data: {
       action: "getTemplateByFile",
@@ -116,12 +121,21 @@ $('#ul_MyModbusTemplateList').on('click', '.li_mymodbusTemplate', function(event
       $.fn.showAlert({message: error.message, level: 'danger'});
     },
     success: function (data) {
-      // Configuration de l'équipement
+      // Gestion de l'équipement
       $('#div_MyModbusTemplate').show();
-      $('#div_protocolTmplParameters').load('index.php?v=d&plugin=mymodbus&modal=eqConfig_' + data.configuration.eqProtocol, function () {
-        console.log('paramètres :', $('#div_protocolTmplParameters').html());
-        $('#div_MyModbusTemplate').setValues(data, '.eqLogicAttr');
-      });
+      $('#div_MyModbusTemplate').setValues(data, '.eqLogicAttr');
+      var show_network = (data.configuration.eqProtocol !== 'serial');
+      const networkConfig = $('#div_protocolParameters .networkConfig');
+      const serialConfig = $('#div_protocolParameters .serialConfig');
+      if (show_network) {
+        networkConfig.show();
+        serialConfig.hide();
+      } else {
+        networkConfig.hide();
+        serialConfig.show();
+      }
+      networkConfig.prop('disabled', true);
+      serialConfig.prop('disabled', true);
 
       // Configuration des commandes
       for (let _cmd of data['commands']) {
@@ -143,21 +157,23 @@ $('#ul_MyModbusTemplateList').on('click', '.li_mymodbusTemplate', function(event
 
           if (isset(_cmd.configuration.cmdFctModbus) && _cmd.configuration.cmdFctModbus == 'fromBlob') {
             let cmdSourceBlob = '';
-            if (_cmd.subType == 'binary')
+            if (_cmd.subType == 'binary') {
               cmdSourceBlob = _cmd.configuration.cmdSourceBlobBin;
-            else
+            } else {
               cmdSourceBlob = _cmd.configuration.cmdSourceBlobNum;
-
-            if (cmdSourceBlob.slice(0, 2) == '#[' && cmdSourceBlob.slice(-2) == ']#')
+            }
+            if (cmdSourceBlob.slice(0, 2) == '#[' && cmdSourceBlob.slice(-2) == ']#') {
               cmdSourceBlob = cmdSourceBlob.slice(2, -2);
-            else
+            } else {
               cmdSourceBlob = '{{**Erreur format**}}';
+            }
             cmdSourceBlob = '<option>' + cmdSourceBlob + '</option>';
 
-            if (_cmd.subType == 'binary')
+            if (_cmd.subType == 'binary') {
               tr.find('.cmdAttr[data-l1key=configuration][data-l2key=cmdSourceBlobBin]').append(cmdSourceBlob);
-            else
+            } else {
               tr.find('.cmdAttr[data-l1key=configuration][data-l2key=cmdSourceBlobNum]').append(cmdSourceBlob);
+            }
           }
           actualise_visible($(tr.find('.cmdAttr[data-l1key=type]')), 'first call', true);
         }

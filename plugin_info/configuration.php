@@ -15,7 +15,7 @@
  * along with Jeedom. If not, see <http://www.gnu.org/licenses/>.
  */
 
-require_once dirname(__FILE__) . '/../../../core/php/core.inc.php';
+require_once __DIR__ . '/../../../core/php/core.inc.php';
 include_file('core', 'authentification', 'php');
 if (!isConnect()) {
   include_file('desktop', '404', 'php');
@@ -46,27 +46,3 @@ if (!isConnect()) {
     </div>
   </fieldset>
 </form>
-
-<script>
-  $('#bt_savePluginLogConfig').on('click', function() { // bouton sauvegarde des modifs mode de log
-    $.ajax({// fonction permettant de faire de l'ajax
-      type: "POST", // methode de transmission des données au fichier php
-      url: "plugins/mymodbus/core/ajax/mymodbus.ajax.php", // url du fichier php
-      data: {
-        action: "changeLogLevel",
-        level: $('#div_plugin_log').getValues('.configKey')[0]
-      },
-      dataType: 'json',
-      error: function (request, status, error) {
-        handleAjaxError(request, status, error);
-      },
-      success: function (data) { // si l'appel a bien fonctionné
-        if (data.state != 'ok') {
-          $.fn.showAlert({message: data.result, level: 'danger'});
-          return;
-        }
-        $.fn.showAlert({message: '{{Changement réussi, inutile de redémarrer le démon}}', level: 'success'});
-      }
-    });
-  });
-</script>

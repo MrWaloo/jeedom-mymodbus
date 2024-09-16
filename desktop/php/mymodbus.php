@@ -6,6 +6,7 @@ $plugin = plugin::byId('mymodbus');
 sendVarToJS('eqType', $plugin->getId());
 include_file('desktop', 'mymodbus.functions', 'js', 'mymodbus');
 $eqLogics = eqLogic::byType($plugin->getId());
+require_once 'mymodbusEqConfig.class.php';
 
 ?>
 
@@ -44,7 +45,7 @@ $eqLogics = eqLogic::byType($plugin->getId());
     <legend><i class="fas fa-table"></i> {{Mes équipements}}</legend>
     <?php
     if (count($eqLogics) == 0) {
-      echo '<br><div class="text-center" style="font-size:1.2em;font-weight:bold;">{{Aucun équipement MyModbus trouvé, cliquer sur "Ajouter" pour commencer}}</div>';
+      echo '<br><div class="text-center" style="font-size:1.2em;font-weight:bold;">{{Aucun équipement MyModbus présent, cliquez sur "Ajouter" pour commencer}}</div>';
     } else {
       // Champ de recherche
       echo '<div class="input-group" style="margin:5px;">';
@@ -58,9 +59,9 @@ $eqLogics = eqLogic::byType($plugin->getId());
       echo '<div class="eqLogicThumbnailContainer">';
       foreach ($eqLogics as $eqLogic) {
         $opacity = ($eqLogic->getIsEnable()) ? '' : 'disableCard';
-        echo '<div class="eqLogicDisplayCard cursor '.$opacity.'" data-eqLogic_id="' . $eqLogic->getId() . '">';
+        echo '<div class="eqLogicDisplayCard cursor ' . $opacity . '" data-eqLogic_id="' . $eqLogic->getId() . '">';
         $alternateImg = $eqLogic->getConfiguration('eqProtocol');
-        if (file_exists(dirname(__FILE__) . '/../../desktop/images/' . $alternateImg .'_icon.png')) {
+        if (file_exists(__DIR__ . '/../../desktop/images/' . $alternateImg .'_icon.png')) {
           echo '<img class="lazy" src="plugins/mymodbus/desktop/images/' . $alternateImg .'_icon.png"/>';
         } else {	
           echo '<img src="' . $plugin->getPathImgIcon() . '"/>';
@@ -96,14 +97,16 @@ $eqLogics = eqLogic::byType($plugin->getId());
       <li role="presentation" class="active"><a href="#eqlogictab" aria-controls="home" role="tab" data-toggle="tab"><i class="fas fa-tachometer-alt"></i> {{Equipement}}</a></li>
       <li role="presentation"><a href="#commandtab" aria-controls="profile" role="tab" data-toggle="tab"><i class="fa fa-list-alt"></i> {{Commandes}}</a></li>
     </ul>
-    <div class="tab-content" style="height:calc(100% - 50px);overflow:auto;overflow-x:hidden;">
+    <div class="tab-content"> <!-- DEBUG style="height:calc(100% - 50px);overflow:auto;overflow-x:hidden;" -->
       <!-- Onglet de configuration de l'équipement -->
       <div role="tabpanel" class="tab-pane active" id="eqlogictab">
         <form class="form-horizontal">
           <fieldset>
             
             <!-- Affichage de la configuration de l'équipement -->
-            <div id='div_MyModbusEqlogic'></div>
+            <?php
+            mymodbusEqConfig::show();
+            ?>
 
           </fieldset>
         </form>
@@ -111,9 +114,9 @@ $eqLogics = eqLogic::byType($plugin->getId());
       
       <!-- Onglet des commandes de l'équipement -->
       <div role="tabpanel" class="tab-pane" id="commandtab">
-        <div class="input-group pull-right" style="display:inline-flex;margin-top:5px;">
+        <div class="input-group" style="display:inline-flex;margin-top:5px;position:fixed;z-index:10;right:30px;">
           <span class="input-group-btn">
-            <a class="btn btn-warning btn-sm roundedRight" id="bt_add_command_top"><i class="fas fa-plus-circle"></i> {{Ajouter une commande}} </a>
+            <a class="btn btn-warning btn-sm rounded" id="bt_add_command_top"><i class="fas fa-plus-circle"></i> {{Ajouter une commande}} </a>
           </span>
         </div>
         <br/><br/>
@@ -122,14 +125,14 @@ $eqLogics = eqLogic::byType($plugin->getId());
             <thead>
               <tr>
                 <th class="hidden-xs" style="min-width:50px;width:70px;">ID</th>
-                <th style="min-width:100px;width:300px;">{{Nom}}</th>
+                <th style="min-width:100px;width:280px;">{{Nom}}</th>
                 <th style="min-width:80px;">{{Valeur}}</th>
                 <th style="width:100px;">{{Type}}</th>
-                <th style="min-width:80px;width:130px;">{{Adresse esclave}}
-                  <sup><i class="fas fa-question-circle tooltips" title="{{'0' si pas de bus série}}"></i></sup>
+                <th style="min-width:80px;width:80px;">{{Adresse esclave}}
+                  <sup><i class="fas fa-question-circle tooltips" title="{{'1' si pas de bus série}}"></i></sup>
                 </th>
                 <th style="width:230px;">{{Fonction Modbus}}</th>
-                <th style="min-width:120px;width:320px;">{{Adresse Modbus}}</th>
+                <th style="min-width:120px;width:260px;">{{Adresse Modbus}}</th>
                 <th>{{Paramètres}}</th>
                 <th style="min-width:300px;width:310px;">{{Options}}</th>
                 <th style="width:15px;">&nbsp;</th>
@@ -139,21 +142,10 @@ $eqLogics = eqLogic::byType($plugin->getId());
             </tbody>
           </table>
         </div>
-        <div class="input-group pull-right" style="display:inline-flex;margin-top:5px;">
-          <span class="input-group-btn">
-            <a class="btn btn-warning btn-sm roundedRight" id="bt_add_command_bottom"><i class="fas fa-plus-circle"></i> {{Ajouter une commande}} </a>
-          </span>
-        </div>
       </div><!-- /.tabpanel #commandtab-->
     </div><!-- /.tab-content -->
   </div><!-- /.eqLogic -->
 </div><!-- /.row row-overflow -->
-
-<script>
-
-$('#div_MyModbusEqlogic').load('index.php?v=d&plugin=mymodbus&modal=eqConfig');
-
-</script>
 
 <?php
 include_file('desktop', 'mymodbus', 'js', 'mymodbus');
