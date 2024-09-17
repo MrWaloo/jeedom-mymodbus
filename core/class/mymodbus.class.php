@@ -532,8 +532,8 @@ class mymodbus extends eqLogic {
       if (!is_numeric($eqPolling)) {
         throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Polling" doit être un nombre.', __FILE__));
       }
-      if ($eqPolling < 1) {
-        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Polling" doit être au moins à 1 seconde.', __FILE__));
+      if ($eqPolling < 0.01) {
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Polling" doit être au moins à 10 ms. Ou alors il faut passer en mode cyclique', __FILE__));
       }
       if (!is_numeric($eqTimeout)) {
         throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Timeout" doit être un nombre.', __FILE__));
@@ -801,6 +801,10 @@ class mymodbus extends eqLogic {
   
   public static function getDeamonLaunchable() {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
+    if (!is_executable(self::PYTHON_PATH)) {
+      return 'nok';
+    }
+
     // Si 2 équipements utilisent la même connexion -> nok (workaround provisoire)
     $eqConfigs = self::getCompleteConfiguration();
     $serialIntf = array();

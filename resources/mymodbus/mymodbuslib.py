@@ -29,7 +29,7 @@ PMB_READ_REQUESTS: list[Request] = [
     "registers"
   ),
 ]
-PMB_WRITE_REQUESTS = [
+PMB_WRITE_REQUESTS: list[Request] = [
   Request(
     5,
     "value"

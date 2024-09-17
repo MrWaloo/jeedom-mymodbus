@@ -14,3 +14,5 @@ VENV_DIR=${BASE_DIR}/venv
 # APT_PACKAGES="first1 second2"
 
 launchInstall
+
+rm -rf ${PLUGIN}/ressources

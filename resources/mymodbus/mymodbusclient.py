@@ -70,6 +70,7 @@ class MyModbusClient(object):
     self.should_stop = asyncio.Event()
     self.stopped = asyncio.Event()
     self.stopped.set()
+    self.connected = asyncio.Event()
     self.should_terminate = asyncio.Event()
     self.downstream = asyncio.Queue() # Daemon -> MyModbusClient
     self.upstream = asyncio.Queue() # MyModbusClient -> Daemon
@@ -106,6 +107,7 @@ class MyModbusClient(object):
       "port": int(self.eqConfig["eqPort"]),
       "timeout": float(self.eqConfig["eqTimeout"]),
       "retries": float(self.eqConfig["eqRetries"]),
+      "on_connect_callback": self.on_connect_callback,
     }
     framer = None
     self._requests = {}
@@ -219,17 +221,18 @@ class MyModbusClient(object):
   async def async_connect(self, first_call: bool = False) -> None:
     if not (self.eqConfig["eqRefreshMode"] == "on_event" and first_call):
       self.stopped.clear()
-      async with self._lock:
+      if not self.client.connected or not self.connected.is_set():
         try:
-          await self.client.connect()
+          async with self._lock:
+            await self.client.connect()
         except ModbusException as e:
           self.log.error(f"{self.eqConfig['name']}: Connection could not be opened: {e!s}")
           return
-      self.log.info(f"{self.eqConfig['name']}: connexion opened")
-
-      await asyncio.sleep(float(self.eqConfig["eqFirstDelay"]))
+        self.log.debug(f"{self.eqConfig['name']}: connection opened")
     
-    if first_call:
+    if first_call and self.client.connected:
+      self.log.info(f"{self.eqConfig['name']}: connection opened")
+      await asyncio.sleep(float(self.eqConfig["eqFirstDelay"]))
       self._async_tasks.append(self.loop.create_task(
         self.run_loop(),
         name = f"run_loop_{self.eqConfig['id']}"
@@ -256,9 +259,8 @@ class MyModbusClient(object):
           await self.async_connect()
         #self.log.debug(f"{self.eqConfig['name']}: 'run_loop' cycle {self._read_cycle}")
         
-        async with self._lock:
-          begin = self.loop.time()
-          cycle_with_error = await self.one_cycle_read()
+        begin = self.loop.time()
+        cycle_with_error = await self.one_cycle_read()
         
         duration = self.loop.time() - begin
         if refresh_mode == "polling":
@@ -336,9 +338,12 @@ class MyModbusClient(object):
           self.log.debug(f"{self.eqConfig['name']}: 'one_cycle_read'/{cmd['name']}: no read this cycle")
           continue
 
+        await self.async_connect()
+
         try:
-          self.log.debug(f"{self.eqConfig['name']}: 'one_cycle_read'/{cmd['name']}: requesting read")
-          rr: ModbusResponse = await self.client.execute(pmb_req)
+          async with self._lock:
+            self.log.debug(f"{self.eqConfig['name']}: 'one_cycle_read'/{cmd['name']}: requesting read")
+            rr: ModbusResponse = await self.client.execute(pmb_req)
         except ModbusException as exc:
           self.loop.create_task(self.invalidate_blob(cmd["id"]))
           error_on_last_read = True
@@ -522,7 +527,7 @@ class MyModbusClient(object):
 
         attr = Lib.get_request_attribute(int(cmd["cmdFctModbus"]))
         req_payload = None
-        if "coil" in request_func.function_code_name: # DEBUG
+        if "coil" in request_func.function_code_name:
           req_payload = value
         else:
           payload = self.get_ordered_payload(array('H', payload), cmd)
@@ -539,29 +544,25 @@ class MyModbusClient(object):
 
         pmb_write_req = request_func(**write_req_params)
         self.log.debug(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' Fonction {pmb_write_req}")
-        await self.async_connect()
 
-        async with self._lock:
-          self.log.debug(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' Lock acquired")
-          
-          err_handeled = False
-          try:
-            rr: ModbusResponse = await self.client.execute(pmb_write_req)
+        await self.async_connect()
+        
+        err_handeled = False
+        try:
+          async with self._lock:
             self.log.debug(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' Request sent")
-          except ModbusException as exc:
-            #await self.client.close() # DEBUG: A tester
-            error = f"exception during write request on slave id {pmb_write_req.slave_id}, address {pmb_write_req.address} -> {exc!s}"
-            self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' {error}")
-            err_handeled = True
-          if rr.isError() and not err_handeled:
-            #await self.client.close() # DEBUG: A tester
-            error = f"error during write request on slave id {pmb_write_req.slave_id}, address {pmb_write_req.address} -> {rr}"
-            self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' {error}")
-            err_handeled = True
-          if isinstance(rr, ExceptionResponse) and not err_handeled:
-            #await self.client.close() # DEBUG: A tester
-            error = f"exception  during write request on slave id {pmb_write_req.slave_id}, address {pmb_write_req.address} -> {rr}"
-            self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' {error}")
+            rr: ModbusResponse = await self.client.execute(pmb_write_req)
+        except ModbusException as exc:
+          error = f"modbus exception during write request on slave id {pmb_write_req.slave_id}, address {pmb_write_req.address} -> {exc!s}"
+          self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' {error}")
+          err_handeled = True
+        if rr.isError() and not err_handeled:
+          error = f"error during write request on slave id {pmb_write_req.slave_id}, address {pmb_write_req.address} -> {rr}"
+          self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' {error}")
+          err_handeled = True
+        if isinstance(rr, ExceptionResponse) and not err_handeled:
+          error = f"exception response during write request on slave id {pmb_write_req.slave_id}, address {pmb_write_req.address} -> {rr}"
+          self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' {error}")
       
         if pause is not None:
           self.log.debug(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' Pausing for {pause} seconds")
@@ -608,22 +609,30 @@ class MyModbusClient(object):
       payload = Lib.wordswap(payload)
     return payload
   
+  def on_connect_callback(self, connected: bool):
+    self.log.debug(f"{self.eqConfig['name']}: 'on_connect_callback' called with connected = {connected}")
+    if connected:
+      self.connected.set()
+    else:
+      self.connected.clear()
+
   def close(self) -> asyncio.Task:
     return self.loop.create_task(self.async_close())
 
   async def async_close(self) -> None:
-    async with self._lock:
-      if self.client:
-        try:
+    if self.client:
+      try:
+        async with self._lock:
           self.client.close()
-        except ModbusException as e:
-          self.log.error(f"{self.eqConfig['name']}: the connection could not be closed: {e!s}")
-      self.log.info(f"{self.eqConfig['name']}: communication Modbus closed")
+      except ModbusException as e:
+        self.log.error(f"{self.eqConfig['name']}: the connection could not be closed: {e!s}")
+    self.log.info(f"{self.eqConfig['name']}: Modbus communication closed")
 
     if self.should_terminate.is_set():
       self.terminate()
 
     self.stopped.set()
+    self.connected.clear()
 
   async def wait_for_stopped(self):
     while not self.stopped.is_set():
