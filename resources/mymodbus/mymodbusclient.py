@@ -388,14 +388,15 @@ class MyModbusClient(object):
     if cmd["cmdFormat"] == 'blob':
       change[f"values::{cmd_id}"] = 1
     dest_ids = self._blob_dest.get(cmd_id, None)
-    payload = self.get_payload(response, cmd)
     if dest_ids is not None: # Plage de registres
       for dest_id in dest_ids:
         dest = self.get_cmd_conf(dest_id)
         if dest is None:
           continue
+        payload = self.get_payload(response, dest)
         change[f"values::{dest_id}"] = self.cmd_decode(payload, dest, cmd)
     elif cmd["cmdFormat"] != 'blob': # Lecture pour une commande et pas pour un blob sans destination
+      payload = self.get_payload(response, cmd)
       change[f"values::{cmd_id}"] = self.cmd_decode(payload, cmd)
     
     await self.add_change(change)
