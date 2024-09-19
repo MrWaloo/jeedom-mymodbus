@@ -5,6 +5,6 @@ Thumbs.db
 docs/Gemfile.lock
 docs/.sass-cache/
 __pycache__
-data/template
+data/user_templates/*.json
 resources/*.lib
 resources/venv
