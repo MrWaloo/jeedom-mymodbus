@@ -300,8 +300,8 @@ class mymodbus extends eqLogic {
   public static function templateList() {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     // Get personal and official templates
-    $perso = self::getTemplateList(mymodbusConst::PATH_TEMPLATES_PERSO, mymodbusConst::PREFIX_TEMPLATE_PERSO);
-    $official = self::getTemplateList(mymodbusConst::PATH_TEMPLATES_MYMODBUS);
+    $perso = self::getTemplateList(mymodbusConst::PATH_TEMPLATES_USER, mymodbusConst::PREFIX_TEMPLATE_USER);
+    $official = self::getTemplateList(mymodbusConst::PATH_TEMPLATES_PUBLIC);
     return array_merge($perso, $official);
   }
 
@@ -324,14 +324,14 @@ class mymodbus extends eqLogic {
   // Fonction inspirée du plugin jMQTT
   public static function templateByName($_name) {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . sprintf(" * name = '%s'", $_name));
-    if (strpos($_name , mymodbusConst::PREFIX_TEMPLATE_PERSO) === 0) {
+    if (strpos($_name , mymodbusConst::PREFIX_TEMPLATE_USER) === 0) {
       // Get personal templates
-      $name = substr($_name, strlen(mymodbusConst::PREFIX_TEMPLATE_PERSO));
-      $folder = '/../../' . mymodbusConst::PATH_TEMPLATES_PERSO;
+      $name = substr($_name, strlen(mymodbusConst::PREFIX_TEMPLATE_USER));
+      $folder = '/../../' . mymodbusConst::PATH_TEMPLATES_USER;
     } else {
       // Get official templates
       $name = $_name;
-      $folder = '/../../' . mymodbusConst::PATH_TEMPLATES_MYMODBUS;
+      $folder = '/../../' . mymodbusConst::PATH_TEMPLATES_PUBLIC;
     }
     foreach (glob(__DIR__ . $folder . '*.json') as $file) {
       try {
@@ -379,7 +379,7 @@ class mymodbus extends eqLogic {
     if (!$_filename ||
         !file_exists($_filename) ||
         !is_file($_filename) ||
-        dirname($_filename) != realpath(__DIR__ . '/../../' . mymodbusConst::PATH_TEMPLATES_PERSO)) {
+        dirname($_filename) != realpath(__DIR__ . '/../../' . mymodbusConst::PATH_TEMPLATES_USER)) {
       return false;
     }
     return unlink($_filename);
@@ -425,7 +425,7 @@ class mymodbus extends eqLogic {
       $template,
       JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
     );
-    $templateDir = realpath(__DIR__ . '/../../' . mymodbusConst::PATH_TEMPLATES_PERSO) . '/';
+    $templateDir = realpath(__DIR__ . '/../../' . mymodbusConst::PATH_TEMPLATES_USER) . '/';
     if (!file_exists($templateDir)) {
       if (!mkdir($templateDir, 0775, true)) {
         throw new Exception(__('Impossible de créer le répertoire de téléversement :', __FILE__) . ' ' . $templateDir);

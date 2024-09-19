@@ -675,6 +675,29 @@ function addCmdToTable(_cmd) {
       
       delete _cmd.configuration.type;
     }
+    if (isset(_cmd.configuration.cmdFormat)) {
+      format_replace = {
+        'uint8-lsb':   'uint8',
+        'int16':       'h',
+        'uint16':      'H',
+        'int32':       'i',
+        'uint32':      'I',
+        'float32':     'f',
+        'int64':       'q',
+        'uint64':      'Q',
+        'float64':     'd',
+        'string':      's',
+        'int16sp-sf':  'h_sf',
+        'uint16sp-sf': 'H_sf',
+        'uint32sp-sf': 'I_sf'
+      };
+      for (let [search, replace] of Object.entries(format_replace)) {
+        if (_cmd.configuration.cmdFormat == search) {
+          _cmd.configuration.cmdFormat = replace;
+          continue;
+        }
+      }
+    }
     // was never used
     delete _cmd.configuration.datatype;
     modifyWithoutSave = true;

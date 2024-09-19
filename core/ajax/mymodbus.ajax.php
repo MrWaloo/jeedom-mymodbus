@@ -86,7 +86,7 @@ try {
       throw new Exception(__('Aucun fichier trouvé. Vérifiez le paramètre PHP (post size limit)', __FILE__));
     }
 
-    $uploaddir = realpath(__DIR__ . '/../../') . mymodbusConst::PATH_TEMPLATES_PERSO;
+    $uploaddir = realpath(__DIR__ . '/../../') . mymodbusConst::PATH_TEMPLATES_USER;
     log::add('mymodbus', 'info', sprintf(__("uploaddir = '%s'", __FILE__), $uploaddir));
     $allowed_ext = '.json';
     $max_size = 500*1024; // 500KB

@@ -148,13 +148,17 @@ class Lib():
     
     return (address, count)
 
-  class Uint8(Enum):
-    UINT8 = ("uint8", 1)
-
   @classmethod
-  def wordswap(cls, payload: array) -> array:
+  def wordswap(cls, payload: array, cmd: dict, blob: dict | None = None) -> array:
     i = 0
-    for e0, e1 in zip(payload[::2], payload[1::2]):
+    offset = 0
+    if blob is not None:
+      addr, count = cls.get_request_addr_count(cmd)
+      blob_addr, blob_count = cls.get_request_addr_count(blob)
+      offset = addr - blob_addr
+      i = offset
+
+    for e0, e1 in zip(payload[offset::2], payload[offset + 1::2]):
       payload[i] = e1
       payload[i + 1] = e0
       i += 2
@@ -166,3 +170,6 @@ class Lib():
       if entry.func_code == func_code:
         return entry.attr
     return None
+
+  class Uint8(Enum):
+    UINT8 = ("uint8", 1)

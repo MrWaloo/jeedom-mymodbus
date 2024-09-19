@@ -104,7 +104,6 @@ class MyModbusClient(object):
     self.client = None
     self._client_params = {
       "name": self.eqConfig["name"],
-      "port": int(self.eqConfig["eqPort"]),
       "timeout": float(self.eqConfig["eqTimeout"]),
       "retries": float(self.eqConfig["eqRetries"]),
       "on_connect_callback": self.on_connect_callback,
@@ -122,6 +121,7 @@ class MyModbusClient(object):
         framer = FramerType.RTU
       self._client_params.update(
         {
+          "port": self.eqConfig["eqPort"],
           "baudrate": int(self.eqConfig["eqSerialBaudrate"]),
           "stopbits": int(self.eqConfig["eqSerialStopbits"]),
           "bytesize": int(self.eqConfig["eqSerialBytesize"]),
@@ -130,6 +130,11 @@ class MyModbusClient(object):
       )
     else:
       # Liaison Ethernet
+      self._client_params.update(
+        {
+          "port": int(self.eqConfig["eqPort"]),
+        }
+      )
       if self.eqConfig["eqProtocol"] == "rtuovertcp":
         framer = FramerType.RTU
       else:
@@ -393,19 +398,18 @@ class MyModbusClient(object):
         dest = self.get_cmd_conf(dest_id)
         if dest is None:
           continue
-        payload = self.get_payload(response, dest)
-        change[f"values::{dest_id}"] = self.cmd_decode(payload, dest, cmd)
+        change[f"values::{dest_id}"] = self.cmd_decode(response, dest, cmd)
     elif cmd["cmdFormat"] != 'blob': # Lecture pour une commande et pas pour un blob sans destination
-      payload = self.get_payload(response, cmd)
-      change[f"values::{cmd_id}"] = self.cmd_decode(payload, cmd)
+      change[f"values::{cmd_id}"] = self.cmd_decode(response, cmd)
     
     await self.add_change(change)
 
-  def cmd_decode(self, payload: array, cmd: dict, blob: dict | None = None) -> any:
+  def cmd_decode(self, response: ModbusResponse, cmd: dict, blob: dict | None = None) -> any:
     self.log.debug(f"{self.eqConfig['name']}: 'cmd_decode' launched for command id = {cmd['id']}")
     address, count = Lib.get_request_addr_count(cmd)
     cmd_format: str = cmd["cmdFormat"]
     data_type = Lib.get_data_type(cmd_format)
+    payload = self.get_payload(response, cmd, blob)
     if blob is not None:
       blob_addr, blob_count = Lib.get_request_addr_count(blob)
       if address < blob_addr or address + count > blob_addr + blob_count:
@@ -413,7 +417,6 @@ class MyModbusClient(object):
         self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
         return
       offset = address - blob_addr
-      # Le decodeur est placé à la bonne adresse pour la commande (offset peut être 0)
       if cmd_format == "bit":
         payload = payload.tobytes()[offset // 8:]
       else:
@@ -589,7 +592,7 @@ class MyModbusClient(object):
         return cmd
     return None
   
-  def get_payload(self, response: ModbusResponse, cmd: dict) -> array:
+  def get_payload(self, response: ModbusResponse, cmd: dict, blob: dict | None = None) -> array:
     attr = Lib.get_request_attribute(response.function_code)
     result = getattr(response, attr)
     payload = b''
@@ -600,14 +603,14 @@ class MyModbusClient(object):
     else:
       payload = result
     payload = array("H", payload)
-    return self.get_ordered_payload(payload, cmd)
+    return self.get_ordered_payload(payload, cmd, blob)
   
-  def get_ordered_payload(self, payload: array, cmd: dict) -> array:
+  def get_ordered_payload(self, payload: array, cmd: dict, blob: dict | None = None) -> array:
     payload = array("H", payload)
     if cmd["cmdInvertBytes"] != "0":
       payload.byteswap()
     if cmd["cmdInvertWords"] != "0":
-      payload = Lib.wordswap(payload)
+      payload = Lib.wordswap(payload, cmd, blob)
     return payload
   
   def on_connect_callback(self, connected: bool):
