@@ -46,23 +46,7 @@ if (isset($result['heartbeat_request'])) {
   foreach ($result['values'] as $cmd_id => $new_value) {
     #log::add('mymodbus', 'debug', 'jeemymodbus.php: Traitement cmd_id = ' . $cmd_id . ' -> new value: ' . sprintf("%d", $new_value));
     
-    if (is_numeric($cmd_id)) {
-      $cmd = mymodbusCmd::byid($cmd_id);
-      $eqlogic = $cmd->getEqLogic();
-      //$old_value = $cmd->execCmd();
-      
-      $cmdOption = $cmd->getConfiguration('cmdOption');
-      // Only if the option is valid and cannot be malicious code
-      if (strstr($cmdOption, '#value#') && !strstr($cmdOption, ';')) {
-        try {
-          $eval = str_replace('#value#', '$new_value', $cmdOption);
-          $new_value = eval('return ' . $eval . ';');
-        } catch (Throwable $t) {
-          log::add('mymodbus', 'error', 'jeemymodbus.php: ' . $cmd->getName() . __('Calcul non effectué. Erreur lors du calcul : ' . $t, __FILE__));
-        }
-      }
-
-    } elseif ($cmd_id === 'cycle_time') {
+    if ($cmd_id === 'cycle_time') {
       $eqlogic = mymodbus::byId($new_value['eqId']);
       $cmd = mymodbusCmd::byEqLogicIdAndLogicalId($new_value['eqId'], 'refresh time');
       $new_value = number_format($new_value['value'], 3);
@@ -71,6 +55,24 @@ if (isset($result['heartbeat_request'])) {
       $eqlogic = mymodbus::byId($new_value['eqId']);
       $cmd = mymodbusCmd::byEqLogicIdAndLogicalId($new_value['eqId'], 'cycle ok');
       $new_value = $new_value['value'];
+      
+    } elseif (is_numeric($cmd_id)) {
+      $cmd = mymodbusCmd::byid($cmd_id);
+      if (is_object($cmd)) {
+        $eqlogic = $cmd->getEqLogic();
+        //$old_value = $cmd->execCmd();
+        
+        $cmdOption = $cmd->getConfiguration('cmdOption');
+        // Only if the option is valid and cannot be malicious code
+        if (strstr($cmdOption, '#value#') && !strstr($cmdOption, ';')) {
+          try {
+            $eval = str_replace('#value#', '$new_value', $cmdOption);
+            $new_value = eval('return ' . $eval . ';');
+          } catch (Throwable $t) {
+            log::add('mymodbus', 'error', 'jeemymodbus.php: ' . $cmd->getName() . __('Calcul non effectué. Erreur lors du calcul : ' . $t, __FILE__));
+          }
+        }
+      }
     }
     
     log::add('mymodbus', 'debug', 'jeemymodbus.php: Mise à jour cmd ' . $cmd->getName() . ' -> new value: ' . $new_value, 'config');

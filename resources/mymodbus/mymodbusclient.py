@@ -334,7 +334,7 @@ class MyModbusClient(object):
         
         cmd = self.get_cmd_conf(cmd_id)
         if cmd is None:
-          self.log.debug(f"{self.eqConfig['name']}: 'one_cycle_read' {cmd_id} cmd is None")
+          self.log.debug(f"{self.eqConfig['name']}: 'one_cycle_read' {cmd['id']} cmd is None")
           continue
         if cmd["type"] != "info":
           self.log.debug(f"{self.eqConfig['name']}: 'one_cycle_read'/{cmd['name']}: command action")
@@ -372,7 +372,7 @@ class MyModbusClient(object):
         if error_on_last_read:
           self.loop.create_task(self.invalidate_blob(cmd["id"]))
         else:
-          self.loop.create_task(self.process_read_response(cmd_id, rr))
+          self.loop.create_task(self.process_read_response(cmd["id"], rr))
 
       self.log.debug(f"{self.eqConfig['name']}: 'one_cycle_read' exit with error_or_exception = {error_or_exception}")
       return error_or_exception
@@ -391,8 +391,8 @@ class MyModbusClient(object):
       self.log.debug(f"{self.eqConfig['name']}: 'process_read_response' cmd is None")
       return
     if cmd["cmdFormat"] == 'blob':
-      change[f"values::{cmd_id}"] = 1
-    dest_ids = self._blob_dest.get(cmd_id, None)
+      change[f"values::{cmd['id']}"] = 1
+    dest_ids = self._blob_dest.get(cmd["id"], None)
     if dest_ids is not None: # Plage de registres
       for dest_id in dest_ids:
         dest = self.get_cmd_conf(dest_id)
@@ -400,7 +400,7 @@ class MyModbusClient(object):
           continue
         change[f"values::{dest_id}"] = self.cmd_decode(response, dest, cmd)
     elif cmd["cmdFormat"] != 'blob': # Lecture pour une commande et pas pour un blob sans destination
-      change[f"values::{cmd_id}"] = self.cmd_decode(response, cmd)
+      change[f"values::{cmd['id']}"] = self.cmd_decode(response, cmd)
     
     await self.add_change(change)
 
@@ -584,7 +584,7 @@ class MyModbusClient(object):
       self.log.debug(f"{self.eqConfig['name']}: 'invalidate_blob' cmd is None")
       return
     if cmd["cmdFormat"] == 'blob':
-      await self.add_change({f"values::{cmd_id}": 0})
+      await self.add_change({f"values::{cmd['id']}": 0})
   
   def get_cmd_conf(self, cmd_id: str) -> dict | None:
     for cmd in self.eqConfig["cmds"]:

@@ -106,7 +106,7 @@ $('#ul_MyModbusTemplateList').on('click', '.li_mymodbusTemplate', function(event
   $('#ul_MyModbusTemplateList .li_mymodbusTemplate').removeClass('active');
   $('#table_MyModbusTemplateCmds tbody').empty();
   $(this).addClass('active');
-  if ($('#ul_MyModbusTemplateList li.active').attr('data-name').startsWith('[Perso] ')) {
+  if ($('#ul_MyModbusTemplateList li.active').attr('data-name').startsWith('[User] ')) {
     $('#bt_MyModbusTemplateDelete').show();
   } else {
     $('#bt_MyModbusTemplateDelete').hide();
