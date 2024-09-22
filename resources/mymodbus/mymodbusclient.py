@@ -439,7 +439,7 @@ class MyModbusClient(object):
     # Type: Word (16bit) || Dword (32bit) || Double Dword (64bit) || String
     elif Lib.is_normal_number(cmd) or cmd_format == "s":
       payload = payload[:count]
-      return self.client.convert_from_registers(payload, data_type)
+      return Lib.convert_from_registers(payload, cmd_format)
 
     # Type: ScaleFactor
     elif cmd_format.endswith("_sf"):
@@ -447,12 +447,12 @@ class MyModbusClient(object):
       val_addr, sf_addr = Lib.get_val_sf(cmd)
 
       val_payload = payload[val_addr - address:val_addr - address + val_data_type.value[1]]
-      val = self.client.convert_from_registers(val_payload, val_data_type)
+      val = Lib.convert_from_registers(val_payload, cmd_format[0])
 
       if val_data_type.value[1] >= 2 and cmd["cmdInvertWords"] != "0":
         payload = Lib.wordswap(payload)
       sf_payload = payload[sf_addr - address:sf_addr - address + 1]
-      sf = self.client.convert_from_registers(sf_payload, self.client.DATATYPE.INT16)
+      sf = Lib.convert_from_registers(sf_payload, "h")
 
       return val * 10 ** sf
 
@@ -510,16 +510,15 @@ class MyModbusClient(object):
           try:
             if Lib.is_normal_number(cmd):
               value = float(value_to_write) if cmd_format in ("f", "d") else int(value_to_write)
-              payload = self.client.convert_to_registers(value, data_type)
+              payload = Lib.convert_to_registers(value, cmd_format)
 
             elif cmd_format == "s":
               value = str(value_to_write)[:count * 2]
-              payload = self.client.convert_to_registers(value, data_type)
+              payload = Lib.convert_to_registers(value, cmd_format)
               
             elif cmd_format.endswith("_sf"):
-              cmd_format_sf = Lib.get_data_type(cmd_format[0])
               value, sf = Lib.value_to_sf(value_to_write)
-              payload = self.client.convert_to_registers(value, cmd_format_sf) + self.client.convert_to_registers(sf, self.client.DATATYPE.INT16)
+              payload = Lib.convert_to_registers(value, cmd_format[0]) + Lib.convert_to_registers(sf, "h")
 
               if len(payload) != count:
                 self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' write command scale factor not possible: the registers are not contiguous")

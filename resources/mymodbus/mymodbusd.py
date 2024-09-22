@@ -186,17 +186,10 @@ class MyModbusd(BaseDaemon):
         message = await upstream.get()
         self._logger.debug(f"{self.__n}: Message received from MyModbusClient {eq_name}: {message}")
         for action, payload in message.items():
-          if action == "to_jeedom":
+          if action in ("to_jeedom", "add_change"):
             for k, v in payload.items():
               try:
-                await self.send_to_jeedom(k, v)
-              except Exception as e:
-                self._logger.debug(f"{self.__n}: {eq_name}: Error while sending '{action}' - {k} => {v}: {e!s}")
-          
-          elif action == "add_change":
-            for k, v in payload.items():
-              try:
-                await self.add_change(k, v)
+                await getattr(self, action)(k, v)
               except Exception as e:
                 self._logger.debug(f"{self.__n}: {eq_name}: Error while sending '{action}' - {k} => {v}: {e!s}")
           

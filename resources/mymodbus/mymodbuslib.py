@@ -4,6 +4,7 @@ Fonctions utilitaires pour le démon MyModbus
 
 import re
 import struct
+import sys
 
 from array import array
 from collections import namedtuple
@@ -59,43 +60,33 @@ class Lib():
   def convert_from_registers(
     cls, registers: list[int], format: str
   ) -> int | float | str:
-    """Convert registers to int/float/str.
-
-    :param registers: list of registers received from e.g. read_holding_registers()
-    :param data_type: data type to convert to
-    :returns: int, float or str depending on "data_type"
-    :raises ModbusException: when size of registers is not 1, 2 or 4
+    """Inspired from ModbusClientMixin.convert_from_registers but with strict byte and word order
     """
     byte_list = bytearray()
     for x in registers:
-      byte_list.extend(int.to_bytes(x, 2, "big"))
-    if format == ModbusClientMixin.DATATYPE.STRING.value(0):
+      byte_list.extend(int.to_bytes(x, 2, sys.byteorder))
+    if format == ModbusClientMixin.DATATYPE.STRING.value[0]:
       if byte_list[-1:] == b"\00":
         byte_list = byte_list[:-1]
       return byte_list.decode("utf-8")
-    return struct.unpack(f">{format}", byte_list)[0]
+    return struct.unpack(f"{format}", byte_list)[0]
 
   @classmethod
   def convert_to_registers(
-    cls, value: int | float | str, data_type: ModbusClientMixin.DATATYPE
+    cls, value: int | float | str, format: str
   ) -> list[int]:
-    """Convert int/float/str to registers (16/32/64 bit).
-
-    :param value: value to be converted
-    :param data_type: data type to be encoded as registers
-    :returns: List of registers, can be used directly in e.g. write_registers()
-    :raises TypeError: when there is a mismatch between data_type and value
+    """Inspired from ModbusClientMixin.convert_to_registers but with strict byte and word order
     """
-    if data_type == ModbusClientMixin.DATATYPE.STRING:
+    if format == ModbusClientMixin.DATATYPE.STRING.value[0]:
       if not isinstance(value, str):
         raise TypeError(f"Value should be string but is {type(value)}.")
       byte_list = value.encode()
       if len(byte_list) % 2:
         byte_list += b"\x00"
     else:
-      byte_list = struct.pack(f">{data_type.value[0]}", value)
+      byte_list = struct.pack(f"{format}", value)
     regs = [
-      int.from_bytes(byte_list[x : x + 2], "big")
+      int.from_bytes(byte_list[x : x + 2], sys.byteorder)
       for x in range(0, len(byte_list), 2)
     ]
     return regs
