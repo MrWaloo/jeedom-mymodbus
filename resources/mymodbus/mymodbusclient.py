@@ -326,6 +326,7 @@ class MyModbusClient(object):
         if error_on_last_read:
           error_or_exception = True
           await asyncio.sleep(eqErrorDelay) # Laisse le temps pour revenir à la normale
+          error_on_last_read = False
         else:
           await asyncio.sleep(eqWriteCmdCheckTimeout) # Cède le contrôle aux autres tâches
         self.log.debug(f"{self.eqConfig['name']}: 'one_cycle_read' treatment cmd_id = {cmd_id}")
@@ -354,9 +355,8 @@ class MyModbusClient(object):
           error_on_last_read = True
           error = f"exception during read request on slave id {pmb_req.slave_id}, address {pmb_req.address} -> {exc!s}"
           self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
-          continue
         try:
-          if rr.isError():
+          if rr.isError() and not error_on_last_read:
             error_on_last_read = True
             error = f"error during read request on slave id {pmb_req.slave_id}, address {pmb_req.address} -> {rr}"
             self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
@@ -364,7 +364,7 @@ class MyModbusClient(object):
           error_on_last_read = True
           error = f"return error during read request on slave id {pmb_req.slave_id}, address {pmb_req.address} -> {rr}"
           self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
-        if isinstance(rr, ExceptionResponse):
+        if isinstance(rr, ExceptionResponse) and not error_on_last_read:
           error_on_last_read = True
           error = f"exception during read request on slave id {pmb_req.slave_id}, address {pmb_req.address} -> {rr}"
           self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
