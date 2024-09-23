@@ -68,7 +68,7 @@ class MyModbusd(BaseDaemon):
         if "write_cmd" not in message:
           self._logger.error(f"{self.__n}: Received CMD=write without write_cmd: {message}")
           return
-        self._logger.info(f"{self.__n}: Command 'write' received from jeedom: sending the command to MyModbusClient")
+        self._logger.info(f"{self.__n}: Command 'write' received from jeedom: sending the command to MyModbusClient {eqId}: {message['write_cmd']}")
         await self.send_downstream(message["write_cmd"]["eqId"], {"write": message["write_cmd"]})
         
       # Read
