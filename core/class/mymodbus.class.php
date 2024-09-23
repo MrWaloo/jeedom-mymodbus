@@ -810,7 +810,7 @@ class mymodbus extends eqLogic {
     $serialIntf = array();
     foreach ($eqConfigs as $config) {
       if ($config['eqProtocol'] === 'serial') {
-        $intf = $config['eqPortSerial'];
+        $intf = $config['eqPort'];
         if (in_array($intf, $serialIntf)) {
           return 'nok';
         }

@@ -149,9 +149,9 @@ class MyModbusClient(object):
       if cmd["type"] != "info":
         continue
       if cmd["cmdFctModbus"] == "fromBlob":
-        if self._blob_dest.get(cmd["cmdSourceBlob"], None) is None:
-          self._blob_dest[cmd["cmdSourceBlob"]] = []
-        self._blob_dest[cmd["cmdSourceBlob"]].append(cmd["id"])
+        if self._blob_dest.get(int(cmd["cmdSourceBlob"]), None) is None:
+          self._blob_dest[int(cmd["cmdSourceBlob"])] = []
+        self._blob_dest[int(cmd["cmdSourceBlob"])].append(cmd["id"])
         
       else: # not fromBlob
         request_func = func_code_dict.get(int(cmd["cmdFctModbus"]), None)
@@ -355,19 +355,21 @@ class MyModbusClient(object):
           error_on_last_read = True
           error = f"exception during read request on slave id {pmb_req.slave_id}, address {pmb_req.address} -> {exc!s}"
           self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
-        try:
-          if rr.isError() and not error_on_last_read:
+        if not error_on_last_read:
+          try:
+            if rr.isError():
+              error_on_last_read = True
+              error = f"error during read request on slave id {pmb_req.slave_id}, address {pmb_req.address} -> {rr}"
+              self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
+          except AttributeError:
             error_on_last_read = True
-            error = f"error during read request on slave id {pmb_req.slave_id}, address {pmb_req.address} -> {rr}"
+            error = f"return error during read request on slave id {pmb_req.slave_id}, address {pmb_req.address} -> {rr}"
             self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
-        except AttributeError:
-          error_on_last_read = True
-          error = f"return error during read request on slave id {pmb_req.slave_id}, address {pmb_req.address} -> {rr}"
-          self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
-        if isinstance(rr, ExceptionResponse) and not error_on_last_read:
-          error_on_last_read = True
-          error = f"exception during read request on slave id {pmb_req.slave_id}, address {pmb_req.address} -> {rr}"
-          self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
+        if not error_on_last_read:
+          if isinstance(rr, ExceptionResponse):
+            error_on_last_read = True
+            error = f"exception during read request on slave id {pmb_req.slave_id}, address {pmb_req.address} -> {rr}"
+            self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
         
         if error_on_last_read:
           self.loop.create_task(self.invalidate_blob(cmd["id"]))
@@ -392,7 +394,7 @@ class MyModbusClient(object):
       return
     if cmd["cmdFormat"] == 'blob':
       change[f"values::{cmd['id']}"] = 1
-    dest_ids = self._blob_dest.get(cmd["id"], None)
+    dest_ids = self._blob_dest.get(int(cmd["id"]), None)
     if dest_ids is not None: # Plage de registres
       for dest_id in dest_ids:
         dest = self.get_cmd_conf(dest_id)
@@ -450,7 +452,7 @@ class MyModbusClient(object):
       val = Lib.convert_from_registers(val_payload, cmd_format[0])
 
       if val_data_type.value[1] >= 2 and cmd["cmdInvertWords"] != "0":
-        payload = Lib.wordswap(payload)
+        payload = Lib.wordswap(payload, cmd)
       sf_payload = payload[sf_addr - address:sf_addr - address + 1]
       sf = Lib.convert_from_registers(sf_payload, "h")
 
@@ -559,13 +561,15 @@ class MyModbusClient(object):
           error = f"modbus exception during write request on slave id {pmb_write_req.slave_id}, address {pmb_write_req.address} -> {exc!s}"
           self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' {error}")
           err_handeled = True
-        if rr.isError() and not err_handeled:
-          error = f"error during write request on slave id {pmb_write_req.slave_id}, address {pmb_write_req.address} -> {rr}"
-          self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' {error}")
-          err_handeled = True
-        if isinstance(rr, ExceptionResponse) and not err_handeled:
-          error = f"exception response during write request on slave id {pmb_write_req.slave_id}, address {pmb_write_req.address} -> {rr}"
-          self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' {error}")
+        if not err_handeled:
+          if rr.isError():
+            error = f"error during write request on slave id {pmb_write_req.slave_id}, address {pmb_write_req.address} -> {rr}"
+            self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' {error}")
+            err_handeled = True
+        if not err_handeled:
+          if isinstance(rr, ExceptionResponse):
+            error = f"exception response during write request on slave id {pmb_write_req.slave_id}, address {pmb_write_req.address} -> {rr}"
+            self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' {error}")
       
         if pause is not None:
           self.log.debug(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' Pausing for {pause} seconds")
