@@ -265,7 +265,7 @@ class MyModbusClient(object):
         #self.log.debug(f"{self.eqConfig['name']}: 'run_loop' cycle {self._read_cycle}")
         
         begin = self.loop.time()
-        cycle_with_error = await self.one_cycle_read()
+        cycle_with_error = await asyncio.wait_for(self.one_cycle_read(), None)
         
         duration = self.loop.time() - begin
         if refresh_mode == "polling":
@@ -312,23 +312,18 @@ class MyModbusClient(object):
     self.close()
     self.log.debug(f"{self.eqConfig['name']}: 'run_loop' exit")
 
-  async def one_cycle_read(self) -> None:
+  async def one_cycle_read(self) -> bool:
     """
     One read cycle of all the info commands
     """
     self.log.debug(f"{self.eqConfig['name']}: 'one_cycle_read' launched")
-    error_on_last_read = False
+    error_on_current_read = False
     error_or_exception = False
     eqWriteCmdCheckTimeout = float(self.eqConfig['eqWriteCmdCheckTimeout'])
     eqErrorDelay = float(self.eqConfig['eqErrorDelay'])
     try:
       for cmd_id, pmb_req in self._requests.items():
-        if error_on_last_read:
-          error_or_exception = True
-          await asyncio.sleep(eqErrorDelay) # Laisse le temps pour revenir à la normale
-          error_on_last_read = False
-        else:
-          await asyncio.sleep(eqWriteCmdCheckTimeout) # Cède le contrôle aux autres tâches
+        error_on_current_read = False
         self.log.debug(f"{self.eqConfig['name']}: 'one_cycle_read' treatment cmd_id = {cmd_id}")
         if self.should_stop.is_set():
           break
@@ -352,29 +347,32 @@ class MyModbusClient(object):
             rr: ModbusResponse = await self.client.execute(pmb_req)
         except ModbusException as exc:
           self.loop.create_task(self.invalidate_blob(cmd["id"]))
-          error_on_last_read = True
+          error_on_current_read = True
           error = f"exception during read request on slave id {pmb_req.slave_id}, address {pmb_req.address} -> {exc!s}"
           self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
-        if not error_on_last_read:
+        if not error_on_current_read:
           try:
             if rr.isError():
-              error_on_last_read = True
+              error_on_current_read = True
               error = f"error during read request on slave id {pmb_req.slave_id}, address {pmb_req.address} -> {rr}"
               self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
           except AttributeError:
-            error_on_last_read = True
+            error_on_current_read = True
             error = f"return error during read request on slave id {pmb_req.slave_id}, address {pmb_req.address} -> {rr}"
             self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
-        if not error_on_last_read:
+        if not error_on_current_read:
           if isinstance(rr, ExceptionResponse):
-            error_on_last_read = True
+            error_on_current_read = True
             error = f"exception during read request on slave id {pmb_req.slave_id}, address {pmb_req.address} -> {rr}"
             self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
         
-        if error_on_last_read:
+        if error_on_current_read:
+          error_or_exception = True
           self.loop.create_task(self.invalidate_blob(cmd["id"]))
+          await asyncio.sleep(eqErrorDelay) # Laisse le temps pour revenir à la normale
         else:
           self.loop.create_task(self.process_read_response(cmd["id"], rr))
+          await asyncio.sleep(eqWriteCmdCheckTimeout) # Cède le contrôle aux autres tâches
 
       self.log.debug(f"{self.eqConfig['name']}: 'one_cycle_read' exit with error_or_exception = {error_or_exception}")
       return error_or_exception
