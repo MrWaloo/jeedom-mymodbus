@@ -120,7 +120,7 @@ class Lib():
   @classmethod
   def get_val_sf(cls, cmd: dict) -> tuple:
     sf_pattern = r"(\d+)\s*?sf\s*?(\d+)"
-    result = re.match(sf_pattern, cmd["cmdAddress"], re.IGNORECASE)
+    result = re.search(sf_pattern, cmd["cmdAddress"], re.IGNORECASE)
     addr_val = int(result.group(1))
     addr_sf = int(result.group(2))
     return (addr_val, addr_sf)
@@ -156,7 +156,7 @@ class Lib():
     else:
       array_pattern = r"(\d+)\s*\[\s*(\d+)\s*\]"
       if "bit" in cmd_format:
-        result = re.match(array_pattern, cmd_address)
+        result = re.search(array_pattern, cmd_address)
         if result:
           address = int(result.group(1))
           count = int(result.group(2))
@@ -164,7 +164,7 @@ class Lib():
           address = int(cmd_address)
 
       elif cmd_format == "s":
-        result = re.match(array_pattern, cmd_address)
+        result = re.search(array_pattern, cmd_address)
         address = int(result.group(1))
         strlen = int(result.group(2))
         if strlen % 2 == 1:
@@ -172,7 +172,7 @@ class Lib():
         count = int(strlen / 2)
 
       elif cmd_format == "blob":
-        result = re.match(array_pattern, cmd_address)
+        result = re.search(array_pattern, cmd_address)
         address = int(result.group(1))
         count = int(result.group(2))
 

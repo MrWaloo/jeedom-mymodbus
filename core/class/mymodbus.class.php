@@ -751,17 +751,17 @@ class mymodbus extends eqLogic {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     $eqConfig = array();
     $eqConfig['id'] = $this->getId();
-    $eqConfig['name'] = $this->getName();
+    $eqConfig['name'] = trim($this->getName());
     $eqConfig['eqProtocol'] = $this->getConfiguration('eqProtocol');
     $eqConfig['eqRefreshMode'] = $this->getConfiguration('eqRefreshMode', 'polling');
-    $eqConfig['eqPolling'] = $this->getConfiguration('eqPolling', '5');
-    $eqConfig['eqTimeout'] = $this->getConfiguration('eqTimeout', '5');
-    $eqConfig['eqWriteCmdCheckTimeout'] = $this->getConfiguration('eqWriteCmdCheckTimeout', '0.01');
-    $eqConfig['eqRetries'] = $this->getConfiguration('eqRetries', '3');
-    $eqConfig['eqFirstDelay'] = $this->getConfiguration('eqFirstDelay', '0');
-    $eqConfig['eqErrorDelay'] = $this->getConfiguration('eqErrorDelay', '1');
+    $eqConfig['eqPolling'] = trim($this->getConfiguration('eqPolling', '5'));
+    $eqConfig['eqTimeout'] = trim($this->getConfiguration('eqTimeout', '5'));
+    $eqConfig['eqWriteCmdCheckTimeout'] = trim($this->getConfiguration('eqWriteCmdCheckTimeout', '0.01'));
+    $eqConfig['eqRetries'] = trim($this->getConfiguration('eqRetries', '3'));
+    $eqConfig['eqFirstDelay'] = trim($this->getConfiguration('eqFirstDelay', '0'));
+    $eqConfig['eqErrorDelay'] = trim($this->getConfiguration('eqErrorDelay', '1'));
     if ($eqConfig['eqProtocol'] === 'serial') {
-      $eqConfig['eqPort'] = $this->getConfiguration('eqPortSerial');
+      $eqConfig['eqPort'] = trim($this->getConfiguration('eqPortSerial'));
       $eqConfig['eqSerialMethod'] = $this->getConfiguration('eqSerialMethod');
       $eqConfig['eqSerialBaudrate'] = $this->getConfiguration('eqSerialBaudrate');
       $eqConfig['eqSerialBytesize'] = $this->getConfiguration('eqSerialBytesize');
@@ -769,8 +769,8 @@ class mymodbus extends eqLogic {
       $eqConfig['eqSerialStopbits'] = $this->getConfiguration('eqSerialStopbits');
       
     } else {
-      $eqConfig['eqAddr'] = $this->getConfiguration('eqAddr');
-      $eqConfig['eqPort'] = $this->getConfiguration('eqPortNetwork');
+      $eqConfig['eqAddr'] = trim($this->getConfiguration('eqAddr'));
+      $eqConfig['eqPort'] = trim($this->getConfiguration('eqPortNetwork'));
       
     }
     $eqConfig['cmds'] = array();
@@ -1098,9 +1098,9 @@ class mymodbusCmd extends cmd {
     //log::add('mymodbus', 'debug', __CLASS__ . '::' . __FUNCTION__);
     $return = array();
     $return['id'] = $this->getId();
-    $return['name'] = $this->getName();
+    $return['name'] = trim($this->getName());
     $return['type'] = $this->getType();
-    $return['cmdSlave'] = $this->getConfiguration('cmdSlave');
+    $return['cmdSlave'] = trim($this->getConfiguration('cmdSlave'));
     $return['cmdFctModbus'] = $this->getConfiguration('cmdFctModbus');
     if ($return['cmdFctModbus'] === 'fromBlob') {
       if ($this->getSubType() === 'binary') {
@@ -1109,9 +1109,9 @@ class mymodbusCmd extends cmd {
         $return['cmdSourceBlob'] = $this->getConfiguration('cmdSourceBlobNum');
       }
     }
-    $return['cmdFormat'] = $this->getConfiguration('cmdFormat');
-    $return['cmdAddress'] = $this->getConfiguration('cmdAddress');
-    $return['cmdFrequency'] = $this->getConfiguration('cmdFrequency');
+    $return['cmdFormat'] = trim($this->getConfiguration('cmdFormat'));
+    $return['cmdAddress'] = trim($this->getConfiguration('cmdAddress'));
+    $return['cmdFrequency'] = trim($this->getConfiguration('cmdFrequency'));
     $return['cmdInvertBytes'] = $this->getConfiguration('cmdInvertBytes');
     $return['cmdInvertWords'] = $this->getConfiguration('cmdInvertWords');
     $return['repeat'] = $this->getConfiguration('repeatEventManagement', 'never') === 'always' ? '1' : '0';

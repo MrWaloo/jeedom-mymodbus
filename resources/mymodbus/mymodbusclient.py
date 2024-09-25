@@ -269,11 +269,12 @@ class MyModbusClient(object):
         
         duration = self.loop.time() - begin
         if refresh_mode == "polling":
-          if duration > polling:
+          if duration > polling and not cycle_with_error:
             polling = (duration // polling_config + 1) * polling_config
             warning = f"the polling time is too short! Setting it to {polling}"
             self.log.warning(f"{self.eqConfig['name']}: {warning}")
-          await asyncio.sleep(math.floor((polling - duration) * 10) / 10) # Arrondi à 0.1s en dessous
+          wait_time = max(0, math.floor((polling - duration) * 10) / 10) # Arrondi à 0.1s en dessous
+          await asyncio.sleep(wait_time)
         
         if cycle_with_error:
           payload = {
@@ -483,7 +484,7 @@ class MyModbusClient(object):
         value_to_write = command["cmdWriteValue"]
         pause = None
         pause_pattern = r"(.*)\s*?pause\s*?(\d+([\.\,]\d+)?)\s*?$"
-        result = re.match(pause_pattern, str(value_to_write), re.IGNORECASE)
+        result = re.search(pause_pattern, str(value_to_write), re.IGNORECASE)
         if result:
           value_to_write = eval(result.group(1))
           pause = float(result.group(2).replace(',', '.'))
