@@ -55,6 +55,11 @@ if (isset($result['heartbeat_request'])) {
       $eqlogic = mymodbus::byId($new_value['eqId']);
       $cmd = mymodbusCmd::byEqLogicIdAndLogicalId($new_value['eqId'], 'cycle ok');
       $new_value = $new_value['value'];
+
+    } elseif ($cmd_id === 'polling') {
+      $eqlogic = mymodbus::byId($new_value['eqId']);
+      $cmd = mymodbusCmd::byEqLogicIdAndLogicalId($new_value['eqId'], 'polling');
+      $new_value = $new_value['value'];
       
     } elseif (is_numeric($cmd_id)) {
       $cmd = mymodbusCmd::byid($cmd_id);
@@ -74,12 +79,15 @@ if (isset($result['heartbeat_request'])) {
         }
       }
     }
-    
-    log::add('mymodbus', 'debug', 'jeemymodbus.php: Mise à jour cmd ' . $cmd->getName() . ' -> new value: ' . $new_value, 'config');
-    
-    $eqlogic->checkAndUpdateCmd($cmd, $new_value);
-    
-    $names .= ' \'' . $cmd->getName() . '\'';
+
+    if (is_object($cmd)){
+      $cmd_name =$cmd->getName();
+      log::add('mymodbus', 'debug', "jeemymodbus.php: Mise à jour cmd '$cmd_name' -> new value: '$new_value'");
+      $eqlogic->checkAndUpdateCmd($cmd, $new_value);
+      #$names .= ' \'' . $cmd->getName() . '\'';
+    } else {
+      log::add('mymodbus', 'debug', "'jeemymodbus.php: Mise à jour cmd_id '$cmd_id' impossible -> new value: '$new_value'");
+    }
   }
   #log::add('mymodbus', 'debug', 'jeemymodbus.php: Mise à jour des commandes info :' . $names);
 } else {

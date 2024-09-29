@@ -254,6 +254,7 @@ class MyModbusClient(object):
       self._cycle_times = [None, None, None, None, None]
       polling_config = float(self.eqConfig["eqPolling"])
       polling = polling_config
+      asyncio.create_task(self.send_polling(polling))
 
       while not self.should_stop.is_set():
         if refresh_mode == "on_event":
@@ -271,6 +272,7 @@ class MyModbusClient(object):
         if refresh_mode == "polling":
           if duration > polling and not cycle_with_error:
             polling = (duration // polling_config + 1) * polling_config
+            asyncio.create_task(self.send_polling(polling))
             warning = f"the polling time is too short! Setting it to {polling}"
             self.log.warning(f"{self.eqConfig['name']}: {warning}")
           wait_time = max(0, math.floor((polling - duration) * 10) / 10) # Arrondi à 0.1s en dessous
@@ -339,7 +341,6 @@ class MyModbusClient(object):
             self.log.debug(f"{self.eqConfig['name']}: 'one_cycle_read'/{cmd['name']}: requesting read")
             rr: ModbusResponse = await self.client.execute(pmb_req)
         except ModbusException as exc:
-          self.loop.create_task(self.invalidate_blob(cmd["id"]))
           error_on_current_read = True
           error = f"exception during read request on slave id {pmb_req.slave_id}, address {pmb_req.address} -> {exc!s}"
           self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
@@ -361,18 +362,11 @@ class MyModbusClient(object):
         
         if error_on_current_read:
           error_or_exception = True
-          self.loop.create_task(self.invalidate_blob(cmd["id"]))
-          change = {
-            "values::cycle_ok": {
-              "value": 0,
-              "eqId": self.eqConfig["id"]
-            }
-          }
-          self.loop.create_task(self.add_change(change))
+          self.loop.create_task(self.set_error(cmd))
           await asyncio.sleep(eqErrorDelay) # Laisse le temps pour revenir à la normale
           
         else:
-          self.loop.create_task(self.process_read_response(cmd["id"], rr))
+          self.loop.create_task(self.process_read_response(cmd, rr))
           await asyncio.sleep(eqWriteCmdCheckTimeout) # Cède le contrôle aux autres tâches
 
       self.log.debug(f"{self.eqConfig['name']}: 'one_cycle_read' exit with error_or_exception = {error_or_exception}")
@@ -381,16 +375,12 @@ class MyModbusClient(object):
     except asyncio.CancelledError:
       self.log.debug(f"{self.eqConfig['name']}: 'one_cycle_read' cancelled")
   
-  async def process_read_response(self, cmd_id: str, response: ModbusResponse) -> None:
+  async def process_read_response(self, cmd: dict, response: ModbusResponse) -> None:
     """
     Reads ModbusResponse and returns the value(s) to Jeedom
     """
-    self.log.debug(f"{self.eqConfig['name']}: 'process_read_response' launched for command id = {cmd_id}")
+    self.log.debug(f"{self.eqConfig['name']}: 'process_read_response' launched for command id = {cmd['id']}")
     change = {}
-    cmd = self.get_cmd_conf(cmd_id)
-    if cmd is None:
-      self.log.debug(f"{self.eqConfig['name']}: 'process_read_response' cmd is None")
-      return
     if cmd["cmdFormat"] == 'blob':
       change[f"values::{cmd['id']}"] = 1
     dest_ids = self._blob_dest.get(int(cmd["id"]), None)
@@ -576,24 +566,35 @@ class MyModbusClient(object):
 
     except asyncio.CancelledError:
       self.log.debug(f"{self.eqConfig['name']}: 'command_write' cancelled")
-
-  async def invalidate_blob(self, cmd_id: str) -> None:
-    """
-    Set the value 0 for this command if it is a register range
-    """
-    cmd = self.get_cmd_conf(cmd_id)
-    if cmd is None:
-      self.log.debug(f"{self.eqConfig['name']}: 'invalidate_blob' cmd is None")
-      return
-    if cmd["cmdFormat"] == 'blob':
-      await self.add_change({f"values::{cmd['id']}": 0})
   
   def get_cmd_conf(self, cmd_id: str) -> dict | None:
     for cmd in self.eqConfig["cmds"]:
       if cmd["id"] == cmd_id:
         return cmd
     return None
+
+  async def set_error(self, cmd: dict) -> None:
+    """
+    Set the value 0 for this command if it is a register range and set cycle_ok to 0
+    """
+    changes = {}
+    if cmd["cmdFormat"] == 'blob':
+      changes[f"values::{cmd['id']}"] = 0
+    changes["values::cycle_ok"] = {
+      "value": 0,
+      "eqId": self.eqConfig["id"]
+    }
+    self.loop.create_task(self.add_change(changes))
   
+  async def send_polling(self, polling: float) -> None:
+    change = {
+      "values::polling": {
+        "value": polling,
+        "eqId": self.eqConfig["id"]
+      }
+    }
+    self.loop.create_task(self.add_change(change))
+
   def get_payload(self, response: ModbusResponse, cmd: dict, blob: dict | None = None) -> array:
     attr = Lib.get_request_attribute(response.function_code)
     result = getattr(response, attr)

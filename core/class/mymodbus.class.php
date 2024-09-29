@@ -628,16 +628,16 @@ class mymodbus extends eqLogic {
           ->setUnite('s')
           ->setOrder(0)
           ->save();
-      }
-      $refreshCmdTest = $this->getCmd('action', 'refresh');
-      if (!is_object($refreshCmdTest)) {
+        }
+        $refreshCmdTest = $this->getCmd('action', 'refresh');
+        if (!is_object($refreshCmdTest)) {
         log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('Création de commande : Rafraîchir', __FILE__));
         $refreshCmd = (new mymodbusCmd)
-          ->setLogicalId('refresh')
-          ->setEqLogic_id($this->getId())
-          ->setName(__('Rafraîchir', __FILE__))
-          ->setType('action')
-          ->setSubType('other');
+        ->setLogicalId('refresh')
+        ->setEqLogic_id($this->getId())
+        ->setName(__('Rafraîchir', __FILE__))
+        ->setType('action')
+        ->setSubType('other');
         $refreshTimeCmd = $this->getCmd('info', 'refresh time');
         $refreshTimeCmd->setOrder(1);
         $refreshTimeCmd->save();
@@ -647,12 +647,24 @@ class mymodbus extends eqLogic {
       $cycleOkCmdTest = $this->getCmd('info', 'cycle ok');
       if (!is_object($cycleOkCmdTest)) {
         log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('Création de commande : Cycle OK', __FILE__));
-        $refreshCmd = (new mymodbusCmd)
+        $cycleOkCmd = (new mymodbusCmd)
           ->setLogicalId('cycle ok')
           ->setEqLogic_id($this->getId())
           ->setName(__('Cycle OK', __FILE__))
           ->setType('info')
           ->setSubType('binary')
+          ->save();
+      }
+      $pollingCmdTest = $this->getCmd('info', 'polling');
+      if (!is_object($pollingCmdTest)) {
+        log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('Création de commande : Polling', __FILE__));
+        $pollingCmd = (new mymodbusCmd)
+          ->setLogicalId('polling')
+          ->setEqLogic_id($this->getId())
+          ->setName(__('Polling', __FILE__))
+          ->setType('info')
+          ->setSubType('numeric')
+          ->setUnite('s')
           ->save();
       }
       
@@ -665,7 +677,7 @@ class mymodbus extends eqLogic {
       }
       if ($offset > 0) {
         foreach ($this->getCmd() as $cmdMymodbus) { // boucle sur les commandes
-          if (in_array($cmdMymodbus->getLogicalId(), array('refresh', 'refresh time', 'cycle ok'))) {
+          if (in_array($cmdMymodbus->getLogicalId(), array('refresh', 'refresh time', 'cycle ok', 'polling'))) {
             continue;
           }
           if ($cmdMymodbus->getId() != '') {
@@ -775,7 +787,7 @@ class mymodbus extends eqLogic {
     }
     $eqConfig['cmds'] = array();
     foreach ($this->getCmd() as $cmdMymodbus) { // boucle sur les commandes
-      if (in_array($cmdMymodbus->getLogicalId(), array('refresh', 'refresh time', 'cycle ok'))) {
+      if (in_array($cmdMymodbus->getLogicalId(), array('refresh', 'refresh time', 'cycle ok', 'polling'))) {
         continue;
       }
       
@@ -951,7 +963,7 @@ class mymodbusCmd extends cmd {
       $this->_changed = true;
     }
 
-    if (in_array($this->getLogicalId(), array('refresh', 'refresh time', 'cycle ok'))) {
+    if (in_array($this->getLogicalId(), array('refresh', 'refresh time', 'cycle ok', 'polling'))) {
       return true;
     }
     $cmdSlave = $this->getConfiguration('cmdSlave');
