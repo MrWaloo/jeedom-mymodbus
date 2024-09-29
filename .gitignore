@@ -8,4 +8,3 @@ __pycache__
 data/user_templates/*.json
 resources/*.lib
 resources/venv
-ressources/

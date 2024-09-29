@@ -276,7 +276,15 @@ class MyModbusClient(object):
           wait_time = max(0, math.floor((polling - duration) * 10) / 10) # Arrondi à 0.1s en dessous
           await asyncio.sleep(wait_time)
         
-        if not cycle_with_error:
+        if cycle_with_error:
+          payload = {
+            "values::cycle_ok": {
+              "value": 0,
+              "eqId": self.eqConfig["id"]
+            }
+          }
+
+        else:
           self._cycle_times[self._read_cycle % len(self._cycle_times)] = duration
           #self.log.debug(f"{self.eqConfig['name']}: 'run_loop' _cycle_times {self._cycle_times}")
           payload = {
@@ -362,15 +370,7 @@ class MyModbusClient(object):
         if error_on_current_read:
           error_or_exception = True
           self.loop.create_task(self.invalidate_blob(cmd["id"]))
-          payload = {
-            "values::cycle_ok": {
-              "value": 0,
-              "eqId": self.eqConfig["id"]
-            }
-          }
-          self.loop.create_task(self.add_change(payload))
           await asyncio.sleep(eqErrorDelay) # Laisse le temps pour revenir à la normale
-          
         else:
           self.loop.create_task(self.process_read_response(cmd["id"], rr))
           await asyncio.sleep(eqWriteCmdCheckTimeout) # Cède le contrôle aux autres tâches
