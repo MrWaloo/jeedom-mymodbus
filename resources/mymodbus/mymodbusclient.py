@@ -276,24 +276,24 @@ class MyModbusClient(object):
           wait_time = max(0, math.floor((polling - duration) * 10) / 10) # Arrondi à 0.1s en dessous
           await asyncio.sleep(wait_time)
         
+        changes = {}
         if not cycle_with_error:
           self._cycle_times[self._read_cycle % len(self._cycle_times)] = duration
           #self.log.debug(f"{self.eqConfig['name']}: 'run_loop' _cycle_times {self._cycle_times}")
-          payload = {
-            "values::cycle_ok": {
-              "value": 1,
-              "eqId": self.eqConfig["id"]
-            }
+          changes["values::cycle_ok"] = {
+            "value": 1,
+            "eqId": self.eqConfig["id"]
           }
           if None not in self._cycle_times:
-            payload["values::cycle_time"] = {
+            changes["values::cycle_time"] = {
               "value": fmean(self._cycle_times),
               "eqId": self.eqConfig["id"]
             }
             self._cycle_times = [None for _ in self._cycle_times]
           self._read_cycle += 1
         
-        self.loop.create_task(self.add_change(payload))
+        if changes:
+          self.loop.create_task(self.add_change(changes))
 
         self.read.clear()
         if refresh_mode == "on_event":
@@ -362,13 +362,13 @@ class MyModbusClient(object):
         if error_on_current_read:
           error_or_exception = True
           self.loop.create_task(self.invalidate_blob(cmd["id"]))
-          payload = {
+          change = {
             "values::cycle_ok": {
               "value": 0,
               "eqId": self.eqConfig["id"]
             }
           }
-          self.loop.create_task(self.add_change(payload))
+          self.loop.create_task(self.add_change(change))
           await asyncio.sleep(eqErrorDelay) # Laisse le temps pour revenir à la normale
           
         else:
