@@ -41,7 +41,8 @@ class mymodbus extends eqLogic {
     "serial",
     "tcp",
     "udp",
-    "rtuovertcp"
+    "rtuovertcp",
+    "shared_from"
   ];
 
   /*   * ***********************Methode static*************************** */
@@ -199,10 +200,20 @@ class mymodbus extends eqLogic {
     self::sendToDaemon($message);
   }
   
-  // Supported protocols are in desktop/modal/eqConfig_[protocol].php
   public static function supportedProtocols() {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     return self::PROTOCOLS;
+  }
+  
+  public static function getSharedInterfaces() {
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
+    $interfaces = [];
+    foreach (self::byType(__CLASS__) as $eqMymodbus) { // boucle sur les équipements
+      if ($eqMymodbus->getIsEnable() && $eqMymodbus->getConfiguration('eqProtocol') != 'shared_from') {
+        $interfaces[$eqMymodbus->getId()] = $eqMymodbus->getName();
+      }
+    }
+    return $interfaces;
   }
   
   // tty interfaces
@@ -746,13 +757,16 @@ class mymodbus extends eqLogic {
   public static function getCompleteConfiguration() {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     $completeConfig = array();
-    foreach (self::byType('mymodbus') as $eqMymodbus) { // boucle sur les équipements
+    foreach (self::byType(__CLASS__) as $eqMymodbus) { // boucle sur les équipements
       // ne pas exporter la configuration si l'équipement n'est pas activé
       if (!$eqMymodbus->getIsEnable()) {
         continue;
       }
       
-      $completeConfig[] = $eqMymodbus->getEqConfiguration();
+      $EqConfiguration = $eqMymodbus->getEqConfiguration();
+      if (is_object($EqConfiguration)) {
+        $completeConfig[] = $EqConfiguration;
+      }
     }
     //log::add(__CLASS__, 'debug', 'eqLogic mymodbus getCompleteConfiguration: ' . json_encode($completeConfig));
     return $completeConfig;
@@ -761,10 +775,14 @@ class mymodbus extends eqLogic {
   // Retourne la configuration de l'équipement et de ses commandes
   public function getEqConfiguration() {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
+    $eqProtocol = $this->getConfiguration('eqProtocol');
+    if ($eqProtocol === 'shared_from') {
+      return;
+    }
     $eqConfig = array();
     $eqConfig['id'] = $this->getId();
     $eqConfig['name'] = trim($this->getName());
-    $eqConfig['eqProtocol'] = $this->getConfiguration('eqProtocol');
+    $eqConfig['eqProtocol'] = $eqProtocol;
     $eqConfig['eqRefreshMode'] = $this->getConfiguration('eqRefreshMode', 'polling');
     $eqConfig['eqPolling'] = trim($this->getConfiguration('eqPolling', '5'));
     $eqConfig['eqTimeout'] = trim($this->getConfiguration('eqTimeout', '5'));
@@ -772,7 +790,7 @@ class mymodbus extends eqLogic {
     $eqConfig['eqRetries'] = trim($this->getConfiguration('eqRetries', '3'));
     $eqConfig['eqFirstDelay'] = trim($this->getConfiguration('eqFirstDelay', '0'));
     $eqConfig['eqErrorDelay'] = trim($this->getConfiguration('eqErrorDelay', '1'));
-    if ($eqConfig['eqProtocol'] === 'serial') {
+    if ($eqProtocol === 'serial') {
       $eqConfig['eqPort'] = trim($this->getConfiguration('eqPortSerial'));
       $eqConfig['eqSerialMethod'] = $this->getConfiguration('eqSerialMethod');
       $eqConfig['eqSerialBaudrate'] = $this->getConfiguration('eqSerialBaudrate');
@@ -790,9 +808,23 @@ class mymodbus extends eqLogic {
       if (in_array($cmdMymodbus->getLogicalId(), array('refresh', 'refresh time', 'cycle ok', 'polling'))) {
         continue;
       }
-      
       $eqConfig['cmds'][] = $cmdMymodbus->getCmdConfiguration();
     }
+
+    // Recherche des équipement qui utilise cette interface
+    foreach (self::byType(__CLASS__) as $eqMymodbus) { // boucle sur les équipements
+      if ($eqMymodbus->getIsEnable()
+          && $eqMymodbus->getConfiguration('eqProtocol') === 'shared_from'
+          && $eqMymodbus->getConfiguration('eqInterfaceFromEqId') === $this->getId()) {
+        foreach ($eqMymodbus->getCmd() as $cmdMymodbus) { // boucle sur les commandes
+          if (in_array($cmdMymodbus->getLogicalId(), array('refresh', 'refresh time', 'cycle ok', 'polling'))) {
+            continue;
+          }
+          $eqConfig['cmds'][] = $cmdMymodbus->getCmdConfiguration();
+        }
+      }
+    }
+
     return $eqConfig;
   }
   
@@ -830,7 +862,7 @@ class mymodbus extends eqLogic {
       } 
     }
     
-    foreach (self::byType('mymodbus') as $eqMymodbus) { // boucle sur les équipements
+    foreach (self::byType(__CLASS__) as $eqMymodbus) { // boucle sur les équipements
       if ($eqMymodbus->getIsEnable()) {
         foreach ($eqMymodbus->getCmd('info') as $cmd) {
           // Au moins une commande enregistrée, donc la configuration est validée par preSave()

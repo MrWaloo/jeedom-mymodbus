@@ -255,20 +255,29 @@ function printEqLogic(_eqLogic) {
   // Afficher la partie variable de la configuration de l'équipement en fonction du protocole choisi
   $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqProtocol]').off().on('change', function () {
     if ($(this).val() != '' && !is_null($(this).val())) {
+      var show_shared = ($(this).val() === 'shared_from');
       var show_network = ($(this).val() !== 'serial');
+      const sharedInterface = $('#div_sharedInterface');
+      const protocolParameters = $('#div_protocolParameters');
       const networkConfig = $('#div_protocolParameters .networkConfig');
       const serialConfig = $('#div_protocolParameters .serialConfig');
-      if (show_network) {
-        networkConfig.show();
-        serialConfig.hide();
+      if (show_shared) {
+        sharedInterface.show();
+        protocolParameters.hide();
       } else {
-        networkConfig.hide();
-        serialConfig.show();
+        sharedInterface.hide();
+        protocolParameters.show();
+        if (show_network) {
+          networkConfig.show();
+          serialConfig.hide();
+        } else {
+          networkConfig.hide();
+          serialConfig.show();
+        }
       }
-      networkConfig.prop('disabled', !show_network);
-      serialConfig.prop('disabled', show_network);
     }
   });
+  
   // load values
   $('#eqLogic').setValues(_eqLogic, '.eqLogicAttr');
 }
