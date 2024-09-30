@@ -86,7 +86,7 @@ class mymodbus extends eqLogic {
   public static function deamon_start() {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     
-    if (!plugin::byId('mymodbus')->isActive()) {
+    if (!plugin::byId(__CLASS__)->isActive()) {
       log::add(__CLASS__, 'error', __('Le plugin Mymodbus n\'est pas actif.', __FILE__));
       return;
     }
