@@ -56,8 +56,8 @@ if (isset($result['heartbeat_request'])) {
       $sharedEqs = [];
       foreach (mymodbus::byType('mymodbus') as $eqMymodbus) { // boucle sur les équipements
         if ($eqMymodbus->getIsEnable()
-            && $eqMymodbus->getConfiguration('eqProtocol') === 'shared_from'
-            && $eqMymodbus->getConfiguration('eqInterfaceFromEqId') === $new_value['eqId']) {
+        && $eqMymodbus->getConfiguration('eqProtocol') === 'shared_from'
+        && $eqMymodbus->getConfiguration('eqInterfaceFromEqId') === $new_value['eqId']) {
           $sharedEqs[] = $eqMymodbus->getId();
         }
       }

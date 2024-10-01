@@ -277,7 +277,14 @@ function printEqLogic(_eqLogic) {
       }
     }
   });
-  
+
+  const selectElement = document.getElementById('sharedInterface');
+  for (let i = 0; i < selectElement.options.length; i++) {
+    if (selectElement.options[i].value === _eqLogic.id) {
+      selectElement.options[i].classList.add('hidden');
+    }
+  }
+
   // load values
   $('#eqLogic').setValues(_eqLogic, '.eqLogicAttr');
 }

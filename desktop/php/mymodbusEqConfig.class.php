@@ -59,7 +59,7 @@ class mymodbusEqConfig {
         </div>
       </div>
       
-      <!--   ***********************************  -->
+      <!-- *********************************** -->
       <legend><i class="fa fa-list-alt"></i> {{Configuration :}}</legend>
       <div class="form-group">
         <label class="col-sm-4 control-label">{{Protocol de connexion}}</label>
@@ -68,7 +68,8 @@ class mymodbusEqConfig {
             <option disabled selected value>-- {{Choisir un protocol de connexion}} --</option>
             <?php
             foreach (mymodbus::supportedProtocols() as $protocol) {
-              echo '<option value="' . $protocol . '">' . $protocol . '</option>';
+              $prot_name = $protocol === 'shared_from' ? __("Interface d'un autre équipement", __FILE__) : $protocol;
+              echo '<option value="' . $protocol . '">' . $prot_name . '</option>';
             }
             ?>
           </select>
@@ -158,7 +159,7 @@ class mymodbusEqConfig {
     <div class="form-group sharedInterface">
       <label class="col-sm-4 control-label">{{Utilisation de l'interface de l'équipement}}</label>
       <div class="col-sm-6">
-        <select class="eqLogicAttr form-control sharedInterface" data-toggle="tooltip" data-placement="top" data-html="true" data-l1key="configuration" data-l2key="eqInterfaceFromEqId">
+        <select id="sharedInterface" class="eqLogicAttr form-control sharedInterface" data-toggle="tooltip" data-placement="top" data-html="true" data-l1key="configuration" data-l2key="eqInterfaceFromEqId">
         <?php
           foreach (mymodbus::getSharedInterfaces() as $eqId => $eq_name) {
             echo '<option title="' . $eq_name . '" value="' . $eqId . '">' . $eq_name . '</option>';
