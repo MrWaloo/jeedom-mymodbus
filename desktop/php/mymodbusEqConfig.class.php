@@ -110,17 +110,17 @@ class mymodbusEqConfig {
           </div>
         </div>
         <div class="form-group nonShared">
+          <label class="col-sm-4 control-label">{{Nombre de tentatives en cas d'erreur}}</label>
+          <div class="col-sm-6">
+            <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRetries" placeholder="3"<?= $disabled ?>/>
+          </div>
+        </div>
+        <div class="form-group nonShared">
           <label class="col-sm-4 control-label">{{Temps entre 2 requêtes de lecture (s)}}
             <sup><i class="fas fa-question-circle tooltips" title="{{Egalement le temps aloué à la vérification de l'envoi d'une commande action par Jeedom}}"></i></sup>
           </label>
           <div class="col-sm-6">
             <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqWriteCmdCheckTimeout" placeholder="1"<?= $disabled ?>/>
-          </div>
-        </div>
-        <div class="form-group nonShared">
-          <label class="col-sm-4 control-label">{{Nombre de tentatives en cas d'erreur}}</label>
-          <div class="col-sm-6">
-            <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRetries" placeholder="3"<?= $disabled ?>/>
           </div>
         </div>
         <div class="form-group nonShared">

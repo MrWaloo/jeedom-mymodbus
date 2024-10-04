@@ -916,8 +916,11 @@ class mymodbusCmd extends cmd {
     $command = array();
     $command['eqId'] = $eqMymodbus->getId();
     
+    $message = array();
     if ($this->getLogicalId() === 'refresh') {
-      $message = array();
+      if ($eqMymodbus->getConfiguration('eqProtocol') === 'shared_from') {
+        $command['eqId'] = $eqMymodbus->getConfiguration('eqInterfaceFromEqId');
+      }
       $message['CMD'] = 'read';
       $message['read_cmd'] = $command;
       
@@ -951,7 +954,6 @@ class mymodbusCmd extends cmd {
 
       $command['cmdId'] = $this->getId();
       
-      $message = array();
       $message['CMD'] = 'write';
       $message['write_cmd'] = $command;
     }

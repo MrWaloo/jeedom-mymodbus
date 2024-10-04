@@ -96,7 +96,7 @@ class MyModbusClient(object):
     """
     Creates the client and the requests according to the configuration
     """
-    if self.client:
+    if self.client and self.client.connected or self.connected.is_set():
       self.close()
     if eqConfig is not None:
       self.eqConfig = eqConfig
@@ -184,7 +184,7 @@ class MyModbusClient(object):
             ))
 
           elif action == "read":
-            self.read.set()          
+            self.read.set()
 
           elif action =="newDaemonConfig":
             self.should_stop.set()
@@ -235,8 +235,8 @@ class MyModbusClient(object):
           return
         self.log.debug(f"{self.eqConfig['name']}: connection opened")
     
-    if first_call and self.client.connected:
-      self.log.info(f"{self.eqConfig['name']}: connection opened")
+    if first_call:
+      self.log.info(f"{self.eqConfig['name']}: 'async_connect' first call")
       await asyncio.sleep(float(self.eqConfig["eqFirstDelay"]))
       self._async_tasks.append(self.loop.create_task(
         self.run_loop(),
@@ -252,9 +252,10 @@ class MyModbusClient(object):
     try:
       self._read_cycle = 0
       self._cycle_times = [None, None, None, None, None]
-      polling_config = float(self.eqConfig["eqPolling"])
-      polling = polling_config
-      asyncio.create_task(self.send_polling(polling))
+      if refresh_mode == "polling":
+        polling_config = float(self.eqConfig["eqPolling"])
+        polling = polling_config
+        asyncio.create_task(self.send_polling(polling))
 
       while not self.should_stop.is_set():
         if refresh_mode == "on_event":
@@ -262,6 +263,7 @@ class MyModbusClient(object):
           await self.read.wait()
           if self.should_stop.is_set():
             break
+          self.stopped.clear()
           await self.async_connect()
         #self.log.debug(f"{self.eqConfig['name']}: 'run_loop' cycle {self._read_cycle}")
         
@@ -299,7 +301,9 @@ class MyModbusClient(object):
 
         self.read.clear()
         if refresh_mode == "on_event":
-          self.close()
+          if not self.should_stop.is_set():
+            self.close()
+          self.stopped.set()
 
     except asyncio.CancelledError:
       self.log.debug(f"{self.eqConfig['name']}: 'run_loop' cancelled")
@@ -646,14 +650,27 @@ class MyModbusClient(object):
       try:
         await asyncio.wait_for(self.stopped.wait(), 2)
       except TimeoutError:
-        if hasattr(self, "_async_tasks"):
-          for task in self._async_tasks:
-            if (
-              task.get_name() == f"run_loop_{self.eqConfig['id']}"
-              and not task.done()
-              and not task.cancelled()
-            ):
-              task.cancel()
+        self.cancel_run_loop()
+    if self.eqConfig["eqRefreshMode"] == "on_event":
+      self.cancel_run_loop()
+    self.remove_done_run_loop()
+
+  def cancel_run_loop(self) -> None:
+    if hasattr(self, "_async_tasks"):
+      for task in self._async_tasks:
+        if (
+          task.get_name() == f"run_loop_{self.eqConfig['id']}"
+          and not task.done()
+          and not task.cancelled()
+        ):
+          task.cancel()
+
+  def remove_done_run_loop(self) -> None:
+    if hasattr(self, "_async_tasks"):
+      for i in range(len(self._async_tasks) - 1, -1, -1):
+        task = self._async_tasks[i]
+        if task.get_name() == f"run_loop_{self.eqConfig['id']}" and task.done():
+          del self._async_tasks[i]
 
   def terminate(self):
     return self.loop.create_task(self.async_terminate())
