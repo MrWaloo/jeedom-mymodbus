@@ -41,7 +41,8 @@ class mymodbus extends eqLogic {
     "serial",
     "tcp",
     "udp",
-    "rtuovertcp"
+    "rtuovertcp",
+    "shared_from"
   ];
 
   /*   * ***********************Methode static*************************** */
@@ -85,7 +86,7 @@ class mymodbus extends eqLogic {
   public static function deamon_start() {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     
-    if (!plugin::byId('mymodbus')->isActive()) {
+    if (!plugin::byId(__CLASS__)->isActive()) {
       log::add(__CLASS__, 'error', __('Le plugin Mymodbus n\'est pas actif.', __FILE__));
       return;
     }
@@ -199,10 +200,20 @@ class mymodbus extends eqLogic {
     self::sendToDaemon($message);
   }
   
-  // Supported protocols are in desktop/modal/eqConfig_[protocol].php
   public static function supportedProtocols() {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     return self::PROTOCOLS;
+  }
+  
+  public static function getSharedInterfaces() {
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
+    $interfaces = [];
+    foreach (self::byType(__CLASS__) as $eqMymodbus) { // boucle sur les équipements
+      if ($eqMymodbus->getIsEnable() && $eqMymodbus->getConfiguration('eqProtocol') != 'shared_from') {
+        $interfaces[$eqMymodbus->getId()] = $eqMymodbus->getName();
+      }
+    }
+    return $interfaces;
   }
   
   // tty interfaces
@@ -505,65 +516,67 @@ class mymodbus extends eqLogic {
     if ($this->getIsEnable()) {
       // Un nouvel équipement vient d'être ajouté, il faut retourner "true" sinon, l'ajout est invalidé
       if (!in_array('eqProtocol', $configKeys) && !in_array('eqRefreshMode', $configKeys) && !in_array('eqPolling', $configKeys)
-          && !in_array('eqWriteCmdCheckTimeout', $configKeys) && !in_array('eqRetries', $configKeys) && !in_array('eqFirstDelay', $configKeys)
-          && !in_array('eqErrorDelay', $configKeys)) {
+      && !in_array('eqWriteCmdCheckTimeout', $configKeys) && !in_array('eqRetries', $configKeys) && !in_array('eqFirstDelay', $configKeys)
+      && !in_array('eqErrorDelay', $configKeys)) {
         return True;
       }
       if (!in_array('eqProtocol', $configKeys) || !in_array('eqRefreshMode', $configKeys) || !in_array('eqPolling', $configKeys)
-          || !in_array('eqWriteCmdCheckTimeout', $configKeys) || !in_array('eqRetries', $configKeys) || !in_array('eqFirstDelay', $configKeys)
-          || !in_array('eqErrorDelay', $configKeys)) {
+      || !in_array('eqWriteCmdCheckTimeout', $configKeys) || !in_array('eqRetries', $configKeys) || !in_array('eqFirstDelay', $configKeys)
+      || !in_array('eqErrorDelay', $configKeys)) {
         throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Veuillez définir la configuration de base de l\'équipement', __FILE__));
       }
       
       $eqProtocol = $this->getConfiguration('eqProtocol');
-      $eqRefreshMode = $this->getConfiguration('eqRefreshMode');
-      $eqPolling = $this->getConfiguration('eqPolling');
-      $eqTimeout = $this->getConfiguration('eqTimeout');
-      $eqWriteCmdCheckTimeout = $this->getConfiguration('eqWriteCmdCheckTimeout');
-      $eqRetries = $this->getConfiguration('eqRetries');
-      $eqFirstDelay = $this->getConfiguration('eqFirstDelay');
-      $eqErrorDelay = $this->getConfiguration('eqErrorDelay');
       if (!in_array($eqProtocol, self::supportedProtocols())) {
         throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le protocol n\'est pas défini correctement.', __FILE__));
       }
-      if (!in_array($eqRefreshMode, array('polling', 'cyclic', 'on_event'))) {
-        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le mode de rafraîchissement n\'est pas défini correctement.', __FILE__));
-      }
-      if (!is_numeric($eqPolling)) {
-        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Polling" doit être un nombre.', __FILE__));
-      }
-      if ($eqPolling < 0.01) {
-        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Polling" doit être au moins à 10 ms. Ou alors il faut passer en mode cyclique', __FILE__));
-      }
-      if (!is_numeric($eqTimeout)) {
-        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Timeout" doit être un nombre.', __FILE__));
-      }
-      if ($eqTimeout < 1) {
-        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Timeout" doit être au moins à 1 seconde.', __FILE__));
-      }
-      if (!is_numeric($eqWriteCmdCheckTimeout)) {
-        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Temps entre 2 requêtes de lecture (s)" doit être un nombre.', __FILE__));
-      }
-      if ($eqWriteCmdCheckTimeout < 0) {
-        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Temps entre 2 requêtes de lecture (s)" doit être positif.', __FILE__));
-      }
-      if (!is_numeric($eqRetries)) {
-        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Nombre de tentatives en cas d\'erreur" doit être un nombre.', __FILE__));
-      }
-      if ($eqRetries <= 0) {
-        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Nombre de tentatives en cas d\'erreur" doit être positif non nul.', __FILE__));
-      }
-      if (!is_numeric($eqFirstDelay)) {
-        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Temps d\'attente après la connexion" doit être un nombre.', __FILE__));
-      }
-      if ($eqFirstDelay < 0) {
-        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Temps d\'attente après la connexion" doit être positif.', __FILE__));
-      }
-      if (!is_numeric($eqErrorDelay)) {
-        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Temps d\'attente après une erreur de lecture" doit être un nombre.', __FILE__));
-      }
-      if ($eqErrorDelay < 1) {
-        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Temps d\'attente après une erreur de lecture" doit être au moins à 1 seconde.', __FILE__));
+      if ($eqProtocol != 'shared_from') {
+        $eqRefreshMode = $this->getConfiguration('eqRefreshMode');
+        $eqPolling = $this->getConfiguration('eqPolling');
+        $eqTimeout = $this->getConfiguration('eqTimeout');
+        $eqWriteCmdCheckTimeout = $this->getConfiguration('eqWriteCmdCheckTimeout');
+        $eqRetries = $this->getConfiguration('eqRetries');
+        $eqFirstDelay = $this->getConfiguration('eqFirstDelay');
+        $eqErrorDelay = $this->getConfiguration('eqErrorDelay');
+        if (!in_array($eqRefreshMode, array('polling', 'cyclic', 'on_event'))) {
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le mode de rafraîchissement n\'est pas défini correctement.', __FILE__));
+        }
+        if (!is_numeric($eqPolling)) {
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Polling" doit être un nombre.', __FILE__));
+        }
+        if ($eqPolling < 0.01) {
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Polling" doit être au moins à 10 ms. Ou alors il faut passer en mode cyclique', __FILE__));
+        }
+        if (!is_numeric($eqTimeout)) {
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Timeout" doit être un nombre.', __FILE__));
+        }
+        if ($eqTimeout < 1) {
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Timeout" doit être au moins à 1 seconde.', __FILE__));
+        }
+        if (!is_numeric($eqWriteCmdCheckTimeout)) {
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Temps entre 2 requêtes de lecture (s)" doit être un nombre.', __FILE__));
+        }
+        if ($eqWriteCmdCheckTimeout < 0) {
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Temps entre 2 requêtes de lecture (s)" doit être positif.', __FILE__));
+        }
+        if (!is_numeric($eqRetries)) {
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Nombre de tentatives en cas d\'erreur" doit être un nombre.', __FILE__));
+        }
+        if ($eqRetries <= 0) {
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Nombre de tentatives en cas d\'erreur" doit être positif non nul.', __FILE__));
+        }
+        if (!is_numeric($eqFirstDelay)) {
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Temps d\'attente après la connexion" doit être un nombre.', __FILE__));
+        }
+        if ($eqFirstDelay < 0) {
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Temps d\'attente après la connexion" doit être positif.', __FILE__));
+        }
+        if (!is_numeric($eqErrorDelay)) {
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Temps d\'attente après une erreur de lecture" doit être un nombre.', __FILE__));
+        }
+        if ($eqErrorDelay < 1) {
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Temps d\'attente après une erreur de lecture" doit être au moins à 1 seconde.', __FILE__));
+        }
       }
       
       if ($eqProtocol === 'serial') {
@@ -598,7 +611,7 @@ class mymodbus extends eqLogic {
           throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le nombre de bits de stop n\'est pas défini correctement.', __FILE__));
         }
 
-      } else {
+      } elseif ($eqProtocol != 'shared_from') {
         // Vérification du paramétrage d'une connexion TCP
         if (!in_array('eqAddr', $configKeys) || !in_array('eqPortNetwork', $configKeys)) {
           throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Veuillez définir la configuration réseau de l\'équipement', __FILE__));
@@ -647,12 +660,24 @@ class mymodbus extends eqLogic {
       $cycleOkCmdTest = $this->getCmd('info', 'cycle ok');
       if (!is_object($cycleOkCmdTest)) {
         log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('Création de commande : Cycle OK', __FILE__));
-        $refreshCmd = (new mymodbusCmd)
+        $cycleOkCmd = (new mymodbusCmd)
           ->setLogicalId('cycle ok')
           ->setEqLogic_id($this->getId())
           ->setName(__('Cycle OK', __FILE__))
           ->setType('info')
           ->setSubType('binary')
+          ->save();
+      }
+      $pollingCmdTest = $this->getCmd('info', 'polling');
+      if (!is_object($pollingCmdTest)) {
+        log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('Création de commande : Polling', __FILE__));
+        $pollingCmd = (new mymodbusCmd)
+          ->setLogicalId('polling')
+          ->setEqLogic_id($this->getId())
+          ->setName(__('Polling', __FILE__))
+          ->setType('info')
+          ->setSubType('numeric')
+          ->setUnite('s')
           ->save();
       }
       
@@ -665,7 +690,7 @@ class mymodbus extends eqLogic {
       }
       if ($offset > 0) {
         foreach ($this->getCmd() as $cmdMymodbus) { // boucle sur les commandes
-          if (in_array($cmdMymodbus->getLogicalId(), array('refresh', 'refresh time', 'cycle ok'))) {
+          if (in_array($cmdMymodbus->getLogicalId(), array('refresh', 'refresh time', 'cycle ok', 'polling'))) {
             continue;
           }
           if ($cmdMymodbus->getId() != '') {
@@ -689,11 +714,11 @@ class mymodbus extends eqLogic {
     // Suppression des éléments de configuration inutiles
     $confOK = $this->getEqConfiguration();
     $conf = $this->getConfiguration();
+    $shared_from = $conf['eqProtocol'] === 'shared_from';
     $serial_com = $conf['eqProtocol'] === 'serial';
     foreach ($conf as $key => $value) {
-      if ((substr($key, 0, 2) === 'eq' && !in_array($key, array_keys($confOK))
-          || $value === '')
-          && (!$serial_com && $key != 'eqPortNetwork' || $serial_com && $key != 'eqPortSerial')) {
+      if ((substr($key, 0, 2) === 'eq' && !in_array($key, array_keys($confOK)) || $value === '')
+      && ($shared_from && !in_array($key, ['eqProtocol', 'eqInterfaceFromEqId']) || !$shared_from && (!$serial_com && $key != 'eqPortNetwork' || $serial_com && $key != 'eqPortSerial'))) {
         $this->setConfiguration($key, null);
       }
     }
@@ -734,13 +759,16 @@ class mymodbus extends eqLogic {
   public static function getCompleteConfiguration() {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     $completeConfig = array();
-    foreach (self::byType('mymodbus') as $eqMymodbus) { // boucle sur les équipements
+    foreach (self::byType(__CLASS__) as $eqMymodbus) { // boucle sur les équipements
       // ne pas exporter la configuration si l'équipement n'est pas activé
       if (!$eqMymodbus->getIsEnable()) {
         continue;
       }
       
-      $completeConfig[] = $eqMymodbus->getEqConfiguration();
+      $EqConfiguration = $eqMymodbus->getEqConfiguration();
+      if ($EqConfiguration != []) {
+        $completeConfig[] = $EqConfiguration;
+      }
     }
     //log::add(__CLASS__, 'debug', 'eqLogic mymodbus getCompleteConfiguration: ' . json_encode($completeConfig));
     return $completeConfig;
@@ -749,10 +777,14 @@ class mymodbus extends eqLogic {
   // Retourne la configuration de l'équipement et de ses commandes
   public function getEqConfiguration() {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
+    $eqProtocol = $this->getConfiguration('eqProtocol');
     $eqConfig = array();
+    if ($eqProtocol === 'shared_from') {
+      return $eqConfig;
+    }
     $eqConfig['id'] = $this->getId();
     $eqConfig['name'] = trim($this->getName());
-    $eqConfig['eqProtocol'] = $this->getConfiguration('eqProtocol');
+    $eqConfig['eqProtocol'] = $eqProtocol;
     $eqConfig['eqRefreshMode'] = $this->getConfiguration('eqRefreshMode', 'polling');
     $eqConfig['eqPolling'] = trim($this->getConfiguration('eqPolling', '5'));
     $eqConfig['eqTimeout'] = trim($this->getConfiguration('eqTimeout', '5'));
@@ -760,7 +792,7 @@ class mymodbus extends eqLogic {
     $eqConfig['eqRetries'] = trim($this->getConfiguration('eqRetries', '3'));
     $eqConfig['eqFirstDelay'] = trim($this->getConfiguration('eqFirstDelay', '0'));
     $eqConfig['eqErrorDelay'] = trim($this->getConfiguration('eqErrorDelay', '1'));
-    if ($eqConfig['eqProtocol'] === 'serial') {
+    if ($eqProtocol === 'serial') {
       $eqConfig['eqPort'] = trim($this->getConfiguration('eqPortSerial'));
       $eqConfig['eqSerialMethod'] = $this->getConfiguration('eqSerialMethod');
       $eqConfig['eqSerialBaudrate'] = $this->getConfiguration('eqSerialBaudrate');
@@ -775,12 +807,26 @@ class mymodbus extends eqLogic {
     }
     $eqConfig['cmds'] = array();
     foreach ($this->getCmd() as $cmdMymodbus) { // boucle sur les commandes
-      if (in_array($cmdMymodbus->getLogicalId(), array('refresh', 'refresh time', 'cycle ok'))) {
+      if (in_array($cmdMymodbus->getLogicalId(), array('refresh', 'refresh time', 'cycle ok', 'polling'))) {
         continue;
       }
-      
       $eqConfig['cmds'][] = $cmdMymodbus->getCmdConfiguration();
     }
+    
+    // Recherche des équipement qui utilise cette interface
+    foreach (self::byType(__CLASS__) as $eqMymodbus) { // boucle sur les équipements
+      if ($eqMymodbus->getIsEnable()
+      && $eqMymodbus->getConfiguration('eqProtocol') === 'shared_from'
+      && $eqMymodbus->getConfiguration('eqInterfaceFromEqId') === $this->getId()) {
+        foreach ($eqMymodbus->getCmd() as $cmdMymodbus) { // boucle sur les commandes
+          if (in_array($cmdMymodbus->getLogicalId(), array('refresh', 'refresh time', 'cycle ok', 'polling'))) {
+            continue;
+          }
+          $eqConfig['cmds'][] = $cmdMymodbus->getCmdConfiguration();
+        }
+      }
+    }
+    
     return $eqConfig;
   }
   
@@ -818,7 +864,7 @@ class mymodbus extends eqLogic {
       } 
     }
     
-    foreach (self::byType('mymodbus') as $eqMymodbus) { // boucle sur les équipements
+    foreach (self::byType(__CLASS__) as $eqMymodbus) { // boucle sur les équipements
       if ($eqMymodbus->getIsEnable()) {
         foreach ($eqMymodbus->getCmd('info') as $cmd) {
           // Au moins une commande enregistrée, donc la configuration est validée par preSave()
@@ -870,8 +916,11 @@ class mymodbusCmd extends cmd {
     $command = array();
     $command['eqId'] = $eqMymodbus->getId();
     
+    $message = array();
     if ($this->getLogicalId() === 'refresh') {
-      $message = array();
+      if ($eqMymodbus->getConfiguration('eqProtocol') === 'shared_from') {
+        $command['eqId'] = $eqMymodbus->getConfiguration('eqInterfaceFromEqId');
+      }
       $message['CMD'] = 'read';
       $message['read_cmd'] = $command;
       
@@ -890,7 +939,7 @@ class mymodbusCmd extends cmd {
         $value = trim(str_replace('#slider#', $_option['slider'], $value));
       } elseif ($this->getSubtype() === 'color') {
         $value = trim(str_replace('#color#', $_option['color'], $value));
-      }elseif ($this->getSubtype() === 'select') {
+      } elseif ($this->getSubtype() === 'select') {
         $value = trim(str_replace('#select#', $_option['select'], $value));
       }
       if (strstr($value, '#value#') && $this->getValue()) {
@@ -905,7 +954,6 @@ class mymodbusCmd extends cmd {
 
       $command['cmdId'] = $this->getId();
       
-      $message = array();
       $message['CMD'] = 'write';
       $message['write_cmd'] = $command;
     }
@@ -951,7 +999,7 @@ class mymodbusCmd extends cmd {
       $this->_changed = true;
     }
 
-    if (in_array($this->getLogicalId(), array('refresh', 'refresh time', 'cycle ok'))) {
+    if (in_array($this->getLogicalId(), array('refresh', 'refresh time', 'cycle ok', 'polling'))) {
       return true;
     }
     $cmdSlave = $this->getConfiguration('cmdSlave');

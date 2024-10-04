@@ -59,7 +59,7 @@ class mymodbusEqConfig {
         </div>
       </div>
       
-      <!--   ***********************************  -->
+      <!-- *********************************** -->
       <legend><i class="fa fa-list-alt"></i> {{Configuration :}}</legend>
       <div class="form-group">
         <label class="col-sm-4 control-label">{{Protocol de connexion}}</label>
@@ -68,67 +68,73 @@ class mymodbusEqConfig {
             <option disabled selected value>-- {{Choisir un protocol de connexion}} --</option>
             <?php
             foreach (mymodbus::supportedProtocols() as $protocol) {
-              echo '<option value="' . $protocol . '">' . $protocol . '</option>';
+              $prot_name = $protocol === 'shared_from' ? __("Interface d'un autre équipement", __FILE__) : $protocol;
+              echo '<option value="' . $protocol . '">' . $prot_name . '</option>';
             }
             ?>
           </select>
         </div>
       </div>
-      <div class="form-group">
-        <label class="col-sm-4 control-label">{{Mode de rafraîchissement}}</label>
-        <div class="col-sm-6">
-          <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRefreshMode"<?= $disabled ?>>
-            <option disabled selected value>-- {{Selectionnez un mode}} --</option>
-            <option value="polling">{{Polling}}</option>
-            <option value="cyclic">{{Cyclique}}</option>
-              <option value="on_event">{{Sur événement}}</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group" id="eqPolling">
-        <label class="col-sm-4 control-label">{{Polling (s)}}
-          <sup><i class="fas fa-question-circle tooltips" title="{{En mode Polling: raffraichissement des valeurs toutes les n secondes, minimum 1}}"></i></sup>
-        </label>
-        <div class="col-sm-6">
-          <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqPolling" placeholder="60"<?= $disabled ?>/>
-        </div>
-      </div>
-      <div class="form-group" id="eqTimeout">
-        <label class="col-sm-4 control-label">{{Timeout (s)}}
-          <sup><i class="fas fa-question-circle tooltips" title="{{Temps maximum d'attente de réponse à une requête}}"></i></sup>
-        </label>
-        <div class="col-sm-6">
-          <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqTimeout" placeholder="60"<?= $disabled ?>/>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="col-sm-4 control-label">{{Temps entre 2 requêtes de lecture (s)}}
-          <sup><i class="fas fa-question-circle tooltips" title="{{Egalement le temps aloué à la vérification de l'envoi d'une commande action par Jeedom}}"></i></sup>
-        </label>
-        <div class="col-sm-6">
-          <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqWriteCmdCheckTimeout" placeholder="1"<?= $disabled ?>/>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="col-sm-4 control-label">{{Nombre de tentatives en cas d'erreur}}</label>
-        <div class="col-sm-6">
-          <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRetries" placeholder="3"<?= $disabled ?>/>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="col-sm-4 control-label">{{Temps d'attente après la connexion (s)}}</label>
-        <div class="col-sm-6">
-          <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqFirstDelay" placeholder="0"<?= $disabled ?>/>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="col-sm-4 control-label">{{Temps d'attente après une erreur de lecture (s)}}</label>
-        <div class="col-sm-6">
-          <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqErrorDelay" placeholder="0"<?= $disabled ?>/>
-        </div>
+      <div id="div_sharedInterface">
+        <?php
+        self::show_shared_interface();
+        ?>
       </div>
       <!-- Paramètres propres au protocol -->
       <div id="div_protocolParameters">
+        <div class="form-group nonShared">
+          <label class="col-sm-4 control-label">{{Mode de rafraîchissement}}</label>
+          <div class="col-sm-6">
+            <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRefreshMode"<?= $disabled ?>>
+              <option disabled selected value>-- {{Selectionnez un mode}} --</option>
+              <option value="polling">{{Polling}}</option>
+              <option value="cyclic">{{Cyclique}}</option>
+                <option value="on_event">{{Sur événement}}</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group nonShared" id="eqPolling">
+          <label class="col-sm-4 control-label">{{Polling (s)}}
+            <sup><i class="fas fa-question-circle tooltips" title="{{En mode Polling: raffraichissement des valeurs toutes les n secondes, minimum 1}}"></i></sup>
+          </label>
+          <div class="col-sm-6">
+            <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqPolling" placeholder="60"<?= $disabled ?>/>
+          </div>
+        </div>
+        <div class="form-group nonShared" id="eqTimeout">
+          <label class="col-sm-4 control-label">{{Timeout (s)}}
+            <sup><i class="fas fa-question-circle tooltips" title="{{Temps maximum d'attente de réponse à une requête}}"></i></sup>
+          </label>
+          <div class="col-sm-6">
+            <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqTimeout" placeholder="60"<?= $disabled ?>/>
+          </div>
+        </div>
+        <div class="form-group nonShared">
+          <label class="col-sm-4 control-label">{{Nombre de tentatives en cas d'erreur}}</label>
+          <div class="col-sm-6">
+            <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRetries" placeholder="3"<?= $disabled ?>/>
+          </div>
+        </div>
+        <div class="form-group nonShared">
+          <label class="col-sm-4 control-label">{{Temps entre 2 requêtes de lecture (s)}}
+            <sup><i class="fas fa-question-circle tooltips" title="{{Egalement le temps aloué à la vérification de l'envoi d'une commande action par Jeedom}}"></i></sup>
+          </label>
+          <div class="col-sm-6">
+            <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqWriteCmdCheckTimeout" placeholder="1"<?= $disabled ?>/>
+          </div>
+        </div>
+        <div class="form-group nonShared">
+          <label class="col-sm-4 control-label">{{Temps d'attente après la connexion (s)}}</label>
+          <div class="col-sm-6">
+            <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqFirstDelay" placeholder="0"<?= $disabled ?>/>
+          </div>
+        </div>
+        <div class="form-group nonShared">
+          <label class="col-sm-4 control-label">{{Temps d'attente après une erreur de lecture (s)}}</label>
+          <div class="col-sm-6">
+            <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqErrorDelay" placeholder="0"<?= $disabled ?>/>
+          </div>
+        </div>
         <?php
         self::show_network_config();
         self::show_serial_config();
@@ -148,16 +154,33 @@ class mymodbusEqConfig {
     <?php
   }
 
+  static function show_shared_interface() {
+    ?>
+    <div class="form-group sharedInterface">
+      <label class="col-sm-4 control-label">{{Utilisation de l'interface de l'équipement}}</label>
+      <div class="col-sm-6">
+        <select id="sharedInterface" class="eqLogicAttr form-control sharedInterface" data-toggle="tooltip" data-placement="top" data-html="true" data-l1key="configuration" data-l2key="eqInterfaceFromEqId">
+        <?php
+          foreach (mymodbus::getSharedInterfaces() as $eqId => $eq_name) {
+            echo '<option title="' . $eq_name . '" value="' . $eqId . '">' . $eq_name . '</option>';
+          }
+          ?>
+        </select>
+      </div>
+    </div>
+    <?php
+  }
+
   static function show_network_config() {
     ?>
-    <div class="form-group networkConfig">
+    <div class="form-group networkConfig" hidden>
       <label class="col-sm-4 control-label">{{Adresse IP}}</label>
       <div class="col-sm-6">
         <input type="text" class="eqLogicAttr form-control networkConfig" data-l1key="configuration" data-l2key="eqAddr" placeholder="192.168.1.55"/>
       </div>
     </div>
 
-    <div class="form-group networkConfig">
+    <div class="form-group networkConfig" hidden>
       <label class="col-sm-4 control-label">{{Port}}</label>
       <div class="col-sm-6">
         <input type="text" class="eqLogicAttr form-control networkConfig" data-l1key="configuration" data-l2key="eqPortNetwork" placeholder="502"/>
@@ -168,7 +191,7 @@ class mymodbusEqConfig {
 
   static function show_serial_config() {
     ?>
-    <div class="form-group serialConfig">
+    <div class="form-group serialConfig" hidden>
       <label class="col-sm-4 control-label">{{Interface}}</label>
       <div class="col-sm-6">
         <select class="eqLogicAttr form-control serialConfig" data-toggle="tooltip" data-placement="top" data-html="true" data-l1key="configuration" data-l2key="eqPortSerial">
@@ -181,7 +204,7 @@ class mymodbusEqConfig {
       </div>
     </div>
 
-    <div class="form-group serialConfig">
+    <div class="form-group serialConfig" hidden>
       <label class="col-sm-4 control-label">{{Méthode de transport}}</label>
       <div class="col-sm-6">
         <select class="eqLogicAttr form-control serialConfig" data-l1key="configuration" data-l2key="eqSerialMethod">
@@ -191,7 +214,7 @@ class mymodbusEqConfig {
       </div>
     </div>
 
-    <div class="form-group serialConfig">
+    <div class="form-group serialConfig" hidden>
       <label class="col-sm-4 control-label">{{Vitesse de transmission}}</label>
       <div class="col-sm-6">
         <select class="eqLogicAttr form-control serialConfig" data-l1key="configuration" data-l2key="eqSerialBaudrate">
@@ -215,7 +238,7 @@ class mymodbusEqConfig {
       </div>
     </div>
 
-    <div class="form-group serialConfig">
+    <div class="form-group serialConfig" hidden>
       <label class="col-sm-4 control-label">{{Nombre de bits par octet}}</label>
       <div class="col-sm-6">
         <select class="eqLogicAttr form-control serialConfig" data-l1key="configuration" data-l2key="eqSerialBytesize">
@@ -226,7 +249,7 @@ class mymodbusEqConfig {
       </div>
     </div>
 
-    <div class="form-group serialConfig">
+    <div class="form-group serialConfig" hidden>
       <label class="col-sm-4 control-label">{{Parité}}</label>
       <div class="col-sm-6">
         <select class="eqLogicAttr form-control serialConfig" data-l1key="configuration" data-l2key="eqSerialParity">
@@ -238,7 +261,7 @@ class mymodbusEqConfig {
       </div>
     </div>
 
-    <div class="form-group serialConfig">
+    <div class="form-group serialConfig" hidden>
       <label class="col-sm-4 control-label">{{Bits de stop}}</label>
       <div class="col-sm-6">
         <select class="eqLogicAttr form-control serialConfig" data-l1key="configuration" data-l2key="eqSerialStopbits">
