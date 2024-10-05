@@ -618,6 +618,8 @@ class MyModbusClient(object):
       payload.byteswap()
     if cmd["cmdInvertWords"] != "0":
       payload = Lib.wordswap(payload, cmd, blob)
+    if cmd["cmdInvertDWords"] != "0":
+      payload = Lib.dwordswap(payload, cmd, blob)
     return payload
   
   def on_connect_callback(self, connected: bool):
