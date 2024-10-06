@@ -1139,6 +1139,12 @@ class mymodbusCmd extends cmd {
       }
     }
     
+    if (!in_array($cmdFormat, ['i', 'I', 'f', 'q', 'Q', 'd', 's', 'blob', 'i_sf', 'I_sf'])) {
+      $this->setConfiguration('cmdInvertWords', '0');
+    }
+    if (!in_array($cmdFormat, ['q', 'Q', 'd'])) {
+      $this->setConfiguration('cmdInvertDWords', '0');
+    }
     //log::add('mymodbus', 'debug', 'Validation de la configuration pour la commande *' . $this->getHumanName() . '* : OK');
   }
 
@@ -1162,6 +1168,7 @@ class mymodbusCmd extends cmd {
     $return['cmdFrequency'] = trim($this->getConfiguration('cmdFrequency'));
     $return['cmdInvertBytes'] = $this->getConfiguration('cmdInvertBytes');
     $return['cmdInvertWords'] = $this->getConfiguration('cmdInvertWords');
+    $return['cmdInvertDWords'] = $this->getConfiguration('cmdInvertDWords');
     $return['repeat'] = $this->getConfiguration('repeatEventManagement', 'never') === 'always' ? '1' : '0';
 
     return $return;

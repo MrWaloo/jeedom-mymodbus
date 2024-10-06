@@ -86,8 +86,9 @@ $('.eqLogicAction[data-action=bt_addMymodbusEq]').off('click').on('click', funct
     error: function(error) {},
     success: function (dataresult) {
       opts = '<option value="">{{Aucun}}</option>';
-      for (var i in dataresult)
+      for (var i in dataresult) {
         opts += '<option value="' + dataresult[i][0] + '">' + dataresult[i][0] + '</option>';
+      }
       $('#addMymodbusTplSelector').html(opts);
     }
   });
@@ -134,8 +135,9 @@ $('.eqLogicAction[data-action=applyTemplate]').off('click').on('click', function
     success: function (dataresult) {
       var dialog_message = '<label class="control-label">{{Choisissez un template :}}</label> ';
       dialog_message += '<select class="bootbox-input bootbox-input-select form-control" id="applyTemplateSelector">';
-      for(var i in dataresult)
+      for(var i in dataresult) {
         dialog_message += '<option value="'+dataresult[i][0]+'">'+dataresult[i][0]+'</option>';
+      }
       dialog_message += '</select><br/>';
 
       dialog_message += '<label class="control-label">{{Que voulez-vous faire des commandes existantes ?}}</label> ';
@@ -303,9 +305,11 @@ var bitSelect =
       '           <select class="conditionAttr form-control" data-l1key="operande">' +
       '             <optgroup label="{{Premier Octet}}">';
 for (let i = 0; i < 16; i++) {
-  if (i == 8) bitSelect +=
+  if (i == 8) {
+    bitSelect +=
       '             </optgroup>' +
       '             <optgroup label="{{Second Octet}}">';
+  }
   bitSelect += '               <option value="' + 2**i + '">Bit ' + i % 8 + '</option>';
 }
 bitSelect += 
@@ -367,12 +371,14 @@ listSourceBlobs = function(_params) {
       for (var i in cmds) {
         if (cmds[i].configuration.cmdFormat === 'blob') {
           resultBin += '<option value="' + cmds[i].id + '">' + cmds[i].name + '</option>';
-          if (cmds[i].subType !== 'binary')
+          if (cmds[i].subType !== 'binary') {
             resultNum += '<option value="' + cmds[i].id + '">' + cmds[i].name + '</option>';
+          }
         }
       }
-      if (typeof(_params.success) == 'function')
+      if (typeof(_params.success) == 'function') {
         _params.success(resultBin, resultNum);
+      }
     }
   });
 }
@@ -383,11 +389,13 @@ listSourceValues = function(_params) {
     success: function(cmds) {
       var result = '';
       for (var i in cmds) {
-        if (cmds[i].type === 'info' && cmds[i].configuration.cmdFormat != 'blob' && cmds[i].logicalId === '')
+        if (cmds[i].type === 'info' && cmds[i].configuration.cmdFormat != 'blob' && cmds[i].logicalId === '') {
           result += '<option value="' + cmds[i].id + '">' + cmds[i].name + '</option>';
+        }
       }
-      if (typeof(_params.success) == 'function')
+      if (typeof(_params.success) == 'function') {
         _params.success(result);
+      }
     }
   });
 }
@@ -405,13 +413,14 @@ function actualise_visible(me, source, _template = false) {
   var cmdFctModbus = $(cmdFctModbusEl).value();
   var cmdFormatEl = $(me).closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=cmdFormat]');
   var cmdFormat = $(cmdFormatEl).value();
+  var show_invertSetting = false;
   
   $(me).closest('tr').find('.formatNum').hide();
   $(me).closest('tr').find('.formatBin').hide();
   $(me).closest('tr').find('.FctBlobBin').hide();
   $(me).closest('tr').find('.FctBlobNum').hide();
   $(me).closest('tr').find('.notFctBlob').hide();
-  $(me).closest('tr').find('.notFormatBlob').hide();
+  $(me).closest('tr').find('.invertSetting').hide();
   $(me).closest('tr').find('.readFunction').hide();
   $(me).closest('tr').find('.writeFunction').hide();
   $(me).closest('tr').find('.readBin').hide();
@@ -449,8 +458,9 @@ function actualise_visible(me, source, _template = false) {
           $(me).closest('tr').find('.FctBlobNum').show();
         }
       }
-      if (cmdFormat != 'blob')
-        $(me).closest('tr').find('.notFormatBlob').show();
+      if (cmdFormat != 'blob') {
+        show_invertSetting = true;
+      }
       
     } else { // action
       $(me).closest('tr').find('.writeFunction').show();
@@ -459,9 +469,26 @@ function actualise_visible(me, source, _template = false) {
       } else {
         $(me).closest('tr').find('.formatNum').show();
       }
-      if (subType == 'select')
+      if (subType == 'select') {
         $(me).closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=listValue]').show();
-      $(me).closest('tr').find('.notFormatBlob').show();
+      }
+      show_invertSetting = true;
+    }
+
+    if (show_invertSetting) {
+      $(me).closest('tr').find('.invertSetting').show();
+      var format64bit = ['q', 'Q', 'd', 's', 'blob'];
+      var format32bit = format64bit.concat(['i', 'I', 'f', 'i_sf', 'I_sf']);
+      if (format32bit.includes(cmdFormat)) {
+        $(me).closest('tr').find('.invertWords').show();
+      } else {
+        $(me).closest('tr').find('.invertWords').hide();
+      }
+      if (format64bit.includes(cmdFormat)) {
+        $(me).closest('tr').find('.invertDWords').show();
+      } else {
+        $(me).closest('tr').find('.invertDWords').hide();
+      }
     }
     
     selectFirstVisible(cmdFctModbusEl);
@@ -482,13 +509,16 @@ function selectFirstVisible(selectEl) {
   selectEl.find('option').each(function() {
     var option = $(this);
     var visible = option[0].style.display !== "none";
-    if (option.is(':selected') && !visible)
+    if (option.is(':selected') && !visible) {
       wrongSelection = true;
-    if (visible && firstVisibleOption === null)
+    }
+    if (visible && firstVisibleOption === null) {
       firstVisibleOption = option.value();
+    }
   });
-  if (wrongSelection)
+  if (wrongSelection) {
     $(selectEl).val(firstVisibleOption).change();
+  }
 }
 
 function getTrfromCmd(_cmd, _template = false) {
@@ -579,11 +609,14 @@ function getTrfromCmd(_cmd, _template = false) {
   tr += '     <select class="cmdAttr form-control input-sm FctBlobNum" style="width:100%;" data-l1key="configuration" data-l2key="cmdSourceBlobNum"' + formDisabled + '>';
   tr += '     </select>';
   tr += '     <input class="cmdAttr form-control input-sm" style="margin-top:5px;" data-l1key="configuration" data-l2key="cmdAddress"' + formDisabled + '/>';
-  tr += '     <label class="checkbox-inline notFormatBlob">';
+  tr += '     <label class="checkbox-inline invertSetting">';
   tr += '       <input type="checkbox" class="cmdAttr checkbox-inline tooltips" data-l1key="configuration" data-l2key="cmdInvertBytes"' + formDisabled + '/>{{Inverser octets}}';
   tr += '     </label></br>';
-  tr += '     <label class="checkbox-inline notFormatBlob">';
+  tr += '     <label class="checkbox-inline invertSetting invertWords">';
   tr += '       <input type="checkbox" class="cmdAttr checkbox-inline tooltips" data-l1key="configuration" data-l2key="cmdInvertWords"' + formDisabled + '/>{{Inverser mots}}';
+  tr += '     </label></br>';
+  tr += '     <label class="checkbox-inline invertSetting invertDWords">';
+  tr += '       <input type="checkbox" class="cmdAttr checkbox-inline tooltips" data-l1key="configuration" data-l2key="cmdInvertDWords"' + formDisabled + '/>{{Inverser double-mots}}';
   tr += '     </label></br>';
   tr += '   </div>';
   tr += ' </td>';
@@ -647,19 +680,21 @@ $("#bt_add_command_top").on('click', function (event) {
 
 function addCmdToTable(_cmd) {
   // Minimal structure for _cmd
-  if (!isset(_cmd))
+  if (!isset(_cmd)) {
     var _cmd = {configuration: {}};
-  if (!isset(_cmd.configuration))
+  }
+  if (!isset(_cmd.configuration)) {
     _cmd.configuration = {};
+  }
   // Conversion from the old version of MyModbus
   // ****************************************** info
   if (init(_cmd.type) == 'info') {
-    if (isset(_cmd.configuration.location) && !isset(_cmd.configuration.cmdAddress))  {
+    if (isset(_cmd.configuration.location) && !isset(_cmd.configuration.cmdAddress)) {
       _cmd.configuration.cmdAddress = _cmd.configuration.location;
       delete _cmd.configuration.location;
       modifyWithoutSave = true;
     }
-    if (isset(_cmd.configuration.request) && !isset(_cmd.configuration.cmdOption))  {
+    if (isset(_cmd.configuration.request) && !isset(_cmd.configuration.cmdOption)) {
       _cmd.configuration.cmdoption = '#value# ' + _cmd.configuration.request;
       delete _cmd.configuration.request;
       modifyWithoutSave = true;
@@ -697,12 +732,12 @@ function addCmdToTable(_cmd) {
     
   // ****************************************** action
   } else if (init(_cmd.type) == 'action') {
-    if (isset(_cmd.configuration.location) && !isset(_cmd.configuration.cmdAddress))  {
+    if (isset(_cmd.configuration.location) && !isset(_cmd.configuration.cmdAddress)) {
       _cmd.configuration.cmdAddress = _cmd.configuration.location;
       delete _cmd.configuration.location;
       modifyWithoutSave = true;
     }
-    if (isset(_cmd.configuration.request) && !isset(_cmd.configuration.cmdWriteValue))  {
+    if (isset(_cmd.configuration.request) && !isset(_cmd.configuration.cmdWriteValue)) {
       _cmd.configuration.cmdWriteValue = _cmd.configuration.request;
       delete _cmd.configuration.request;
       modifyWithoutSave = true;
@@ -805,6 +840,9 @@ function addCmdToTable(_cmd) {
   });
   tr.find('.cmdAttr[data-l1key=configuration][data-l2key=cmdFctModbus]').on('change', function () {
     actualise_visible($(this), 'cmdFctModbus');
+  });
+  tr.find('.cmdAttr[data-l1key=configuration][data-l2key=cmdFormat]').on('change', function () {
+    actualise_visible($(this), 'cmdFormat');
   });
   
   actualise_visible($(tr.find('.cmdAttr[data-l1key=type]')), 'first call');

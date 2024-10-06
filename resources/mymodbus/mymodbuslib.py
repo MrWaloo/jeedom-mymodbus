@@ -189,16 +189,36 @@ class Lib():
   def wordswap(cls, payload: array, cmd: dict, blob: dict | None = None) -> array:
     i = 0
     offset = 0
+    addr, count = cls.get_request_addr_count(cmd)
     if blob is not None:
-      addr, count = cls.get_request_addr_count(cmd)
       blob_addr, blob_count = cls.get_request_addr_count(blob)
       offset = addr - blob_addr
       i = offset
 
-    for e0, e1 in zip(payload[offset::2], payload[offset + 1::2]):
-      payload[i] = e1
-      payload[i + 1] = e0
-      i += 2
+    if count >= 2:
+      for e0, e1 in zip(payload[offset::2], payload[offset + 1::2]):
+        payload[i] = e1
+        payload[i + 1] = e0
+        i += 2
+    return payload
+
+  @classmethod
+  def dwordswap(cls, payload: array, cmd: dict, blob: dict | None = None) -> array:
+    i = 0
+    offset = 0
+    addr, count = cls.get_request_addr_count(cmd)
+    if blob is not None:
+      blob_addr, blob_count = cls.get_request_addr_count(blob)
+      offset = addr - blob_addr
+      i = offset
+
+    if count >= 4:
+      for e0, e1, e2, e3 in zip(payload[offset::4], payload[offset + 1::4], payload[offset + 2::4], payload[offset + 3::4]):
+        payload[i] = e2
+        payload[i + 1] = e3
+        payload[i + 2] = e0
+        payload[i + 3] = e1
+        i += 4
     return payload
 
   @classmethod
