@@ -13,8 +13,6 @@ import re
 from array import array
 from statistics import fmean
 
-from jeedomdaemon.utils import Utils
-
 from pymodbus import FramerType
 from pymodbus.client import AsyncModbusSerialClient, AsyncModbusTcpClient, AsyncModbusUdpClient
 from pymodbus.exceptions import ModbusException
