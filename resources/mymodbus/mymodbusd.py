@@ -1,6 +1,6 @@
 import asyncio
 
-from jeedomdaemon.base_daemon import BaseDaemon # type: ignore
+from jeedomdaemon.base_daemon import BaseDaemon
 
 from mymodbusclient import MyModbusClient
 from mymodbusconfig import MyModbusConfig
