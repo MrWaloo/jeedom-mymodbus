@@ -209,7 +209,7 @@ class mymodbus extends eqLogic {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     $interfaces = [];
     foreach (self::byType(__CLASS__) as $eqMymodbus) { // boucle sur les équipements
-      if ($eqMymodbus->getIsEnable() && $eqMymodbus->getConfiguration('eqProtocol') != 'shared_from') {
+      if ($eqMymodbus->getConfiguration('eqProtocol') != 'shared_from') {
         $interfaces[$eqMymodbus->getId()] = $eqMymodbus->getName();
       }
     }

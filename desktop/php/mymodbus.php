@@ -36,6 +36,11 @@ require_once 'mymodbusEqConfig.class.php';
         <br/>
         <span>{{Templates}}</span>
       </div>
+      <div class="cursor logoSecondary" id="bt_move_cmd">
+        <i class="fas fa-cubes" style="color:#0F9DE8;"></i>
+        <br/>
+        <span>{{Déplacer les commandes}}</span>
+      </div>
       <div class="cursor eqLogicAction logoSecondary" data-action="bt_docSpecific" >
         <i class="fas fa-book" style="color:#0F9DE8;"></i>
         <br>

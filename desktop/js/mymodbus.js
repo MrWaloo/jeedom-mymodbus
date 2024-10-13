@@ -104,6 +104,11 @@ $('#bt_templatesMymodbus').on('click', function () {
   $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=templates').dialog('open');
 });
 
+$('#bt_move_cmd').on('click', function () {
+  $('#md_modal').dialog({title: "{{Déplacement des commandes MyModbus}}"});
+  $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=move_cmd').dialog('open');
+});
+
 $('.eqLogicAction[data-action=bt_docSpecific]').on('click', function () {
   window.open('https://bebel27a.github.io/jeedom-mymobdus.github.io/fr_FR/');
 });
