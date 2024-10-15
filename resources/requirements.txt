@@ -1,2 +1,2 @@
-jeedomdaemon ~= 0.11.2
+jeedomdaemon >= 1.0.2
 pymodbus [serial] < 3.8
