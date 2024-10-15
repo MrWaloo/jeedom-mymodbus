@@ -36,30 +36,59 @@ foreach ($eqLogics as $eqLogic) {
 
 ?>
 
-<div class="col-lg-8 col-md-8 col-sm-8" id="div_Source" style="height:100%">
-  <div class="form-group">
-    <?php
-    if (count($eqLogicSrc) > 0) {
-      echo '<label class="col-sm-4 control-label">{{Equipement source}}</label>';
-      echo '<div class="col-sm-6">';
-      echo '  <select id="sel_source" class="form-control">';
-      foreach ($eqLogicSrc as $src_id => $dest_ids) {
-        $eqLogic = eqLogic::byId($src_id);
-        echo '<option value="' . $src_id . '">' . $eqLogic->getName() . '</option>';
-      }
-      echo '</select>';
-      echo '</div>';
-    } else {
-      echo __('Aucun équipement ne partage sa configuration de connexion', __FILE__);
+<div class="col-sm-8" id="div_Source" style="height:100%">
+  <?php
+  if (count($eqLogicSrc) > 0) {
+    echo '<form class="form-horizontal">';
+    echo '  <fieldset>';
+    echo '    <div class="form-group">';
+    echo '      <label class="col-sm-4 control-label">{{Equipement source}}</label>';
+    echo '      <div class="col-sm-8">';
+    echo '        <select id="sel_source" class="form-control">';
+    echo '          <option disabled selected value>-- {{Selectionnez un équipement source}} --</option>';
+    foreach ($eqLogicSrc as $src_id => $dest_ids) {
+      $eqLogic = eqLogic::byId($src_id);
+      echo '          <option value="' . $src_id . '">' . $eqLogic->getName() . '</option>';
     }
-    ?>
-  </div>
+    echo '        </select>';
+    echo '      </div>';
+    echo '      </br>';
+    echo '      <div class="col-sm-8" id="div_ListCmd"></div>';
+    echo '    </div>';
+    echo '  </fieldset>';
+    echo '</form>';
+  } else {
+    echo __('Aucun équipement ne partage sa configuration de connexion', __FILE__);
+  }
+  ?>
 </div>
 
-<div class="col-lg-4 col-md-4 col-sm-4" id="div_Destination" style="height:100%">
+<div class="col-sm-4" id="div_Destination" style="height:100%">
   
 </div>
 
 <script>
+
+$('#sel_source').off().on('change', function () {
+  jeedom.eqLogic.getCmd({
+    id: $(this).val(),
+    async: false,
+    success: function(cmds) {
+      var html = '';
+      for (var i in cmds) {
+        if (cmds[i].logicalId == '') {
+          html += '    <div class="form-group">';
+          html += '      <label class="checkbos-inline">';
+          html += '        <input type="checkbox" value="' + cmds[i].id + '"></input>';
+          html += '          ' + cmds[i].name;
+          html += '      </label>';
+          html += '    </div>';
+        }
+      }
+      let div_ListCmd = document.getElementById("div_ListCmd");
+      div_ListCmd.innerHTML = html;
+    }
+  })
+});
 
 </script>

@@ -37,7 +37,7 @@ require_once 'mymodbusEqConfig.class.php';
         <span>{{Templates}}</span>
       </div>
       <div class="cursor logoSecondary" id="bt_move_cmd">
-        <i class="fas fa-cubes" style="color:#0F9DE8;"></i>
+        <i class="fas fa-arrow-right" style="color:#0F9DE8;"></i>
         <br/>
         <span>{{Déplacer les commandes}}</span>
       </div>
