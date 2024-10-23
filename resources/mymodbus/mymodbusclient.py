@@ -391,9 +391,15 @@ class MyModbusClient(object):
         dest = self.get_cmd_conf(dest_id)
         if dest is None:
           continue
-        change[f"values::{dest_id}"] = self.cmd_decode(response, dest, cmd)
+        try:
+          change[f"values::{dest_id}"] = self.cmd_decode(response, dest, cmd)
+        except Exception as e:
+          self.log.error(f"{self.eqConfig['name']}: 'process_read_response' 'cmd_decode' for command id = {cmd['id']} (in register range with command id = {dest_id}) raised an exception: {e!s}")
     elif cmd["cmdFormat"] != 'blob': # Lecture pour une commande et pas pour un blob sans destination
-      change[f"values::{cmd['id']}"] = self.cmd_decode(response, cmd)
+      try:
+        change[f"values::{cmd['id']}"] = self.cmd_decode(response, cmd)
+      except Exception as e:
+        self.log.error(f"{self.eqConfig['name']}: 'process_read_response' 'cmd_decode' for command id = {cmd['id']} raised an exception: {e!s}")
     
     await self.add_change(change)
 
@@ -401,7 +407,7 @@ class MyModbusClient(object):
     self.log.debug(f"{self.eqConfig['name']}: 'cmd_decode' launched for command id = {cmd['id']}")
     address, count = Lib.get_request_addr_count(cmd)
     cmd_format: str = cmd["cmdFormat"]
-    data_type = Lib.get_data_type(cmd_format)
+    #data_type = Lib.get_data_type(cmd_format) # not needed
     payload = self.get_payload(response, cmd, blob)
     if blob is not None:
       blob_addr, blob_count = Lib.get_request_addr_count(blob)
@@ -415,39 +421,43 @@ class MyModbusClient(object):
       else:
         payload = payload.tolist()[offset:]
     
-    # Bit
-    if cmd_format == "bit":
-      mask = 1
-      if blob is not None:
-        offset = address - blob_addr
-        mask = 2 ** offset % 8
-      return int(payload[0]) & mask != 0
+    try:
+      # Bit
+      if cmd_format == "bit":
+        mask = 1
+        if blob is not None:
+          offset = address - blob_addr
+          mask = 2 ** offset % 8
+        return int(payload[0]) & mask != 0
 
-    # Type: Byte
-    elif cmd_format.startswith("uint8"):
-      if cmd_format.endswith("-msb"):
-        return payload[0] >> 8
-      return payload[0] & 255
+      # Type: Byte
+      elif cmd_format.startswith("uint8"):
+        if cmd_format.endswith("-msb"):
+          return payload[0] >> 8
+        return payload[0] & 255
 
-    # Type: Word (16bit) || Dword (32bit) || Double Dword (64bit) || String
-    elif Lib.is_normal_number(cmd) or cmd_format == "s":
-      payload = payload[:count]
-      return Lib.convert_from_registers(payload, cmd_format)
+      # Type: Word (16bit) || Dword (32bit) || Double Dword (64bit) || String
+      elif Lib.is_normal_number(cmd) or cmd_format == "s":
+        payload = payload[:count]
+        return Lib.convert_from_registers(payload, cmd_format)
 
-    # Type: ScaleFactor
-    elif cmd_format.endswith("_sf"):
-      val_data_type = Lib.get_data_type(cmd_format[0])
-      val_addr, sf_addr = Lib.get_val_sf(cmd)
+      # Type: ScaleFactor
+      elif cmd_format.endswith("_sf"):
+        val_data_type = Lib.get_data_type(cmd_format[0])
+        val_addr, sf_addr = Lib.get_val_sf(cmd)
 
-      val_payload = payload[val_addr - address:val_addr - address + val_data_type.value[1]]
-      val = Lib.convert_from_registers(val_payload, cmd_format[0])
+        val_payload = payload[val_addr - address:val_addr - address + val_data_type.value[1]]
+        val = Lib.convert_from_registers(val_payload, cmd_format[0])
 
-      if val_data_type.value[1] >= 2 and cmd["cmdInvertWords"] != "0":
-        payload = Lib.wordswap(payload, cmd)
-      sf_payload = payload[sf_addr - address:sf_addr - address + 1]
-      sf = Lib.convert_from_registers(sf_payload, "h")
+        if val_data_type.value[1] >= 2 and cmd["cmdInvertWords"] != "0":
+          payload = Lib.wordswap(payload, cmd)
+        sf_payload = payload[sf_addr - address:sf_addr - address + 1]
+        sf = Lib.convert_from_registers(sf_payload, "h")
 
-      return val * 10 ** sf
+        return val * 10 ** sf
+      
+    except Exception as e:
+      raise e
 
   async def command_write(self, command: dict) -> None:
     self.log.debug(f"{self.eqConfig['name']}: 'command_write' launched with command = '{command}'")
@@ -464,7 +474,7 @@ class MyModbusClient(object):
           self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' write command with unknown 'cmdId': {command}")
           return
         cmd_format: str = cmd["cmdFormat"]
-        data_type = Lib.get_data_type(cmd_format)
+        #data_type = Lib.get_data_type(cmd_format) # not needed
         if (
           cmd["cmdFctModbus"] == "fromBlob"
           or cmd_format == "blob"

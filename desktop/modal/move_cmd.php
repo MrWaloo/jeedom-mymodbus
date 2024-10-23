@@ -77,12 +77,12 @@ $('#sel_source').off().on('change', function () {
       var html = '';
       for (var i in cmds) {
         if (cmds[i].logicalId == '') {
-          html += '    <div class="form-group">';
-          html += '      <label class="checkbos-inline">';
-          html += '        <input type="checkbox" value="' + cmds[i].id + '"></input>';
-          html += '          ' + cmds[i].name;
-          html += '      </label>';
-          html += '    </div>';
+          html += '<div class="form-group">';
+          html += '  <label class="checkbos-inline">';
+          html += '    <input type="checkbox" value="' + cmds[i].id + '"></input>';
+          html += '      ' + cmds[i].name;
+          html += '  </label>';
+          html += '</div>';
         }
       }
       let div_ListCmd = document.getElementById("div_ListCmd");
