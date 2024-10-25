@@ -18,9 +18,9 @@ from jeedomdaemon.utils import Utils
 from pymodbus import FramerType
 from pymodbus.client import AsyncModbusSerialClient, AsyncModbusTcpClient, AsyncModbusUdpClient
 from pymodbus.exceptions import ModbusException
-from pymodbus.factory import ServerDecoder
 from pymodbus.logging import pymodbus_apply_logging_config
-from pymodbus.pdu import ExceptionResponse, ModbusRequest, ModbusResponse
+from pymodbus.pdu import ExceptionResponse, ModbusPDU
+from pymodbus.pdu.decoders import DecodePDU
 from pymodbus.utilities import (
     pack_bitstring,
     unpack_bitstring,
@@ -54,7 +54,7 @@ class MyModbusClient(object):
       AsyncModbusSerialClient | AsyncModbusTcpClient | AsyncModbusUdpClient | None
     ) = None
     self._client_params: dict[str, any] = {}
-    self._requests: dict[str, ModbusRequest] = {}
+    self._requests: dict[str, ModbusPDU] = {}
     self._payload: array = array("H")
     self._blob_dest: dict[str, list] = {}
     self._read_cycle: int = 0
@@ -144,7 +144,7 @@ class MyModbusClient(object):
     self.log.debug(f"{self.eqConfig['name']}: 'read_eqConfig' client params for {self.eqConfig['name']}: {self._client_params}")
     
     # Création de la liste des requêtes pymodbus
-    func_code_dict = ServerDecoder.getFCdict()
+    decoder = DecodePDU(True)
     for cmd in self.eqConfig["cmds"]:
       if cmd["type"] != "info":
         continue
@@ -154,7 +154,7 @@ class MyModbusClient(object):
         self._blob_dest[int(cmd["cmdSourceBlob"])].append(cmd["id"])
         
       else: # not fromBlob
-        request_func = func_code_dict.get(int(cmd["cmdFctModbus"]), None)
+        request_func = decoder.lookup.get(int(cmd["cmdFctModbus"]), None)
         if request_func is None:
           error = f"le code de fonction Modbus n'est pas disponible: {cmd['cmdFctModbus']}"
           self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
@@ -162,7 +162,7 @@ class MyModbusClient(object):
         address, count = Lib.get_request_addr_count(cmd)
         slave = int(cmd["cmdSlave"])
         self._requests[cmd["id"]] = request_func(address, count, slave)
-        self.log.debug(f"{self.eqConfig['name']}: 'read_eqConfig' ModbusRequest for cmd id {cmd['id']}: {self._requests[cmd['id']]}")
+        self.log.debug(f"{self.eqConfig['name']}: 'read_eqConfig' Modbus request for cmd id {cmd['id']}: {self._requests[cmd['id']]}")
 
   async def read_downstream(self):
     self.log.debug(f"{self.eqConfig['name']}: 'read_downstream' launched")
@@ -343,28 +343,25 @@ class MyModbusClient(object):
         try:
           async with self._lock:
             self.log.debug(f"{self.eqConfig['name']}: 'one_cycle_read'/{cmd['name']}: requesting read")
-            rr: ModbusResponse = await self.client.execute(pmb_req)
+            rr: ModbusPDU = await self.client.execute(no_response_expected=False, request=pmb_req)
         except ModbusException as exc:
           error_on_current_read = True
           error = f"exception during read request on slave id {pmb_req.slave_id}, address {pmb_req.address} -> {exc!s}"
-          self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
         if not error_on_current_read:
           try:
             if rr.isError():
               error_on_current_read = True
               error = f"error during read request on slave id {pmb_req.slave_id}, address {pmb_req.address} -> {rr}"
-              self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
           except AttributeError:
             error_on_current_read = True
             error = f"return error during read request on slave id {pmb_req.slave_id}, address {pmb_req.address} -> {rr}"
-            self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
         if not error_on_current_read:
           if isinstance(rr, ExceptionResponse):
             error_on_current_read = True
             error = f"exception during read request on slave id {pmb_req.slave_id}, address {pmb_req.address} -> {rr}"
-            self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
         
         if error_on_current_read:
+          self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
           error_or_exception = True
           self.loop.create_task(self.set_error(cmd))
           await asyncio.sleep(eqErrorDelay) # Laisse le temps pour revenir à la normale
@@ -379,9 +376,9 @@ class MyModbusClient(object):
     except asyncio.CancelledError:
       self.log.debug(f"{self.eqConfig['name']}: 'one_cycle_read' cancelled")
   
-  async def process_read_response(self, cmd: dict, response: ModbusResponse) -> None:
+  async def process_read_response(self, cmd: dict, response: DecodePDU) -> None:
     """
-    Reads ModbusResponse and returns the value(s) to Jeedom
+    Reads DecodePDU and returns the value(s) to Jeedom
     """
     self.log.debug(f"{self.eqConfig['name']}: 'process_read_response' launched for command id = {cmd['id']}")
     change = {}
@@ -399,7 +396,7 @@ class MyModbusClient(object):
     
     await self.add_change(change)
 
-  def cmd_decode(self, response: ModbusResponse, cmd: dict, blob: dict | None = None) -> any:
+  def cmd_decode(self, response: DecodePDU, cmd: dict, blob: dict | None = None) -> any:
     self.log.debug(f"{self.eqConfig['name']}: 'cmd_decode' launched for command id = {cmd['id']}")
     address, count = Lib.get_request_addr_count(cmd)
     cmd_format: str = cmd["cmdFormat"]
@@ -489,12 +486,11 @@ class MyModbusClient(object):
         self.log.debug(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' 'value_to_write' = '{value_to_write}' ({cmd_format}){pause_log}")
         self.log.debug(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' 'address' (count) = '{address}' ({count})")
 
-        func_code_dict = ServerDecoder.getFCdict()
-        request_func = func_code_dict.get(int(cmd["cmdFctModbus"]), None)
+        decoder = DecodePDU(False)
+        request_func = decoder.lookup.get(int(cmd["cmdFctModbus"]), None)
         if request_func is None:
           self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' the function code is not available: {cmd['cmdFctModbus']}")
           return
-        #func = getattr(self.client, request_func.function_code_name)
 
         payload:list = []
         if cmd_format == "bit":
@@ -525,7 +521,7 @@ class MyModbusClient(object):
 
         attr = Lib.get_request_attribute(int(cmd["cmdFctModbus"]))
         req_payload = None
-        if "coil" in request_func.function_code_name:
+        if request_func.function_code in (1, 2, 5, 15):
           req_payload = value
         else:
           payload = self.get_ordered_payload(array('H', payload), cmd)
@@ -549,7 +545,7 @@ class MyModbusClient(object):
         try:
           async with self._lock:
             self.log.debug(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' Request sent")
-            rr: ModbusResponse = await self.client.execute(pmb_write_req)
+            rr: DecodePDU = await self.client.execute(no_response_expected=False, request=pmb_write_req)
         except ModbusException as exc:
           error = f"modbus exception during write request on slave id {pmb_write_req.slave_id}, address {pmb_write_req.address} -> {exc!s}"
           self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' {error}")
@@ -599,7 +595,7 @@ class MyModbusClient(object):
     }
     self.loop.create_task(self.add_change(change))
 
-  def get_payload(self, response: ModbusResponse, cmd: dict, blob: dict | None = None) -> array:
+  def get_payload(self, response: DecodePDU, cmd: dict, blob: dict | None = None) -> array:
     attr = Lib.get_request_attribute(response.function_code)
     result = getattr(response, attr)
     payload = b''
