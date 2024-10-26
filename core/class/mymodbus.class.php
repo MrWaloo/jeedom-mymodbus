@@ -621,7 +621,6 @@ class mymodbus extends eqLogic {
         if (!filter_var($eqAddr, FILTER_VALIDATE_IP)) {
           throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'adresse IP n\'est pas valide', __FILE__));
         }
-        log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('***** DEBUG DEBUG DEBUG ***** ', __FILE__) . sprintf("*'%d'*", var_export($eqPortNetwork, true)));
         if (!is_numeric($eqPortNetwork)) {
           throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le port doit être un nombre.', __FILE__));
         }
