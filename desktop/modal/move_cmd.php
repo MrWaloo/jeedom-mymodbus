@@ -24,71 +24,148 @@ $eqLogicSrc = [];
 
 foreach ($eqLogics as $eqLogic) {
   $protocol = $eqLogic->getConfiguration('eqProtocol', '');
+  $eqId = $eqLogic->getId();
   if ($protocol === "shared_from") {
+    if (!array_key_exists($eqId, $eqLogicSrc)) {
+      $eqLogicSrc[] = $eqId;
+    }
     $src_id = $eqLogic->getConfiguration('eqInterfaceFromEqId');
     if (!array_key_exists($src_id, $eqLogicSrc)) {
-      $eqLogicSrc[$src_id] = [];
+      $eqLogicSrc[] = $src_id;
     }
-    $eqId = $eqLogic->getId();
-    $eqLogicSrc[$src_id][] = $eqLogic->getId();
   }
 }
 
 ?>
 
-<div class="col-sm-8" id="div_Source" style="height:100%">
-  <?php
-  if (count($eqLogicSrc) > 0) {
-    echo '<form class="form-horizontal">';
-    echo '  <fieldset>';
-    echo '    <div class="form-group">';
-    echo '      <label class="col-sm-4 control-label">{{Equipement source}}</label>';
-    echo '      <div class="col-sm-8">';
-    echo '        <select id="sel_source" class="form-control">';
-    echo '          <option disabled selected value>-- {{Selectionnez un équipement source}} --</option>';
-    foreach ($eqLogicSrc as $src_id => $dest_ids) {
-      $eqLogic = eqLogic::byId($src_id);
-      echo '          <option value="' . $src_id . '">' . $eqLogic->getName() . '</option>';
-    }
-    echo '        </select>';
-    echo '      </div>';
-    echo '      </br>';
-    echo '      <div class="col-sm-8" id="div_ListCmd"></div>';
-    echo '    </div>';
-    echo '  </fieldset>';
-    echo '</form>';
-  } else {
-    echo __('Aucun équipement ne partage sa configuration de connexion', __FILE__);
-  }
-  ?>
-</div>
+<form class="form-horizontal">
+  <div class="col-sm-12" id="div_form_move" style="height:100%">
+    <div class="col-sm-6" id="div_Source" style="height:100%">
+      <?php
+      if (count($eqLogicSrc) > 0) {
+        echo '<fieldset>';
+        echo '  <div class="form-group">';
+        echo '    <label class="col-sm-4 control-label">{{Equipement source}}</label>';
+        echo '    <div class="col-sm-8">';
+        echo '      <select id="sel_source" class="form-control">';
+        echo '        <option disabled selected value>-- {{Selectionnez un équipement source}} --</option>';
+        foreach ($eqLogicSrc as $src_id) {
+          $eqLogic = eqLogic::byId($src_id);
+          echo '        <option value="' . $src_id . '">' . $eqLogic->getName() . '</option>';
+        }
+        echo '      </select>';
+        echo '    </div>';
+        echo '    </br>';
+        echo '    <div class="col-sm-12" id="div_ListCmd"></div>';
+        echo '  </div>';
+        echo '</fieldset>';
+      } else {
+        echo __('Aucun équipement ne partage sa configuration de connexion', __FILE__);
+      }
+      ?>
+    </div>
 
-<div class="col-sm-4" id="div_Destination" style="height:100%">
-  
-</div>
+    <div class="col-sm-6" id="div_Destination" style="height:100%">
+      
+    </div>
+  </div>
+</form>
 
 <script>
 
 $('#sel_source').off().on('change', function () {
+  // Affichage des commandes déplaçables
   jeedom.eqLogic.getCmd({
     id: $(this).val(),
-    async: false,
+    //async: false,
     success: function(cmds) {
-      var html = '';
+      if (cmds.length == 0) {
+        return;
+      }
+      let movable_cmds = {};
+      let blob = {};
       for (var i in cmds) {
         if (cmds[i].logicalId == '') {
-          html += '<div class="form-group">';
-          html += '  <label class="checkbos-inline">';
-          html += '    <input type="checkbox" value="' + cmds[i].id + '"></input>';
-          html += '      ' + cmds[i].name;
-          html += '  </label>';
-          html += '</div>';
+          if (cmds[i].configuration['cmdFctModbus'] != 'fromBlob') {
+            movable_cmds[cmds[i].id] = cmds[i].name;
+          } else {
+            let blob_src = null;
+            if ('cmdSourceBlobNum' in cmds[i].configuration) {
+              blob_src = cmds[i].configuration['cmdSourceBlobNum'];
+            } else if ('cmdSourceBlobBin' in cmds[i].configuration) {
+              blob_src = cmds[i].configuration['cmdSourceBlobBin'];
+            }
+            if (blob_src !== null) {
+              if (!(blob_src in blob)) {
+                blob[blob_src] = [];
+              }
+              blob[blob_src].push(cmds[i].name)
+            }
+          }
         }
+      }
+      let html = '';
+      for (var cmd_id in movable_cmds) {
+        html += '<div class="form-group">';
+        html += '  <label class="checkbos-inline">';
+        html += '    <input type="checkbox" value="' + cmd_id + '"></input>';
+        html += '      ' + movable_cmds[cmd_id];
+        html += '  </label>';
+        if (cmd_id in blob) {
+          html += '  (' + blob[cmd_id].join(' / ') + ')';
+        }
+        html += '</div>';
       }
       let div_ListCmd = document.getElementById("div_ListCmd");
       div_ListCmd.innerHTML = html;
     }
-  })
+  });
+
+  // Sauvegarde de l'eqLogic sélectionné comme source
+  let scr_eqLogic = null;
+  jeedom.eqLogic.byId({
+    id: $(this).val(),
+    async: false,
+    success: function(_eqLogic) {
+      scr_eqLogic = _eqLogic;
+    }
+  });
+  console.log(scr_eqLogic);
+
+  // Génération de la liste des destinations possibles
+  jeedom.eqLogic.byType({
+    type: 'mymodbus',
+    async: false,
+    success: function(eqLogics) {
+      let html = '';
+      if (eqLogics.length == 0) {
+        html += '{{Aucune destination possible}}';
+      } else {
+        html += '<fieldset>';
+        html += '  <div class="form-group">';
+        html += '    <label class="col-sm-4 control-label">{{Equipement destination}}</label>';
+        html += '    <div class="col-sm-8">';
+        html += '      <select id="sel_source" class="form-control">';
+        html += '        <option disabled selected value>-- {{Selectionnez un équipement destination}} --</option>';
+        for (var i in eqLogics) {
+          if (scr_eqLogic.id != eqLogics[i].id) {
+            if (
+              ('eqInterfaceFromEqId' in eqLogics[i].configuration && eqLogics[i].configuration['eqInterfaceFromEqId'] === scr_eqLogic.id)
+              || ('eqInterfaceFromEqId' in scr_eqLogic.configuration && scr_eqLogic.configuration['eqInterfaceFromEqId'] === eqLogics[i].id)
+            ) {
+              html += '        <option value="' + eqLogics[i].id + '">' + eqLogics[i].name + '</option>';
+            }
+          }
+        }
+        html += '      </select>';
+        html += '    </div>';
+        html += '  </div>';
+        html += '</fieldset>';
+      }
+      let div_Destination = document.getElementById("div_Destination");
+      div_Destination.innerHTML = html;
+    }
+  });
 });
 
 </script>
