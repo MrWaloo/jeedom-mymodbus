@@ -44,6 +44,7 @@ foreach ($eqLogics as $eqLogic) {
       <?php
       if (count($eqLogicSrc) > 0) {
         echo '<fieldset>';
+        echo '  <legend><i class="fa fa-list-alt"></i> {{Source :}}</legend>';
         echo '  <div class="form-group">';
         echo '    <label class="col-sm-4 control-label">{{Equipement source}}</label>';
         echo '    <div class="col-sm-8">';
@@ -66,9 +67,13 @@ foreach ($eqLogics as $eqLogic) {
     </div>
 
     <div class="col-sm-6" id="div_Destination" style="height:100%">
-      
     </div>
+
+    <div class="col-sm-12" id="div_move_button" style="height:100%">
+    </div>
+    
   </div>
+
 </form>
 
 <script>
@@ -130,7 +135,6 @@ $('#sel_source').off().on('change', function () {
       scr_eqLogic = _eqLogic;
     }
   });
-  console.log(scr_eqLogic);
 
   // Génération de la liste des destinations possibles
   jeedom.eqLogic.byType({
@@ -139,13 +143,15 @@ $('#sel_source').off().on('change', function () {
     success: function(eqLogics) {
       let html = '';
       if (eqLogics.length == 0) {
+        html += '<legend><i class="fa fa-list-alt"></i> {{Destination :}}</legend>';
         html += '{{Aucune destination possible}}';
       } else {
         html += '<fieldset>';
+        html += '  <legend><i class="fa fa-list-alt"></i> {{Destination :}}</legend>';
+        html += '  <label class="col-sm-4 control-label">{{Equipement destination}}</label>';
         html += '  <div class="form-group">';
-        html += '    <label class="col-sm-4 control-label">{{Equipement destination}}</label>';
         html += '    <div class="col-sm-8">';
-        html += '      <select id="sel_source" class="form-control">';
+        html += '      <select id="sel_destination" class="form-control">';
         html += '        <option disabled selected value>-- {{Selectionnez un équipement destination}} --</option>';
         for (var i in eqLogics) {
           if (scr_eqLogic.id != eqLogics[i].id) {
@@ -164,6 +170,33 @@ $('#sel_source').off().on('change', function () {
       }
       let div_Destination = document.getElementById("div_Destination");
       div_Destination.innerHTML = html;
+      let div_move_button = document.getElementById("div_move_button");
+      div_move_button.innerHTML = '';
+
+      $('#sel_destination').off().on('change', function () {
+        let html = '</br></br>';
+        html += '<fieldset>';
+        html += '  <legend><i class="fa fa-cog"></i> {{Déplacer :}}</legend>';
+        html += '  <div class="form-group">';
+        html += '    <div class="col-sm-2">';
+        html += '    </div>';
+        html += '    <div class="col-sm-10">';
+        html += '      <a class="btn btn-sm btn-primary" id="bt_move_cmds"><i class="fas fa-arrow-right"></i> {{Déplacer}}</a>';
+        html += '    </div>';
+        html += '  </div>';
+        html += '</fieldset>';
+        let div_move_button = document.getElementById("div_move_button");
+        div_move_button.innerHTML = html;
+
+        $('#bt_move_cmds').off().on('click', function () {
+          let source = $('#sel_source').val();
+          let destination = $('#sel_destination').val();
+          console.log(source, destination);
+        });
+
+      });
+
+
     }
   });
 });
