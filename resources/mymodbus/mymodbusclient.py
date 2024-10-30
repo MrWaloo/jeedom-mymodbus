@@ -486,7 +486,7 @@ class MyModbusClient(object):
         self.log.debug(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' 'value_to_write' = '{value_to_write}' ({cmd_format}){pause_log}")
         self.log.debug(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' 'address' (count) = '{address}' ({count})")
 
-        decoder = DecodePDU(False)
+        decoder = DecodePDU(True)
         request_func = decoder.lookup.get(int(cmd["cmdFctModbus"]), None)
         if request_func is None:
           self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' the function code is not available: {cmd['cmdFctModbus']}")
