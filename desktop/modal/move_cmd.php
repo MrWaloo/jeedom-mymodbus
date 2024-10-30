@@ -78,7 +78,7 @@ foreach ($eqLogics as $eqLogic) {
 
 <script>
 
-$('#sel_source').off().on('change', function () {
+function sel_source_change(event) {
   // Affichage des commandes déplaçables
   jeedom.eqLogic.getCmd({
     id: $(this).val(),
@@ -173,32 +173,39 @@ $('#sel_source').off().on('change', function () {
       let div_move_button = document.getElementById("div_move_button");
       div_move_button.innerHTML = '';
 
-      $('#sel_destination').off().on('change', function () {
-        let html = '</br></br>';
-        html += '<fieldset>';
-        html += '  <legend><i class="fa fa-cog"></i> {{Déplacer :}}</legend>';
-        html += '  <div class="form-group">';
-        html += '    <div class="col-sm-2">';
-        html += '    </div>';
-        html += '    <div class="col-sm-10">';
-        html += '      <a class="btn btn-sm btn-primary" id="bt_move_cmds"><i class="fas fa-arrow-right"></i> {{Déplacer}}</a>';
-        html += '    </div>';
-        html += '  </div>';
-        html += '</fieldset>';
-        let div_move_button = document.getElementById("div_move_button");
-        div_move_button.innerHTML = html;
-
-        $('#bt_move_cmds').off().on('click', function () {
-          let source = $('#sel_source').val();
-          let destination = $('#sel_destination').val();
-          console.log(source, destination);
-        });
-
-      });
-
-
+      const sel_destination = document.getElementById('sel_destination');
+      sel_destination.addEventListener('change', sel_destination_change);
     }
   });
-});
+  
+}
+
+function sel_destination_change(event) {
+  let html = '</br></br>';
+  html += '<fieldset>';
+  html += '  <legend><i class="fa fa-cog"></i> {{Déplacer :}}</legend>';
+  html += '  <div class="form-group">';
+  html += '    <div class="col-sm-2">';
+  html += '    </div>';
+  html += '    <div class="col-sm-10">';
+  html += '      <a class="btn btn-sm btn-primary" id="bt_move_cmds"><i class="fas fa-arrow-right"></i> {{Déplacer}}</a>';
+  html += '    </div>';
+  html += '  </div>';
+  html += '</fieldset>';
+  let div_move_button = document.getElementById("div_move_button");
+  div_move_button.innerHTML = html;
+
+  const bt_move_cmds = document.getElementById('bt_move_cmds');
+  bt_move_cmds.addEventListener('click', bt_move_cmds_click);
+}
+
+function bt_move_cmds_click(event) {
+  const sel_source = document.getElementById('sel_source');
+  const sel_destination = document.getElementById('sel_destination');
+  console.log('source', sel_source.value, 'destination', sel_destination.value);
+}
+
+const sel_source = document.getElementById('sel_source');
+sel_source.addEventListener('change', sel_source_change);
 
 </script>
