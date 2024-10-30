@@ -502,7 +502,7 @@ class MyModbusClient(object):
 
         payload:list = []
         if cmd_format == "bit":
-          value = not (str(value_to_write) == '0' or str(value_to_write).lower() == 'false') # anything else than '0' or 'false' will be True
+          value = str(value_to_write).lower() not in ("0", "false") # anything else than '0' or 'false' will be True
           payload = [value]
 
         else:

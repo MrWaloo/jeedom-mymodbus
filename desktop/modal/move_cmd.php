@@ -18,93 +18,108 @@
 if (!isConnect('admin')) {
   throw new Exception('401 Unauthorized');
 }
-$pluginId = 'mymodbus';
-$eqLogics = eqLogic::byType($pluginId);
-$eqLogicSrc = [];
-
-foreach ($eqLogics as $eqLogic) {
-  $protocol = $eqLogic->getConfiguration('eqProtocol', '');
-  $eqId = $eqLogic->getId();
-  if ($protocol === "shared_from") {
-    if (!array_key_exists($eqId, $eqLogicSrc)) {
-      $eqLogicSrc[] = $eqId;
-    }
-    $src_id = $eqLogic->getConfiguration('eqInterfaceFromEqId');
-    if (!array_key_exists($src_id, $eqLogicSrc)) {
-      $eqLogicSrc[] = $src_id;
-    }
-  }
-}
 
 ?>
 
 <form class="form-horizontal">
   <div class="col-sm-12" id="div_form_move" style="height:100%">
     <div class="col-sm-6" id="div_Source" style="height:100%">
-      <?php
-      if (count($eqLogicSrc) > 0) {
-        echo '<fieldset>';
-        echo '  <legend><i class="fa fa-list-alt"></i> {{Source :}}</legend>';
-        echo '  <div class="form-group">';
-        echo '    <label class="col-sm-4 control-label">{{Equipement source}}</label>';
-        echo '    <div class="col-sm-8">';
-        echo '      <select id="sel_source" class="form-control">';
-        echo '        <option disabled selected value>-- {{Selectionnez un équipement source}} --</option>';
-        foreach ($eqLogicSrc as $src_id) {
-          $eqLogic = eqLogic::byId($src_id);
-          echo '        <option value="' . $src_id . '">' . $eqLogic->getName() . '</option>';
-        }
-        echo '      </select>';
-        echo '    </div>';
-        echo '    </br>';
-        echo '    <div class="col-sm-12" id="div_ListCmd"></div>';
-        echo '  </div>';
-        echo '</fieldset>';
-      } else {
-        echo __('Aucun équipement ne partage sa configuration de connexion', __FILE__);
-      }
-      ?>
     </div>
-
     <div class="col-sm-6" id="div_Destination" style="height:100%">
     </div>
-
     <div class="col-sm-12" id="div_move_button" style="height:100%">
     </div>
-    
   </div>
-
 </form>
 
 <script>
+
+function fill_sel_source() {
+  let pluginId = 'mymodbus';
+  let eqLogicSrc = [];
+  jeedom.eqLogic.byType({
+    type: pluginId,
+    async: false,
+    noCache: true,
+    success: function(eqLogics) {
+      for (var eqLogic of eqLogics) {
+        let protocol = eqLogic.configuration['eqProtocol'];
+        let eqId = eqLogic.id;
+        if (protocol == "shared_from") {
+          if (!eqLogicSrc.includes(eqId)) {
+            eqLogicSrc.push(eqId);
+          }
+          let source_id = eqLogic.configuration['eqInterfaceFromEqId'];
+          if (!eqLogicSrc.includes(source_id)) {
+            eqLogicSrc.push(source_id);
+          }
+        }
+      }
+    }
+  });
+  let html = '';
+  if (eqLogicSrc.length > 0) {
+    html += '<fieldset>';
+    html += '  <legend><i class="fa fa-list-alt"></i> {{Source :}}</legend>';
+    html += '  <div class="form-group">';
+    html += '    <label class="col-sm-4 control-label">{{Equipement source}}</label>';
+    html += '    <div class="col-sm-8">';
+    html += '      <select id="sel_source" class="form-control">';
+    html += '        <option disabled selected value>-- {{Selectionnez un équipement source}} --</option>';
+    for (var eqLogic_id of eqLogicSrc) {
+      jeedom.eqLogic.byId({
+        id: eqLogic_id,
+        async: false,
+        success: function(eqLogic) {
+          html += '        <option value="' + eqLogic.id + '">' + eqLogic.name + '</option>';
+        }
+      });
+    }
+    html += '      </select>';
+    html += '    </div>';
+    html += '    </br>';
+    html += '    <div class="col-sm-12" id="div_ListCmd"></div>';
+    html += '  </div>';
+    html += '</fieldset>';
+  } else {
+    html += '{{Aucun équipement ne partage sa configuration de connexion}}';
+  }
+  let div_Source = document.getElementById('div_Source');
+  div_Source.innerHTML = html;
+  let sel_source = document.getElementById('sel_source');
+  if (sel_source) {
+    sel_source.addEventListener('change', sel_source_change);
+  }
+}
 
 function sel_source_change(event) {
   // Affichage des commandes déplaçables
   jeedom.eqLogic.getCmd({
     id: $(this).val(),
-    //async: false,
+    async: false,
+    noCache: true,
     success: function(cmds) {
       if (cmds.length == 0) {
         return;
       }
       let movable_cmds = {};
       let blob = {};
-      for (var i in cmds) {
-        if (cmds[i].logicalId == '') {
-          if (cmds[i].configuration['cmdFctModbus'] != 'fromBlob') {
-            movable_cmds[cmds[i].id] = cmds[i].name;
+      for (var cmd of cmds) {
+        if (cmd.logicalId == '') {
+          if (cmd.configuration['cmdFctModbus'] != 'fromBlob') {
+            movable_cmds[cmd.id] = cmd.name;
           } else {
             let blob_src = null;
-            if ('cmdSourceBlobNum' in cmds[i].configuration) {
-              blob_src = cmds[i].configuration['cmdSourceBlobNum'];
-            } else if ('cmdSourceBlobBin' in cmds[i].configuration) {
-              blob_src = cmds[i].configuration['cmdSourceBlobBin'];
+            if ('cmdSourceBlobNum' in cmd.configuration) {
+              blob_src = cmd.configuration['cmdSourceBlobNum'];
+            } else if ('cmdSourceBlobBin' in cmd.configuration) {
+              blob_src = cmd.configuration['cmdSourceBlobBin'];
             }
             if (blob_src !== null) {
               if (!(blob_src in blob)) {
                 blob[blob_src] = [];
               }
-              blob[blob_src].push(cmds[i].name)
+              blob[blob_src].push(cmd.name)
             }
           }
         }
@@ -112,12 +127,10 @@ function sel_source_change(event) {
       let html = '';
       for (var cmd_id in movable_cmds) {
         html += '<div class="form-group">';
-        html += '  <label class="checkbos-inline">';
-        html += '    <input type="checkbox" value="' + cmd_id + '"></input>';
-        html += '      ' + movable_cmds[cmd_id];
-        html += '  </label>';
+        html += '  <input type="checkbox" value="' + cmd_id + '"></input>';
+        html += '  <label class="checkbos-inline">' + movable_cmds[cmd_id] + '</label>';
         if (cmd_id in blob) {
-          html += '  (' + blob[cmd_id].join(' / ') + ')';
+          html += ' (' + blob[cmd_id].join(' / ') + ')';
         }
         html += '</div>';
       }
@@ -153,13 +166,13 @@ function sel_source_change(event) {
         html += '    <div class="col-sm-8">';
         html += '      <select id="sel_destination" class="form-control">';
         html += '        <option disabled selected value>-- {{Selectionnez un équipement destination}} --</option>';
-        for (var i in eqLogics) {
-          if (scr_eqLogic.id != eqLogics[i].id) {
+        for (var eqLogic of eqLogics) {
+          if (scr_eqLogic.id != eqLogic.id) {
             if (
-              ('eqInterfaceFromEqId' in eqLogics[i].configuration && eqLogics[i].configuration['eqInterfaceFromEqId'] === scr_eqLogic.id)
-              || ('eqInterfaceFromEqId' in scr_eqLogic.configuration && scr_eqLogic.configuration['eqInterfaceFromEqId'] === eqLogics[i].id)
+              ('eqInterfaceFromEqId' in eqLogic.configuration && eqLogic.configuration['eqInterfaceFromEqId'] === scr_eqLogic.id)
+              || ('eqInterfaceFromEqId' in scr_eqLogic.configuration && scr_eqLogic.configuration['eqInterfaceFromEqId'] === eqLogic.id)
             ) {
-              html += '        <option value="' + eqLogics[i].id + '">' + eqLogics[i].name + '</option>';
+              html += '        <option value="' + eqLogic.id + '">' + eqLogic.name + '</option>';
             }
           }
         }
@@ -202,10 +215,36 @@ function sel_destination_change(event) {
 function bt_move_cmds_click(event) {
   const sel_source = document.getElementById('sel_source');
   const sel_destination = document.getElementById('sel_destination');
-  console.log('source', sel_source.value, 'destination', sel_destination.value);
+  console.log('source', sel_source.value, 'destination', sel_destination.value); // DEBUG
+  const checkboxes = document.querySelectorAll('#div_ListCmd input[type="checkbox"]');
+  const checkedCheckboxes = Array.from(checkboxes).filter(checkbox => checkbox.checked);
+  const checkedValues = checkedCheckboxes.map(checkbox => checkbox.value);
+  console.log(checkedValues); // DEBUG
+
+  let html = '</br></br>';
+  mymodbus.callPluginAjax({
+    async: false,
+    data: {
+      action: "moveCommands",
+      source: sel_source.value,
+      destination: sel_destination.value,
+      cmdIds: checkedValues,
+    },
+    error: function(error) {
+      html += '{{Erreur lors du déplacement}}';
+    },
+    success: function (result) {
+      html += '{{Déplacement effectué}}';
+    }
+  });
+  let div_move_button = document.getElementById("div_move_button");
+  div_move_button.innerHTML = html;
+  let div_Source = document.getElementById("div_Source");
+  div_Source.innerHTML = '';
+  let div_Destination = document.getElementById("div_Destination");
+  div_Destination.innerHTML = '';
 }
 
-const sel_source = document.getElementById('sel_source');
-sel_source.addEventListener('change', sel_source_change);
+fill_sel_source();
 
 </script>

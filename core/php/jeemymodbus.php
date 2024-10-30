@@ -33,7 +33,7 @@ if (!is_array($result)) {
 }
 
 if (isset($result['heartbeat_request'])) {
-  $message = array();
+  $message = [];
   $message['CMD'] = 'heartbeat_answer';
   $message['answer'] = $result['heartbeat_request'];
   mymodbus::sendToDaemon($message);

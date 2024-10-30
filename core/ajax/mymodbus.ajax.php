@@ -27,7 +27,54 @@ try {
   /* Fonction permettant l'envoi de l'entête 'Content-Type: application/json'
   *  Autoriser l'exécution d'une méthode 'action' en GET en indiquant le(s) nom(s) de(s) action(s) dans un tableau en argument
   */
-  ajax::init(array('fileupload'));
+  ajax::init(['fileupload']);
+
+  /* ---------------------------
+  * moveCommands
+  */
+  if (init('action') == 'moveCommands') {
+    $eqSource_id = init('source');
+    $eqDestination_id = init('destination');
+    $cmdIds = init('cmdIds');
+
+    log::add('mymodbus', 'debug', sprintf(__("eqSource_id '%s' eqDestination_id '%s' cmdIds '%s'", __FILE__), $eqSource_id, $eqDestination_id, var_export($cmdIds, true)));
+
+    $eqSource = mymodbus::byId($eqSource_id);
+    $blob = [];
+    foreach ($eqSource->getCmd() as $cmd) {
+      if ($cmd->getConfiguration('cmdFctModbus') == 'fromBlob') {
+        $blobSrc = $cmd->getConfiguration('cmdSourceBlobNum', '') . $cmd->getConfiguration('cmdSourceBlobBin', '');
+        if ($blobSrc != '') {
+          if (!array_key_exists($blobSrc, $blob)) {
+            $blob[$blobSrc] = [];
+          }
+          $blob[$blobSrc][] = $cmd->getId();
+        }
+      }
+    }
+    log::add('mymodbus', 'debug', sprintf(__("blob '%s'", __FILE__), var_export($blob, true)));
+
+    $eqDestination = mymodbus::byId($eqDestination_id);
+    foreach ($cmdIds as $cmd_id) {
+      $cmd = mymodbusCmd::byId($cmd_id);
+      if ($cmd->getEqLogic_id() == $eqSource_id) {
+        $cmd->setEqLogic_id($eqDestination_id);
+        $cmd->save();
+      }
+      if (array_key_exists($cmd_id, $blob)) {
+        foreach ($blob[$cmd_id] as $cmd_id_dest) {
+          $cmd = mymodbusCmd::byId($cmd_id_dest);
+          if ($cmd->getEqLogic_id() == $eqSource_id) {
+            $cmd->setEqLogic_id($eqDestination_id);
+            $cmd->save();
+          }
+        }
+      }
+    }
+    $eqSource->save();
+    $eqDestination->save();
+    ajax::success();
+  }
   
   /* ---------------------------
   * getTemplateList
