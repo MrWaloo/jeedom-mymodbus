@@ -215,11 +215,11 @@ function sel_destination_change(event) {
 function bt_move_cmds_click(event) {
   const sel_source = document.getElementById('sel_source');
   const sel_destination = document.getElementById('sel_destination');
-  console.log('source', sel_source.value, 'destination', sel_destination.value); // DEBUG
+  //console.log('source', sel_source.value, 'destination', sel_destination.value); // DEBUG
   const checkboxes = document.querySelectorAll('#div_ListCmd input[type="checkbox"]');
   const checkedCheckboxes = Array.from(checkboxes).filter(checkbox => checkbox.checked);
   const checkedValues = checkedCheckboxes.map(checkbox => checkbox.value);
-  console.log(checkedValues); // DEBUG
+  //console.log(checkedValues); // DEBUG
 
   let html = '</br></br>';
   mymodbus.callPluginAjax({
