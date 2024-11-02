@@ -69,7 +69,10 @@ class Lib():
       if byte_list[-1:] == b"\00":
         byte_list = byte_list[:-1]
       return byte_list.decode("utf-8")
-    return struct.unpack(f"{format}", byte_list)[0]
+    try:
+      return struct.unpack(f"{format}", byte_list)[0]
+    except Exception as e:
+      raise e
 
   @classmethod
   def convert_to_registers(

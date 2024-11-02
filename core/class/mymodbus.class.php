@@ -25,14 +25,14 @@ class mymodbus extends eqLogic {
 
   /*
   * Permet de définir les possibilités de personnalisation du widget (en cas d'utilisation de la fonction 'toHtml' par exemple)
-  * Tableau multidimensionnel - exemple: array('custom' => true, 'custom::layout' => false)
-  public static $_widgetPossibility = array();
+  * Tableau multidimensionnel - exemple: ['custom' => true, 'custom::layout' => false]
+  public static $_widgetPossibility = [];
   */
 
   /*
   * Permet de crypter/décrypter automatiquement des champs de configuration du plugin
   * Exemple : "param1" & "param2" seront cryptés mais pas "param3"
-  public static $_encryptConfigKey = array('param1', 'param2');
+  public static $_encryptConfigKey = ['param1', 'param2'];
   */
 
   const PYTHON_PATH = __DIR__ . '/../../resources/venv/bin/python3';
@@ -75,7 +75,7 @@ class mymodbus extends eqLogic {
 
   public static function deamon_info() {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
-    $daemon_info = array();
+    $daemon_info = [];
     $daemon_info['log'] = __CLASS__;
     $daemon_info['state'] = self::getDeamonState();
     $daemon_info['launchable'] = self::getDeamonLaunchable();
@@ -143,7 +143,7 @@ class mymodbus extends eqLogic {
     }
     
     log::add(__CLASS__, 'info', __CLASS__ . '::' . __FUNCTION__ . ' * Arrêt du démon...');
-    $message = array();
+    $message = [];
     $message['CMD'] = 'quit';
     self::sendToDaemon($message);
 
@@ -194,7 +194,7 @@ class mymodbus extends eqLogic {
       return True;
     }
     
-    $message = array();
+    $message = [];
     $message['CMD'] = 'newDaemonConfig';
     $message['config'] = self::getCompleteConfiguration();
     self::sendToDaemon($message);
@@ -209,7 +209,7 @@ class mymodbus extends eqLogic {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     $interfaces = [];
     foreach (self::byType(__CLASS__) as $eqMymodbus) { // boucle sur les équipements
-      if ($eqMymodbus->getIsEnable() && $eqMymodbus->getConfiguration('eqProtocol') != 'shared_from') {
+      if ($eqMymodbus->getConfiguration('eqProtocol') != 'shared_from') {
         $interfaces[$eqMymodbus->getId()] = $eqMymodbus->getName();
       }
     }
@@ -253,11 +253,11 @@ class mymodbus extends eqLogic {
 
   public static function dependancy_install() {
       log::remove(__CLASS__ . '_update');
-      return array('script' => __DIR__ . '/../../resources/install_#stype#.sh', 'log' => log::getPathToLog(__CLASS__ . '_update'));
+      return ['script' => __DIR__ . '/../../resources/install_#stype#.sh', 'log' => log::getPathToLog(__CLASS__ . '_update')];
   }
 
   public static function dependancy_info() {
-    $return = array();
+    $return = [];
     $return['log'] = log::getPathToLog(__CLASS__ . '_update');
     $return['progress_file'] = jeedom::getTmpFolder(__CLASS__) . '/dependance';
     $return['state'] = 'ok';
@@ -319,12 +319,12 @@ class mymodbus extends eqLogic {
   // Fonction inspirée du plugin jMQTT
   public static function getTemplateList($_patern, $_prefix = '') {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . sprintf(" * patern = '%s', prefix = '%s'", $_patern, $_prefix));
-    $return = array();
+    $return = [];
     foreach (glob(__DIR__ . '/../../' . $_patern . '*.json') as $file) {
       try {
         $file = realpath($file);
         [$templateKey, $templateValue] = self::templateRead($file);
-        $return[] = array($_prefix . $templateKey, $file);
+        $return[] = [$_prefix . $templateKey, $file];
       } catch (Throwable $e) {
         log::add(__CLASS__, 'warning', sprintf(__("Erreur lors de la lecture du Template '%s'", __FILE__), $file));
       }
@@ -471,7 +471,7 @@ class mymodbus extends eqLogic {
 		foreach (($eqLogicCopy->getCmd()) as $cmd) {
 			$cmd->remove();
 		}
-		$cmd_link = array();
+		$cmd_link = [];
 		foreach (($this->getCmd()) as $cmd) {
 			$cmdCopy = clone $cmd;
 			$cmdCopy->setId('');
@@ -538,7 +538,7 @@ class mymodbus extends eqLogic {
         $eqRetries = $this->getConfiguration('eqRetries');
         $eqFirstDelay = $this->getConfiguration('eqFirstDelay');
         $eqErrorDelay = $this->getConfiguration('eqErrorDelay');
-        if (!in_array($eqRefreshMode, array('polling', 'cyclic', 'on_event'))) {
+        if (!in_array($eqRefreshMode, ['polling', 'cyclic', 'on_event'])) {
           throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le mode de rafraîchissement n\'est pas défini correctement.', __FILE__));
         }
         if (!is_numeric($eqPolling)) {
@@ -595,19 +595,19 @@ class mymodbus extends eqLogic {
         if ($eqPortSerial === '') {
           throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'interface doit être définie correctement.', __FILE__));
         }
-        if (!in_array($eqSerialMethod, array('rtu', 'ascii', 'binary'))) {
+        if (!in_array($eqSerialMethod, ['rtu', 'ascii', 'binary'])) {
           throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La méthode de transport n\'est pas définie correctement.', __FILE__));
         }
         if (!is_numeric($eqSerialBaudrate)) {
           throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La vitesse de transmission Modbus doit être un nombre.', __FILE__));
         }
-        if (!in_array($eqSerialBytesize, array('7', '8'))) {
+        if (!in_array($eqSerialBytesize, ['7', '8'])) {
           throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le nombre de bits par octet n\'est pas défini correctement.', __FILE__));
         }
-        if (!in_array($eqSerialParity, array('E', 'O', 'N'))) {
+        if (!in_array($eqSerialParity, ['E', 'O', 'N'])) {
           throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La parité n\'est pas définie correctement.', __FILE__));
         }
-        if (!in_array($eqSerialStopbits, array('0', '1', '2'))) {
+        if (!in_array($eqSerialStopbits, ['0', '1', '2'])) {
           throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le nombre de bits de stop n\'est pas défini correctement.', __FILE__));
         }
 
@@ -621,7 +621,6 @@ class mymodbus extends eqLogic {
         if (!filter_var($eqAddr, FILTER_VALIDATE_IP)) {
           throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'adresse IP n\'est pas valide', __FILE__));
         }
-        log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('***** DEBUG DEBUG DEBUG ***** ', __FILE__) . sprintf("*'%d'*", var_export($eqPortNetwork, true)));
         if (!is_numeric($eqPortNetwork)) {
           throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le port doit être un nombre.', __FILE__));
         }
@@ -690,7 +689,7 @@ class mymodbus extends eqLogic {
       }
       if ($offset > 0) {
         foreach ($this->getCmd() as $cmdMymodbus) { // boucle sur les commandes
-          if (in_array($cmdMymodbus->getLogicalId(), array('refresh', 'refresh time', 'cycle ok', 'polling'))) {
+          if (in_array($cmdMymodbus->getLogicalId(), ['refresh', 'refresh time', 'cycle ok', 'polling'])) {
             continue;
           }
           if ($cmdMymodbus->getId() != '') {
@@ -758,7 +757,7 @@ class mymodbus extends eqLogic {
   // Retourne la configuration des équipements et de leurs commandes
   public static function getCompleteConfiguration() {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
-    $completeConfig = array();
+    $completeConfig = [];
     foreach (self::byType(__CLASS__) as $eqMymodbus) { // boucle sur les équipements
       // ne pas exporter la configuration si l'équipement n'est pas activé
       if (!$eqMymodbus->getIsEnable()) {
@@ -778,7 +777,7 @@ class mymodbus extends eqLogic {
   public function getEqConfiguration() {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     $eqProtocol = $this->getConfiguration('eqProtocol');
-    $eqConfig = array();
+    $eqConfig = [];
     if ($eqProtocol === 'shared_from') {
       return $eqConfig;
     }
@@ -805,9 +804,9 @@ class mymodbus extends eqLogic {
       $eqConfig['eqPort'] = trim($this->getConfiguration('eqPortNetwork'));
       
     }
-    $eqConfig['cmds'] = array();
+    $eqConfig['cmds'] = [];
     foreach ($this->getCmd() as $cmdMymodbus) { // boucle sur les commandes
-      if (in_array($cmdMymodbus->getLogicalId(), array('refresh', 'refresh time', 'cycle ok', 'polling'))) {
+      if (in_array($cmdMymodbus->getLogicalId(), ['refresh', 'refresh time', 'cycle ok', 'polling'])) {
         continue;
       }
       $eqConfig['cmds'][] = $cmdMymodbus->getCmdConfiguration();
@@ -819,7 +818,7 @@ class mymodbus extends eqLogic {
       && $eqMymodbus->getConfiguration('eqProtocol') === 'shared_from'
       && $eqMymodbus->getConfiguration('eqInterfaceFromEqId') === $this->getId()) {
         foreach ($eqMymodbus->getCmd() as $cmdMymodbus) { // boucle sur les commandes
-          if (in_array($cmdMymodbus->getLogicalId(), array('refresh', 'refresh time', 'cycle ok', 'polling'))) {
+          if (in_array($cmdMymodbus->getLogicalId(), ['refresh', 'refresh time', 'cycle ok', 'polling'])) {
             continue;
           }
           $eqConfig['cmds'][] = $cmdMymodbus->getCmdConfiguration();
@@ -853,7 +852,7 @@ class mymodbus extends eqLogic {
 
     // Si 2 équipements utilisent la même connexion -> nok (workaround provisoire)
     $eqConfigs = self::getCompleteConfiguration();
-    $serialIntf = array();
+    $serialIntf = [];
     foreach ($eqConfigs as $config) {
       if ($config['eqProtocol'] === 'serial') {
         $intf = $config['eqPort'];
@@ -913,10 +912,10 @@ class mymodbusCmd extends cmd {
     
     $eqMymodbus = $this->getEqLogic();
     
-    $command = array();
+    $command = [];
     $command['eqId'] = $eqMymodbus->getId();
     
-    $message = array();
+    $message = [];
     if ($this->getLogicalId() === 'refresh') {
       if ($eqMymodbus->getConfiguration('eqProtocol') === 'shared_from') {
         $command['eqId'] = $eqMymodbus->getConfiguration('eqInterfaceFromEqId');
@@ -999,7 +998,7 @@ class mymodbusCmd extends cmd {
       $this->_changed = true;
     }
 
-    if (in_array($this->getLogicalId(), array('refresh', 'refresh time', 'cycle ok', 'polling'))) {
+    if (in_array($this->getLogicalId(), ['refresh', 'refresh time', 'cycle ok', 'polling'])) {
       return true;
     }
     $cmdSlave = $this->getConfiguration('cmdSlave');
@@ -1023,7 +1022,7 @@ class mymodbusCmd extends cmd {
       if (!is_numeric($cmdFrequency)) {
         throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La configuration \'Lecture 1x sur\' doit être un nombre.', __FILE__));
       }
-      if ($this->getSubType() === 'binary' && in_array($cmdFctModbus, array('3', '4')) && !preg_match('/#value# & \d+/', $cmdOption)) {
+      if ($this->getSubType() === 'binary' && in_array($cmdFctModbus, ['3', '4']) && !preg_match('/#value# & \d+/', $cmdOption)) {
         throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Pour pouvoir utiliser une fonction de lecture de registre numérique, une commande de type binaire doit avoir un filtre en option', __FILE__));
       }
     }
@@ -1150,7 +1149,7 @@ class mymodbusCmd extends cmd {
 
   public function getCmdConfiguration() {
     //log::add('mymodbus', 'debug', __CLASS__ . '::' . __FUNCTION__);
-    $return = array();
+    $return = [];
     $return['id'] = $this->getId();
     $return['name'] = trim($this->getName());
     $return['type'] = $this->getType();

@@ -25,7 +25,9 @@ require_once __DIR__ . '/../php/mymodbusEqConfig.class.php';
   <div class="bs-sidebar nav nav-list bs-sidenav" style="height:calc(100%);overflow:auto;overflow-x:hidden;">
     <div class="form-group">
       <span class="btn btn-default btn-file" style="width:100%;">
-        <i class="fas fa-upload"></i> {{Importer un template depuis un fichier}}<input id="bt_MyModbusTemplateUp" type="file" name="file" accept=".json" data-url="plugins/mymodbus/core/ajax/mymodbus.ajax.php?action=fileupload" style="display : inline-block;width:100%;">
+        <i class="fas fa-upload"></i>
+        {{Importer un template depuis un fichier}}
+        <input id="bt_MyModbusTemplateUp" type="file" name="file" accept=".json" data-url="plugins/mymodbus/core/ajax/mymodbus.ajax.php?action=fileupload" style="display:inline-block;width:100%;">
       </span>
     </div>
     <legend>{{Templates existants}}</legend>

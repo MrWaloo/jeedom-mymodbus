@@ -55,7 +55,7 @@ function delete_unused_files() {
   ];
   foreach($directories as $directory) {
     if (is_file($dir . $directory)) {
-      rmdir($dir . $directory);
+      deltree($dir . $directory);
     }
   }
 }
@@ -82,5 +82,32 @@ function mymodbus_install() {
 /*
     function mymodbus_remove() {}
  */
+
+private function deltree($_dir) {
+  if (!is_dir($_dir)) {
+    return;
+  }
+
+  // On utilise scandir avec le drapeau SCANDIR_SORT_DESCENDING pour parcourir les éléments du plus profond au moins profond
+  foreach (scandir($_dir, SCANDIR_SORT_DESCENDING) as $element) {
+    if ($element === '.' || $element === '..') {
+      continue; // On ignore les répertoires . et ..
+    }
+    $file_or_dir = "$_dir/$element";
+    if (is_dir($file_or_dir)) {
+      deltree($file_or_dir);
+    } else {
+      if (!unlink($file_or_dir)) {
+        // Gestion des erreurs en cas d'échec de la suppression
+        throw new RuntimeException("Impossible de supprimer le fichier $file_or_dir");
+      }
+    }
+  }
+
+  // On supprime le répertoire vide
+  if (!rmdir($_dir)) {
+    throw new RuntimeException("Impossible de supprimer le répertoire $_dir");
+  }
+}
 
 ?>
