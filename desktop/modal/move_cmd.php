@@ -95,7 +95,7 @@ function fill_sel_source() {
 function sel_source_change(event) {
   // Affichage des commandes déplaçables
   jeedom.eqLogic.getCmd({
-    id: $(this).val(),
+    id: event.target.value,
     async: false,
     noCache: true,
     success: function(cmds) {
@@ -142,7 +142,7 @@ function sel_source_change(event) {
   // Sauvegarde de l'eqLogic sélectionné comme source
   let scr_eqLogic = null;
   jeedom.eqLogic.byId({
-    id: $(this).val(),
+    id: event.target.value,
     async: false,
     success: function(_eqLogic) {
       scr_eqLogic = _eqLogic;
@@ -171,6 +171,7 @@ function sel_source_change(event) {
             if (
               ('eqInterfaceFromEqId' in eqLogic.configuration && eqLogic.configuration['eqInterfaceFromEqId'] === scr_eqLogic.id)
               || ('eqInterfaceFromEqId' in scr_eqLogic.configuration && scr_eqLogic.configuration['eqInterfaceFromEqId'] === eqLogic.id)
+              || ('eqInterfaceFromEqId' in eqLogic.configuration && 'eqInterfaceFromEqId' in scr_eqLogic.configuration && eqLogic.configuration['eqInterfaceFromEqId'] === scr_eqLogic.configuration['eqInterfaceFromEqId'])
             ) {
               html += '        <option value="' + eqLogic.id + '">' + eqLogic.name + '</option>';
             }
@@ -190,7 +191,6 @@ function sel_source_change(event) {
       sel_destination.addEventListener('change', sel_destination_change);
     }
   });
-  
 }
 
 function sel_destination_change(event) {
