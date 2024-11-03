@@ -95,7 +95,7 @@ function fill_sel_source() {
 function sel_source_change(event) {
   // Affichage des commandes déplaçables
   jeedom.eqLogic.getCmd({
-    id: $(this).val(),
+    id: event.target.value,
     async: false,
     noCache: true,
     success: function(cmds) {
@@ -142,7 +142,7 @@ function sel_source_change(event) {
   // Sauvegarde de l'eqLogic sélectionné comme source
   let scr_eqLogic = null;
   jeedom.eqLogic.byId({
-    id: $(this).val(),
+    id: event.target.value,
     async: false,
     success: function(_eqLogic) {
       scr_eqLogic = _eqLogic;
