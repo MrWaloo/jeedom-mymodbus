@@ -191,7 +191,6 @@ function sel_source_change(event) {
       sel_destination.addEventListener('change', sel_destination_change);
     }
   });
-  
 }
 
 function sel_destination_change(event) {
