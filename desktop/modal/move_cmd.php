@@ -171,6 +171,7 @@ function sel_source_change(event) {
             if (
               ('eqInterfaceFromEqId' in eqLogic.configuration && eqLogic.configuration['eqInterfaceFromEqId'] === scr_eqLogic.id)
               || ('eqInterfaceFromEqId' in scr_eqLogic.configuration && scr_eqLogic.configuration['eqInterfaceFromEqId'] === eqLogic.id)
+              || ('eqInterfaceFromEqId' in eqLogic.configuration && 'eqInterfaceFromEqId' in scr_eqLogic.configuration && eqLogic.configuration['eqInterfaceFromEqId'] === scr_eqLogic.configuration['eqInterfaceFromEqId'])
             ) {
               html += '        <option value="' + eqLogic.id + '">' + eqLogic.name + '</option>';
             }
