@@ -458,7 +458,7 @@ function actualise_visible(me, source, _template = false) {
         if (subType == 'binary') {
           $(me).closest('tr').find('.FctBlobBin').show();
           $(me).closest('tr').find('.formatBin').show();
-          $(me).closest('tr').find('.formatNum').hide(); // HIDE !
+          $(me).closest('tr').find('.formatNum').show();
         } else {
           $(me).closest('tr').find('.FctBlobNum').show();
         }
