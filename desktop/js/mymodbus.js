@@ -587,7 +587,7 @@ function getTrfromCmd(_cmd, _template = false) {
   tr += '       </optgroup>';
   tr += '       <optgroup class="formatNum" label="32 bits ({{2 registres}})">';
   tr += '         <option class="formatNum" value="i">int32 (-2 147 483 648 ... 2 147 483 647)</option>';
-  tr += '         <option class="formatNum" value="I">uint32 (0 ... 4 294 967 296)</option>';
+  tr += '         <option class="formatNum" value="I">uint32 (0 ... 4 294 967 295)</option>';
   tr += '         <option class="formatNum" value="f">float32 (Real 32bit)</option>';
   tr += '       </optgroup>';
   tr += '       <optgroup class="formatNum" label="64 bits ({{4 registres}})">';
