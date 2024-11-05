@@ -582,7 +582,7 @@ function getTrfromCmd(_cmd, _template = false) {
   tr += '         <option class="formatNum" value="uint8-msb">uint8 MSB (0 ... 255)</option>';
   tr += '       </optgroup>';
   tr += '       <optgroup class="formatNum" label="16 bits">';
-  tr += '         <option class="formatNum" value="h">int16 (-32 768 ... 32 768)</option>';
+  tr += '         <option class="formatNum" value="h">int16 (-32 768 ... 32 767)</option>';
   tr += '         <option class="formatNum" value="H">uint16 (0 ... 65 535)</option>';
   tr += '       </optgroup>';
   tr += '       <optgroup class="formatNum" label="32 bits ({{2 registres}})">';
