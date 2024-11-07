@@ -110,7 +110,7 @@ $('#bt_move_cmd').on('click', function () {
 });
 
 $('.eqLogicAction[data-action=bt_docSpecific]').on('click', function () {
-  window.open('https://bebel27a.github.io/jeedom-mymobdus.github.io/fr_FR/');
+  window.open('https://mrwaloo.github.io/jeedom-plugins-doc/fr_FR/mymodbus_doc');
 });
 
 // *********** Evénements de la page de l'édition d'un équipement
