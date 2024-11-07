@@ -28,7 +28,7 @@ $("#table_mymodbusFilters").sortable({axis: "y", cursor: "move", items: ".filter
  * Fonction pour l'ajout de commande, appellé automatiquement par plugin.template
  */
 $('.eqLogicAction[data-action=bt_docSpecific]').on('click', function () {
-    window.open('https://bebel27a.github.io/jeedom-mymobdus.github.io/fr_FR/');
+    window.open('https://mrwaloo.github.io/jeedom-plugins-doc/fr_FR/mymodbus_doc');
 });
 $('.pluginAction[data-action=openLink]').on('click',function(){
     window.open($(this).attr("data-location"), "_blank", null);
