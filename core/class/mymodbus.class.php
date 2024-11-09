@@ -253,7 +253,10 @@ class mymodbus extends eqLogic {
 
   public static function dependancy_install() {
       log::remove(__CLASS__ . '_update');
-      return ['script' => __DIR__ . '/../../resources/install_#stype#.sh', 'log' => log::getPathToLog(__CLASS__ . '_update')];
+      return [
+        'script' => __DIR__ . '/../../resources/install_#stype#.sh',
+        'log' => log::getPathToLog(__CLASS__ . '_update')
+      ];
   }
 
   public static function dependancy_info() {
