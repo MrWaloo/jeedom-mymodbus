@@ -277,11 +277,11 @@ class mymodbus extends eqLogic {
     $packages = join("||", $packages_installed);
     exec("cat {$requirementsPath}", $packages_needed);
     foreach ($packages_needed as $line) {
-      if (preg_match('/([^\s]+)[\s]*([>=~]=)[\s]*([\d+\.?]+)$/', $line, $need) === 1) {
-        if (preg_match('/' . $need[1] . '==([\d+\.?]+)/', $packages, $install) === 1) {
-          if ($need[2] === '==' && $need[3] != $install[1]) {
+      if (preg_match('/^(?<name>[A-Z0-9]|[A-Z0-9][A-Z0-9._-]*[A-Z0-9])\s*(?:\[.*\])?\s*(?:(?<operator>[>=~]=)\s*(?<version>[\d+\.?]+))?\s*(?:$|;.*|,.*)/i', $line, $need) === 1) {
+        if (preg_match('/' . $need['name'] . '==([\d+\.?]+)/', $packages, $install) === 1) {
+          if ($need[2] === '==' && $need['version'] != $install[1]) {
             return false;
-          } elseif (version_compare($need[3], $install[1], '>')) {
+          } elseif (version_compare($need['version'], $install[1], '>')) {
             return false;
           }
         } else {
@@ -1115,7 +1115,7 @@ class mymodbusCmd extends cmd {
           }
           if ($this->getSubtype() === 'binary') {
             if ($blobCmd->getSubtype() === 'numeric' && !preg_match('/#value# & \d+/', $cmdOption)) {
-              throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Pour pouvoir utiliser une plage de lecture de registre numérique, une commande de type binaire doit avoir un filtre en option', __FILE__));
+              throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Pour pouvoir utiliser une plage de registres numérique, une commande de type binaire doit avoir un filtre en option', __FILE__));
             }
           }
         }
@@ -1135,6 +1135,8 @@ class mymodbusCmd extends cmd {
             throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Adresse Modbus en dehors de la plage de registres.', __FILE__));
           }
         }
+      } else {
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Plage de registres non définie.', __FILE__));
       }
     }
     

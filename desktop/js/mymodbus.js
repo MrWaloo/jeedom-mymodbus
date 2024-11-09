@@ -110,7 +110,7 @@ $('#bt_move_cmd').on('click', function () {
 });
 
 $('.eqLogicAction[data-action=bt_docSpecific]').on('click', function () {
-  window.open('https://bebel27a.github.io/jeedom-mymobdus.github.io/fr_FR/');
+  window.open('https://mrwaloo.github.io/jeedom-plugins-doc/fr_FR/mymodbus_doc');
 });
 
 // *********** Evénements de la page de l'édition d'un équipement
@@ -458,7 +458,7 @@ function actualise_visible(me, source, _template = false) {
         if (subType == 'binary') {
           $(me).closest('tr').find('.FctBlobBin').show();
           $(me).closest('tr').find('.formatBin').show();
-          $(me).closest('tr').find('.formatNum').hide(); // HIDE !
+          $(me).closest('tr').find('.formatNum').show();
         } else {
           $(me).closest('tr').find('.FctBlobNum').show();
         }
@@ -582,12 +582,12 @@ function getTrfromCmd(_cmd, _template = false) {
   tr += '         <option class="formatNum" value="uint8-msb">uint8 MSB (0 ... 255)</option>';
   tr += '       </optgroup>';
   tr += '       <optgroup class="formatNum" label="16 bits">';
-  tr += '         <option class="formatNum" value="h">int16 (-32 768 ... 32 768)</option>';
+  tr += '         <option class="formatNum" value="h">int16 (-32 768 ... 32 767)</option>';
   tr += '         <option class="formatNum" value="H">uint16 (0 ... 65 535)</option>';
   tr += '       </optgroup>';
   tr += '       <optgroup class="formatNum" label="32 bits ({{2 registres}})">';
   tr += '         <option class="formatNum" value="i">int32 (-2 147 483 648 ... 2 147 483 647)</option>';
-  tr += '         <option class="formatNum" value="I">uint32 (0 ... 4 294 967 296)</option>';
+  tr += '         <option class="formatNum" value="I">uint32 (0 ... 4 294 967 295)</option>';
   tr += '         <option class="formatNum" value="f">float32 (Real 32bit)</option>';
   tr += '       </optgroup>';
   tr += '       <optgroup class="formatNum" label="64 bits ({{4 registres}})">';
