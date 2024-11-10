@@ -194,9 +194,10 @@ class mymodbus extends eqLogic {
       return True;
     }
     
-    $message = [];
-    $message['CMD'] = 'newDaemonConfig';
-    $message['config'] = self::getCompleteConfiguration();
+    $message = [
+      'CMD' => 'newDaemonConfig',
+      'config' => self::getCompleteConfiguration()
+    ];
     self::sendToDaemon($message);
   }
   

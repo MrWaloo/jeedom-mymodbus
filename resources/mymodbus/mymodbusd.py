@@ -152,7 +152,7 @@ class MyModbusd(BaseDaemon):
     """
     mymodbus_client = self._mymodbus_clients.get(eqId, None)
     if mymodbus_client is None:
-      self._logger.error(f"{self.__n}: No equipment ID in the message to send to MyModbusClient: {payload}")
+      self._logger.error(f"{self.__n}: No MyModbusClient instance has been started yet for the given equipment ID: {payload}")
       return
     await mymodbus_client.downstream.put(payload)
 
