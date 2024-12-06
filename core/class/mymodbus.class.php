@@ -1135,6 +1135,7 @@ class mymodbusCmd extends cmd {
             throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Adresse Modbus en dehors de la plage de registres.', __FILE__));
           }
         }
+      } elseif (substr($cmdSourceBlob, 0, 2) === '#[' && substr($cmdSourceBlob, -2) === ']#') {
       } else {
         throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Plage de registres non définie.', __FILE__));
       }
