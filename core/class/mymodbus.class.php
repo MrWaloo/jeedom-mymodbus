@@ -339,7 +339,7 @@ class mymodbus extends eqLogic {
   // Fonction inspirée du plugin jMQTT
   public static function templateByName($_name) {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . sprintf(" * name = '%s'", $_name));
-    if (strpos($_name , mymodbusConst::PREFIX_TEMPLATE_USER) === 0) {
+    if (strpos($_name, mymodbusConst::PREFIX_TEMPLATE_USER) === 0) {
       // Get personal templates
       $name = substr($_name, strlen(mymodbusConst::PREFIX_TEMPLATE_USER));
       $folder = '/../../' . mymodbusConst::PATH_TEMPLATES_USER;
@@ -454,7 +454,7 @@ class mymodbus extends eqLogic {
 
   // Fonction inspirée du plugin jMQTT
   public function applyATemplate($_template, $_keepCmd = true) {
-    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . sprintf(" * template = '%s', keepCmd = '%s'", $_template, $_keepCmd));
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . sprintf(" * template = '%s', keepCmd = '%s'", var_export($_template, true), $_keepCmd));
     // import template
     $this->import($_template, $_keepCmd);
     $this->save();
