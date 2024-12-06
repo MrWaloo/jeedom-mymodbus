@@ -3,6 +3,7 @@ import asyncio
 from jeedomdaemon.base_daemon import BaseDaemon
 
 from mymodbusclient import MyModbusClient
+from mymodbustest import MyModbusTest
 from mymodbusconfig import MyModbusConfig
 
 
@@ -109,7 +110,11 @@ class MyModbusd(BaseDaemon):
           asyncio.create_task(self.start_client(eqConfig))
   
   async def start_client(self, eqConfig: dict) -> None:
-    new_client = MyModbusClient(eqConfig)
+    new_client = None
+    if eqConfig["id"] == "test":
+      new_client = MyModbusTest(eqConfig)
+    else:
+      new_client = MyModbusClient(eqConfig)
     self._async_tasks.append(asyncio.create_task(
       self.read_upstream(new_client.upstream, eqConfig["id"]),
       name = eqConfig["id"]

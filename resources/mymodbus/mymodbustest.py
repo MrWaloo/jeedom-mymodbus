@@ -21,7 +21,7 @@ from mymodbuslib import Lib
 from mymodbusbase import MyModbusBase
 
 
-class MyModbusClient(MyModbusBase):
+class MyModbusTest(MyModbusBase):
 
   def __init__(
     self,

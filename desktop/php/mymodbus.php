@@ -41,6 +41,11 @@ require_once 'mymodbusEqConfig.class.php';
         <br/>
         <span>{{Déplacer les commandes}}</span>
       </div>
+      <div class="cursor logoSecondary" id="bt_test_registers">
+        <i class="fas fa-stethoscope" style="color:#0F9DE8;"></i> <!-- fa-search fa-stethoscope  fa-question  -->
+        <br/>
+        <span>{{Tester des registres}}</span>
+      </div>
       <div class="cursor eqLogicAction logoSecondary" data-action="bt_docSpecific" >
         <i class="fas fa-book" style="color:#0F9DE8;"></i>
         <br>
