@@ -14,8 +14,7 @@ from array import array
 from statistics import fmean
 
 from pymodbus.exceptions import ModbusException
-from pymodbus.pdu import ExceptionResponse, ModbusPDU
-from pymodbus.pdu.decoders import DecodePDU
+from pymodbus.pdu import DecodePDU, ExceptionResponse, ModbusPDU
 
 from mymodbuslib import Lib
 from mymodbusbase import MyModbusBase

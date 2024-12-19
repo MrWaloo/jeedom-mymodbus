@@ -15,12 +15,8 @@ from pymodbus import FramerType
 from pymodbus.client import AsyncModbusSerialClient, AsyncModbusTcpClient, AsyncModbusUdpClient
 from pymodbus.exceptions import ModbusException
 from pymodbus.logging import pymodbus_apply_logging_config
-from pymodbus.pdu import ModbusPDU
-from pymodbus.pdu.decoders import DecodePDU
-from pymodbus.utilities import (
-    pack_bitstring,
-    unpack_bitstring,
-)
+from pymodbus.pdu import DecodePDU, ModbusPDU
+from pymodbus.utilities import pack_bitstring, unpack_bitstring
 
 from mymodbuslib import Lib
 
