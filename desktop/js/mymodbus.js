@@ -292,6 +292,10 @@ function printEqLogic(_eqLogic) {
     }
   }
 
+  const div_eqlogicId = document.getElementById('eqlogicId_in_tab');
+  let html_eqId = '<i class="fas fa-tachometer-alt"></i> {{Equipement}} (ID: ' + _eqLogic.id.toString() + ')';
+  div_eqlogicId.innerHTML = html_eqId;
+
   // load values
   $('#eqLogic').setValues(_eqLogic, '.eqLogicAttr');
 }
