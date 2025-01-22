@@ -81,7 +81,7 @@ function delete_unused_files() {
     'ressources',
   ];
   foreach($directories as $directory) {
-    if (is_file($dir . $directory)) {
+    if (is_dir($dir . $directory)) {
       mydeltree($dir . $directory);
     }
   }
