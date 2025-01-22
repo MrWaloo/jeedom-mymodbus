@@ -46,10 +46,6 @@ function mydeltree($_dir) {
 }
 
 function delete_unused_files() {
-  $pluginId = basename(realpath(__DIR__ . '/..'));
-  log::add($pluginId, 'info', 'delete_unused_files');
-  message::add($pluginId, 'delete_unused_files');
-
   $dir = realpath(__DIR__ . '/..') . '/';
   $files = [
     'core/php/mymodbus.inc.php',
@@ -85,7 +81,7 @@ function delete_unused_files() {
     'ressources',
   ];
   foreach($directories as $directory) {
-    if (is_file($dir . $directory)) {
+    if (is_dir($dir . $directory)) {
       mydeltree($dir . $directory);
     }
   }
