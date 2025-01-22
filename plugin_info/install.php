@@ -48,6 +48,7 @@ private function deltree($_dir) {
 function delete_unused_files() {
   $pluginId = basename(realpath(__DIR__ . '/..'));
   log::add($pluginId, 'info', 'delete_unused_files');
+  message::add($pluginId, 'delete_unused_files');
 
   $dir = realpath(__DIR__ . '/..') . '/';
   $files = [
