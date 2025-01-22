@@ -19,6 +19,9 @@
 require_once __DIR__ . '/../../../core/php/core.inc.php';
 
 function delete_unused_files() {
+  $pluginId = basename(realpath(__DIR__ . '/..'));
+  log::add($pluginId, 'info', 'delete_unused_files');
+
   $dir = realpath(__DIR__ . '/..') . '/';
   $files = [
     'core/php/mymodbus.inc.php',
