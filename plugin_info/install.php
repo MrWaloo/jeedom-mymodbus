@@ -18,7 +18,7 @@
 
 require_once __DIR__ . '/../../../core/php/core.inc.php';
 
-private function deltree($_dir) {
+function mydeltree($_dir) {
   if (!is_dir($_dir)) {
     return;
   }
@@ -30,7 +30,7 @@ private function deltree($_dir) {
     }
     $file_or_dir = "$_dir/$element";
     if (is_dir($file_or_dir)) {
-      deltree($file_or_dir);
+      mydeltree($file_or_dir);
     } else {
       if (!unlink(realpath($file_or_dir))) {
         // Gestion des erreurs en cas d'échec de la suppression
@@ -86,7 +86,7 @@ function delete_unused_files() {
   ];
   foreach($directories as $directory) {
     if (is_file($dir . $directory)) {
-      deltree($dir . $directory);
+      mydeltree($dir . $directory);
     }
   }
 }
