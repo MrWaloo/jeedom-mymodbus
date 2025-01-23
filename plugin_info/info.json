@@ -12,15 +12,15 @@
 		"max" : 12.99
 	},
 	"category" : "automation protocol",
-	"hasDependency" : true,
-	"hasOwnDeamon" : true,
-	"maxDependancyInstallTime" : 60,
+	"hasDependency" : 1,
+	"hasOwnDeamon" : 1,
+	"maxDependancyInstallTime" : 5,
 	"changelog" : "https://mrwaloo.github.io/jeedom-plugins-doc/#language#/mymodbus_changelog",
 	"documentation" : "https://mrwaloo.github.io/jeedom-plugins-doc/#language#/mymodbus_doc",
 	"changelog_beta" : "https://mrwaloo.github.io/jeedom-plugins-doc/#language#/mymodbus_changelog",
 	"documentation_beta" : "https://mrwaloo.github.io/jeedom-plugins-doc/#language#/mymodbus_doc",
 	"link" : {
-		"forum" : "https://community.jeedom.com/tag/plugin-mymodbus"
+		"forum":"https://community.jeedom.com/t/plugin-mymodbus/9395"
 	},
 	"language" : ["fr_FR"],
 	"compatibility" : ["smart", "rpi", "docker", "diy", "atlas", "v4"]
