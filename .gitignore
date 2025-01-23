@@ -1,0 +1,11 @@
+.project
+.DS_Store
+Thumbs.db
+*.php~
+docs/Gemfile.lock
+docs/.sass-cache/
+__pycache__
+data/user_templates/*.json
+resources/*.lib
+resources/venv
+ressources/

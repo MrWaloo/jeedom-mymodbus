@@ -4,176 +4,155 @@ if (!isConnect('admin')) {
 }
 $plugin = plugin::byId('mymodbus');
 sendVarToJS('eqType', $plugin->getId());
+include_file('desktop', 'mymodbus.functions', 'js', 'mymodbus');
 $eqLogics = eqLogic::byType($plugin->getId());
+require_once 'mymodbusEqConfig.class.php';
 
-$deamonRunning = mymodbus::deamon_info();
-    if ($deamonRunning['state'] != 'ok') {
-        echo '<div class="alert alert-danger">ATTENTION LE DEMON MYMODBUS NE TOURNE PAS , Avant de le lancer il faut toujours avoir un équipement MyModbus de céer ! </div>';
-    }
-	
 ?>
 
 <div class="row row-overflow">
-   <div class="col-xs-12 eqLogicThumbnailDisplay">
-  <legend><i class="fas fa-cog"></i>  {{Gestion}}</legend>
-  <div class="eqLogicThumbnailContainer">
-      <div class="cursor eqLogicAction logoPrimary" data-action="add">
-        <i class="fas fa-plus-circle"style="font-size : 6em;color:#0F9DE8;"></i>
+  <!-- Page d'accueil du plugin -->
+  <div class="col-xs-12 eqLogicThumbnailDisplay">
+    <legend><i class="fas fa-cog"></i>  {{Gestion}}</legend>
+    <!-- Boutons de gestion du plugin -->
+    <div class="eqLogicThumbnailContainer">
+      <div class="cursor eqLogicAction logoPrimary" data-action="bt_addMymodbusEq">
+        <i class="fas fa-plus-circle"></i>
         <br>
         <span>{{Ajouter}}</span>
-    </div>
+      </div>
       <div class="cursor eqLogicAction logoSecondary" data-action="gotoPluginConf">
-      <i class="fas fa-wrench"style="font-size : 6em;color:#0F9DE8;"></i>
-    <br>
-    <span>{{Configuration}}</span>
-  </div>
-  <div class="cursor eqLogicAction logoSecondary" data-action="bt_docSpecific" >
-		<i class="fas fa-book"style="font-size : 6em;color:#0F9DE8;"></i>
- 		<br>
-		<span>{{Documentation}}</span>
-		</div>
-  <div class="cursor pluginAction" data-action="openLink" data-location="https://community.jeedom.com/t/plugin-<?=$plugin->getId()?>/9395" >
-         <i class="fas fa-comments" style="font-size : 6em;color:#0F9DE8;"></i>
-         <br>
-         <span>{{Commmunity}}</span>
-        </div>
-  <div class="cursor logoSecondary" id="bt_healthmymodbus">
-				<i class="fas fa-medkit"style="font-size : 6em;color:#0F9DE8;"></i>
-				<br/>
-				<span>{{Santé}}</span>
-			</div>
-	<div class="cursor logoSecondary" id="bt_templatesmymodbus">
-				<i class="fas fa-cubes"style="font-size : 6em;color:#0F9DE8;"></i>
-				<br/>
-				<span>{{Templates}}</span>
-			</div>
-  </div>
-  <legend><i class="fas fa-table"></i> {{Mes équipements}}</legend>
-	   <input class="form-control" placeholder="{{Rechercher}}" id="in_searchEqlogic" />
-<div class="eqLogicThumbnailContainer">
-    <?php
-foreach ($eqLogics as $eqLogic) {
-	$opacity = ($eqLogic->getIsEnable()) ? '' : 'disableCard';
-	echo '<div class="eqLogicDisplayCard cursor '.$opacity.'" data-eqLogic_id="' . $eqLogic->getId() . '">';
-	$alternateImg = $eqLogic->getConfiguration('protocol');
-	if (file_exists(dirname(__FILE__) . '/../../desktop/images/' . $alternateImg .'_icon.png')) {
-		echo '<img class="lazy" src="plugins/mymodbus/desktop/images/' . $alternateImg .'_icon.png"/>';
-	} else {	
-	echo '<img src="' . $plugin->getPathImgIcon() . '"/>';
-	}
-	echo '<br>';
-	echo '<span class="name">' . $eqLogic->getHumanName(true, true) . '</span>';
-	echo '</div>';
-}
-?>
-</div>
-</div>
-
-<div class="col-xs-12 eqLogic" style="display: none;">
-		<div class="input-group pull-right" style="display:inline-flex">
-			<span class="input-group-btn">
-				<a class="btn btn-primary btn-sm bt_showNoteManagement roundedLeft"><i class="fas fa-file"></i> {{Notes}}</a><a class="btn btn-primary btn-sm bt_showExpressionTest roundedLeft"><i class="fas fa-check"></i> {{Expression}}</a><a <a class="btn btn-default btn-sm eqLogicAction" data-action="configure"><i class="fas fa-cogs"></i> {{Configuration avancée}}</a><a class="btn btn-default btn-sm eqLogicAction" data-action="copy"><i class="fas fa-copy"></i> {{Dupliquer}}</a><a class="btn btn-sm btn-success eqLogicAction" data-action="save"><i class="fas fa-check-circle"></i> {{Sauvegarder}}</a><a class="btn btn-danger btn-sm eqLogicAction roundedRight" data-action="remove"><i class="fas fa-minus-circle"></i> {{Supprimer}}</a>
-			</span>
-		</div>
-  <ul class="nav nav-tabs" role="tablist">
-    <li role="presentation"><a href="#" class="eqLogicAction" aria-controls="home" role="tab" data-toggle="tab" data-action="returnToThumbnailDisplay"><i class="fa fa-arrow-circle-left"></i></a></li>
-    <li role="presentation" class="active"><a href="#eqlogictab" aria-controls="home" role="tab" data-toggle="tab"><i class="fas fa-tachometer-alt"></i> {{Equipement}}</a></li>
-    <li role="presentation"><a href="#commandtab" aria-controls="profile" role="tab" data-toggle="tab"><i class="fa fa-list-alt"></i> {{Commandes}}</a></li>
-  </ul>
-  <div class="tab-content" style="height:calc(100% - 50px);overflow:auto;overflow-x: hidden;">
-    <div role="tabpanel" class="tab-pane active" id="eqlogictab">
-      <br/>
-    <form class="form-horizontal">
-	<legend><i class="fa fa-wrench"></i> {{Equipement :}}</legend>
-        <fieldset>
-            <div class="form-group">
-                <label class="col-sm-3 control-label">{{Nom de l'équipement}}</label>
-                <div class="col-sm-3">
-                    <input type="text" class="eqLogicAttr form-control" data-l1key="id" style="display : none;" />
-                    <input type="text" class="eqLogicAttr form-control" data-l1key="name" placeholder="{{Nom de l'équipement}}"/>
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="col-sm-3 control-label" >{{Objet parent}}</label>
-                <div class="col-sm-3">
-                    <select id="sel_object" class="eqLogicAttr form-control" data-l1key="object_id">
-                        <option value="">{{Aucun}}</option>
-                        <?php
-foreach (jeeObject::all() as $object) {
-	echo '<option value="' . $object->getId() . '">' . $object->getName() . '</option>';
-}
-?>
-                   </select>
-               </div>
-           </div>
-	   <div class="form-group">
-                <label class="col-sm-3 control-label">{{Catégorie}}</label>
-                <div class="col-sm-9">
-                 <?php
-                    foreach (jeedom::getConfiguration('eqLogic:category') as $key => $value) {
-                    echo '<label class="checkbox-inline">';
-                    echo '<input type="checkbox" class="eqLogicAttr" data-l1key="category" data-l2key="' . $key . '" />' . $value['name'];
-                    echo '</label>';
-                    }
-                  ?>
-               </div>
-           </div>
-	<div class="form-group">
-		<label class="col-sm-3 control-label"></label>
-		<div class="col-sm-9">
-			<label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isEnable" checked/>{{Activer}}</label>
-			<label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isVisible" checked/>{{Visible}}</label>
-		</div>
-		<legend><i class="fa fa-list-alt"></i> {{Configuration :}}</legend>
-		<!--   ***********************************  -->
-	</div>
-	<div class="form-group">
-         <label class="col-sm-3 control-label">{{Mode de connection}}</label>
-            <div class="col-sm-3">
-                <select id="mode" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="protocol">
-					<option disabled selected value>-- {{Choisir un mode de connection}} --</option>
-					<?php
-					foreach (mymodbus::supportedProtocol() as $protocol) {
-					echo '<option value="' . $protocol . '">' . $protocol . '</option>';
-					}
-					?>
-				</select>
-            </div>
+        <i class="fas fa-wrench" style="color:#0F9DE8;"></i>
+        <br>
+        <span>{{Configuration}}</span>
+      </div>
+      <div class="cursor logoSecondary" id="bt_healthmymodbus">
+        <i class="fas fa-medkit" style="color:#0F9DE8;"></i>
+        <br/>
+        <span>{{Santé}}</span>
+      </div>
+      <div class="cursor logoSecondary" id="bt_templatesMymodbus">
+        <i class="fas fa-cubes" style="color:#0F9DE8;"></i>
+        <br/>
+        <span>{{Templates}}</span>
+      </div>
+      <div class="cursor logoSecondary" id="bt_move_cmd">
+        <i class="fas fa-arrow-right" style="color:#0F9DE8;"></i>
+        <br/>
+        <span>{{Déplacer les commandes}}</span>
+      </div>
+      <div class="cursor eqLogicAction logoSecondary" data-action="bt_docSpecific" >
+        <i class="fas fa-book" style="color:#0F9DE8;"></i>
+        <br>
+        <span>{{Documentation}}</span>
+      </div>
     </div>
+    <legend><i class="fas fa-table"></i> {{Mes équipements}}</legend>
+    <?php
+    if (count($eqLogics) == 0) {
+      echo '<br><div class="text-center" style="font-size:1.2em;font-weight:bold;">{{Aucun équipement MyModbus présent, cliquez sur "Ajouter" pour commencer}}</div>';
+    } else {
+      // Champ de recherche
+      echo '<div class="input-group" style="margin:5px;">';
+      echo '<input class="form-control roundedLeft" placeholder="{{Rechercher}}" id="in_searchEqlogic">';
+      echo '<div class="input-group-btn">';
+      echo '<a id="bt_resetSearch" class="btn" style="width:30px"><i class="fas fa-times"></i></a>';
+      echo '<a class="btn roundedRight hidden" id="bt_pluginDisplayAsTable" data-coreSupport="1" data-state="0"><i class="fas fa-grip-lines"></i></a>';
+      echo '</div>';
+      echo '</div>';
+      // Liste des équipements du plugin
+      echo '<div class="eqLogicThumbnailContainer">';
+      foreach ($eqLogics as $eqLogic) {
+        $opacity = ($eqLogic->getIsEnable()) ? '' : 'disableCard';
+        echo '<div class="eqLogicDisplayCard cursor ' . $opacity . '" data-eqLogic_id="' . $eqLogic->getId() . '">';
+        $alternateImg = $eqLogic->getConfiguration('eqProtocol');
+        if (file_exists(__DIR__ . '/../../desktop/images/' . $alternateImg .'_icon.png')) {
+          echo '<img class="lazy" src="plugins/mymodbus/desktop/images/' . $alternateImg .'_icon.png"/>';
+        } else {	
+          echo '<img src="' . $plugin->getPathImgIcon() . '"/>';
+        }
+        echo '<br>';
+        echo '<span class="name">' . $eqLogic->getHumanName(true, true) . '</span>';
+        echo '<span class="hiddenAsCard displayTableRight hidden">';
+        echo ($eqLogic->getIsVisible() == 1) ? '<i class="fas fa-eye" title="{{Equipement visible}}"></i>' : '<i class="fas fa-eye-slash" title="{{Equipement non visible}}"></i>';
+        echo '</span>';
+        echo '</div>';
+      }
+      echo '</div>';
+    }
+    ?>
+  </div> <!-- /.eqLogicThumbnailDisplay -->
 
-       </fieldset>
-<div>
+  <!-- Page de présentation de l'équipement -->
+  <div class="col-xs-12 eqLogic" style="display:none;" id="eqLogic">
+    <div class="input-group pull-right" style="display:inline-flex">
+      <span class="input-group-btn">
+        <a class="btn btn-primary btn-sm eqLogicAction roundedLeft tooltips" data-action="createTemplate" title="{{Créer Template}}"><i class="fas fa-cubes"></i></a>
+        <a class="btn btn-warning btn-sm eqLogicAction tooltips" data-action="applyTemplate" title="{{Appliquer Template}}"><i class="fas fa-share"></i></a>
+        <a class="btn btn-primary btn-sm bt_showExpressionTest tooltips" title="{{Expression}}"><i class="fas fa-check"></i></a>
+        <a class="btn btn-default btn-sm eqLogicAction tooltips" data-action="configure" title="{{Configuration avancée}}"><i class="fas fa-cogs"></i></a>
+        <a class="btn btn-default btn-sm eqLogicAction tooltips" data-action="copy" title="{{Dupliquer}}"><i class="fas fa-copy"></i></a>
+        <a class="btn btn-success btn-sm eqLogicAction" data-action="save"><i class="fas fa-check-circle"></i> {{Sauvegarder}}</a>
+        <a class="btn btn-danger btn-sm eqLogicAction roundedRight" data-action="remove"><i class="fas fa-minus-circle"></i> {{Supprimer}}</a>
+      </span>
+    </div>
+    <!-- Onglets -->
+    <ul class="nav nav-tabs" role="tablist">
+      <li role="presentation"><a href="#" class="eqLogicAction" aria-controls="home" role="tab" data-toggle="tab" data-action="returnToThumbnailDisplay"><i class="fa fa-arrow-circle-left"></i></a></li>
+      <li role="presentation" class="active"><a href="#eqlogictab" aria-controls="home" role="tab" data-toggle="tab"><div id="eqlogicId_in_tab"><i class="fas fa-tachometer-alt"></i> {{Equipement}}</div></a></li>
+      <li role="presentation"><a href="#commandtab" aria-controls="profile" role="tab" data-toggle="tab"><i class="fa fa-list-alt"></i> {{Commandes}}</a></li>
+    </ul>
+    <div class="tab-content"> <!-- DEBUG style="height:calc(100% - 50px);overflow:auto;overflow-x:hidden;" -->
+      <!-- Onglet de configuration de l'équipement -->
+      <div role="tabpanel" class="tab-pane active" id="eqlogictab">
+        <form class="form-horizontal">
+          <fieldset>
+            
+            <!-- Affichage de la configuration de l'équipement -->
+            <?php
+            mymodbusEqConfig::show();
+            ?>
+
+          </fieldset>
+        </form>
+      </div><!-- /.tabpanel #eqlogictab-->
       
-        <fieldset>
-		<div id="div_protocolParameters"></div>
-        </fieldset>
-    </form>
-</div>
-</div>
+      <!-- Onglet des commandes de l'équipement -->
       <div role="tabpanel" class="tab-pane" id="commandtab">
-<a class="btn btn-default btn-sm pull-right" id="bt_add_Info" style="margin-top:5px;"><i class="fas fa-plus-circle"></i> {{Ajouter une info}}</a>
-<a class="btn btn-default btn-sm  pull-right" id="bt_add_Action" style="margin-top:5px;"><i class="fas fa-plus-circle"></i> {{Ajouter une action}}</a><br/><br/>
-<table id="table_cmd" class="table table-bordered table-condensed">
-    <thead>
-        <tr>
-            <!--<th>{{Nom}}</th><th>{{Type}}</th><th>{{Action}}</th> -->
-			<th style="width: 200px;">{{Nom}}</th>
-            <th style="width: 100px;">{{Type}}</th>
-            <th style="width: 150px;">{{Type E/S}}</th>
-            <th style="width: 100px;">{{Adresse}}</th>
-            <th>{{Parametre(s)}}</th>
-			<th style="width: 100px;">{{Options}}</th>
-			<th>{{Configuration}}</th>
-        </tr>
-    </thead>
-    <tbody>
-    </tbody>
-</table>
+        <div class="input-group" style="display:inline-flex;margin-top:5px;position:fixed;z-index:10;right:30px;">
+          <span class="input-group-btn">
+            <a class="btn btn-warning btn-sm rounded" id="bt_add_command_top"><i class="fas fa-plus-circle"></i> {{Ajouter une commande}} </a>
+          </span>
+        </div>
+        <br/><br/>
+        <div class="table-responsive">
+          <table id="table_cmd" class="table table-bordered table-condensed">
+            <thead>
+              <tr>
+                <th class="hidden-xs" style="min-width:50px;width:70px;">ID</th>
+                <th style="min-width:100px;width:280px;">{{Nom}}</th>
+                <th style="min-width:80px;">{{Valeur}}</th>
+                <th style="width:100px;">{{Type}}</th>
+                <th style="min-width:80px;width:80px;">{{Adresse esclave}}
+                  <sup><i class="fas fa-question-circle tooltips" title="{{'1' si pas de bus série}}"></i></sup>
+                </th>
+                <th style="width:230px;">{{Fonction Modbus}}</th>
+                <th style="min-width:120px;width:260px;">{{Adresse Modbus}}</th>
+                <th>{{Paramètres}}</th>
+                <th style="min-width:300px;width:310px;">{{Options}}</th>
+                <th style="width:15px;">&nbsp;</th>
+              </tr>
+            </thead>
+            <tbody>
+            </tbody>
+          </table>
+        </div>
+      </div><!-- /.tabpanel #commandtab-->
+    </div><!-- /.tab-content -->
+  </div><!-- /.eqLogic -->
+</div><!-- /.row row-overflow -->
 
-</div>
-
-</div>
-</div>
-
-<?php include_file('desktop', 'mymodbus', 'js', 'mymodbus');?>
-<?php include_file('core', 'plugin.template', 'js');?>
+<?php
+include_file('desktop', 'mymodbus', 'js', 'mymodbus');
+include_file('core', 'plugin.template', 'js');
+?>

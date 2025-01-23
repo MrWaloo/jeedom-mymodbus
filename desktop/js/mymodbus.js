@@ -14,6 +14,162 @@
  * along with Jeedom. If not, see <http://www.gnu.org/licenses/>.
  */
 
+// *********** Evénements de la page du plugin
+
+$('.eqLogicAction[data-action=bt_addMymodbusEq]').off('click').on('click', function() {
+  let dialog_message = '<label class="control-label">{{Nom du nouvel équipement :}}</label>';
+  dialog_message += '<input class="bootbox-input bootbox-input-text form-control" autocomplete="nope" type="text" id="addMymodbusEqName"><br><br>';
+  dialog_message += '<label class="control-label">{{Utiliser un template :}}</label>';
+  dialog_message += '<select class="bootbox-input bootbox-input-select form-control" id="addMymodbusTplSelector">';
+  dialog_message += '</select>';
+  bootbox.confirm({
+    title: "{{Ajouter un nouvel équipement MyModbus}}",
+    message: dialog_message,
+    callback: function (result) {
+      if (result) {
+        var eqName = $('#addMymodbusEqName').value();
+        if (eqName === undefined || eqName == null || eqName === '' || eqName == false) {
+          $.fn.showAlert({message: "{{Le nom de l'équipement ne peut pas être vide !}}", level: 'warning'});
+          return false;
+        }
+        var eqTemplate = $('#addMymodbusTplSelector').val();
+        jeedom.eqLogic.save({
+          type: 'mymodbus',
+          eqLogics: [ {name: eqName} ],
+          error: function (error) {
+            $.fn.showAlert({message: error.message, level: 'danger'});
+          },
+          success: function(savedEq) {
+            if (eqTemplate != '') {
+              mymodbus.callPluginAjax({
+                data: {
+                  action: "applyTemplate",
+                  id: savedEq.id,
+                  templateName : eqTemplate,
+                  keepCmd: false
+                },
+                success: function () {
+                  var vars = getUrlVars();
+                  var url = 'index.php?';
+                  for (var i in vars) {
+                    if (i != 'id' && i != 'saveSuccessFull' && i != 'removeSuccessFull') {
+                      url += i + '=' + vars[i].replace('#', '') + '&';
+                    }
+                  }
+                  modifyWithoutSave = false;
+                  url += 'id=' + savedEq.id + '&saveSuccessFull=1';
+                  jeedomUtils.loadPage(url);
+                }
+              });
+            }
+            if (eqTemplate == '') {
+              var vars = getUrlVars();
+              var url = 'index.php?';
+              for (var i in vars) {
+                if (i != 'id' && i != 'saveSuccessFull' && i != 'removeSuccessFull') {
+                  url += i + '=' + vars[i].replace('#', '') + '&';
+                }
+              }
+              modifyWithoutSave = false;
+              url += 'id=' + savedEq.id + '&saveSuccessFull=1';
+              jeedomUtils.loadPage(url);
+            }
+          }
+        });
+      }
+    }
+  });
+  mymodbus.callPluginAjax({
+    data: {
+      action: "getTemplateList",
+    },
+    error: function(error) {},
+    success: function (dataresult) {
+      opts = '<option value="">{{Aucun}}</option>';
+      for (var i in dataresult) {
+        opts += '<option value="' + dataresult[i][0] + '">' + dataresult[i][0] + '</option>';
+      }
+      $('#addMymodbusTplSelector').html(opts);
+    }
+  });
+});
+
+$('#bt_healthmymodbus').on('click', function () {
+  $('#md_modal').dialog({title: "{{Santé mymodbus}}"});
+  $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=health').dialog('open');
+});
+
+$('#bt_templatesMymodbus').on('click', function () {
+  $('#md_modal').dialog({title: "{{Gestion des templates d'équipement MyModbus}}"});
+  $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=templates').dialog('open');
+});
+
+$('#bt_move_cmd').on('click', function () {
+  $('#md_modal').dialog({title: "{{Déplacement des commandes MyModbus}}"});
+  $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=move_cmd').dialog('open');
+});
+
+$('.eqLogicAction[data-action=bt_docSpecific]').on('click', function () {
+  window.open('https://mrwaloo.github.io/jeedom-plugins-doc/fr_FR/mymodbus_doc');
+});
+
+// *********** Evénements de la page de l'édition d'un équipement
+
+$('.eqLogicAction[data-action=createTemplate]').off('click').on('click', function () {
+  bootbox.prompt({
+    title: "{{Nom du nouveau template ?}}",
+    callback: function (result) {
+      if (result !== null) {
+        mymodbus.callPluginAjax({
+          data: {
+            action: "createTemplate",
+            id: mymodbus.getEqId(),
+            name : result
+          }
+        });
+      }
+    }
+  });
+});
+
+$('.eqLogicAction[data-action=applyTemplate]').off('click').on('click', function () {
+  mymodbus.callPluginAjax({
+    data: {
+      action: "getTemplateList",
+    },
+    success: function (dataresult) {
+      var dialog_message = '<label class="control-label">{{Choisissez un template :}}</label> ';
+      dialog_message += '<select class="bootbox-input bootbox-input-select form-control" id="applyTemplateSelector">';
+      for(var i in dataresult) {
+        dialog_message += '<option value="'+dataresult[i][0]+'">'+dataresult[i][0]+'</option>';
+      }
+      dialog_message += '</select><br/>';
+
+      dialog_message += '<label class="control-label">{{Que voulez-vous faire des commandes existantes ?}}</label> ';
+      dialog_message += '<div class="radio"><label><input type="radio" name="applyTemplateCommand" value="1" checked="checked">{{Les conserver / Mettre à jour}}</label></div>';
+      dialog_message += '<div class="radio"><label><input type="radio" name="applyTemplateCommand" value="0">' + "{{Les supprimer d'abord}}" + '</label></div>';
+
+      bootbox.confirm({
+        title: '{{Appliquer un Template}}',
+        message: dialog_message,
+        callback: function (result){ if (result) {
+          mymodbus.callPluginAjax({
+            data: {
+              action: "applyTemplate",
+              id: mymodbus.getEqId(),
+              templateName : $("#applyTemplateSelector").val(),
+              keepCmd: $("[name='applyTemplateCommand']:checked").val()
+            },
+            success: function (dataresult) {
+              $('.eqLogicDisplayCard[data-eqLogic_id=' + mymodbus.getEqId() + ']').click();
+            }
+          });
+        }}
+      });
+    }
+  });
+});
+
 /* Permet la réorganisation des commandes dans l'équipement */
 $("#table_cmd").sortable({
   axis: "y",
@@ -23,449 +179,680 @@ $("#table_cmd").sortable({
   tolerance: "intersect",
   forcePlaceholderSize: true
 });
-$("#table_mymodbusFilters").sortable({axis: "y", cursor: "move", items: ".filter", placeholder: "ui-state-highlight", tolerance: "intersect", forcePlaceholderSize: true});
-/*
- * Fonction pour l'ajout de commande, appellé automatiquement par plugin.template
- */
-$('.eqLogicAction[data-action=bt_docSpecific]').on('click', function () {
-    window.open('https://bebel27a.github.io/jeedom-mymobdus.github.io/fr_FR/');
-});
-$('.pluginAction[data-action=openLink]').on('click',function(){
-    window.open($(this).attr("data-location"), "_blank", null);
-});
-$('#bt_healthmymodbus').on('click', function () {
-    $('#md_modal').dialog({title: "{{Santé mymodbus}}"});
-    $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=health').dialog('open');
-});
-$('.bt_showExpressionTest').off('click').on('click', function () {
-  $('#md_modal').dialog({title: "{{Testeur d'expression}}"});
-  $("#md_modal").load('index.php?v=d&modal=expression.test').dialog('open');
-});
-$('.bt_showNoteManagement').off('click').on('click', function () {
-  $('#md_modal').dialog({title: "{{Notes}}"});
-  $("#md_modal").load('index.php?v=d&modal=note.manager').dialog('open');
-});
-$('#bt_templatesmymodbus').on('click', function () {
-    $('#md_modal').dialog({title: "{{Gestion des templates d'équipements mymobus}}"});
-    $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=templates').dialog('open');
-});
 
- function prePrintEqLogic() {
-    $('.eqLogicAttr[data-l1key=configuration][data-l2key=protocol]').off();
-}
-
-function  printEqLogic(_eqLogic) {
-    $.showLoading();
-    $('.eqLogicAttr[data-l1key=configuration][data-l2key=protocol]').off();
-    if (isset(_eqLogic.configuration) && isset(_eqLogic.configuration.protocol)) {
-        $('#div_protocolParameters').load('index.php?v=d&plugin=mymodbus&modal=' + _eqLogic.configuration.protocol + '.configuration', function () {
-            $('body').setValues(_eqLogic, '.eqLogicAttr');
-            //initCheckBox();
-            $('.eqLogicAttr[data-l1key=configuration][data-l2key=protocol]').off().on('change', function () {
-                $('#div_protocolParameters').load('index.php?v=d&plugin=mymodbus&modal=' + $(this).val() + '.configuration',function(){
-                    //initCheckBox();
-                });
-            });
-            modifyWithoutSave = false;
-            $.hideLoading();
-        });
-    } else {
-        $('.eqLogicAttr[data-l1key=configuration][data-l2key=protocol]').on('change', function () {
-            $('#div_protocolParameters').load('index.php?v=d&plugin=mymodbus&modal=' + $(this).val() + '.configuration',function(){
-                //initCheckBox();
-            });
-        });
-        $.hideLoading();
+function printEqLogic(_eqLogic) {
+  //console.log('eqLogic : ' + init(JSON.stringify(_eqLogic)));
+  if (isset(_eqLogic.configuration.keepopen)) {
+    delete _eqLogic.configuration.keepopen;
+    modifyWithoutSave = true;
+  }
+  if (isset(_eqLogic.configuration.eqKeepopen)) {
+    delete _eqLogic.configuration.eqKeepopen;
+    modifyWithoutSave = true;
+  }
+  if (isset(_eqLogic.configuration.eqTcpRtu)) {
+    delete _eqLogic.configuration.eqTcpRtu;
+    modifyWithoutSave = true;
+  }
+  if (isset(_eqLogic.configuration.eqTcpPort)) {
+    if (!isset(_eqLogic.configuration.eqPortNetwork)) {
+      _eqLogic.configuration.eqPortNetwork = _eqLogic.configuration.eqTcpPort;
     }
+    delete _eqLogic.configuration.eqTcpPort;
+    modifyWithoutSave = true;
+  }
+  if (isset(_eqLogic.configuration.eqTcpAddr)) {
+    if (!isset(_eqLogic.configuration.eqAddr)) {
+      _eqLogic.configuration.eqAddr = _eqLogic.configuration.eqTcpAddr;
+    }
+    delete _eqLogic.configuration.eqTcpAddr;
+    modifyWithoutSave = true;
+  }
+  if (isset(_eqLogic.configuration.eqUdpPort)) {
+    if (!isset(_eqLogic.configuration.eqPortNetwork)) {
+      _eqLogic.configuration.eqPortNetwork = _eqLogic.configuration.eqUdpPort;
+    }
+    delete _eqLogic.configuration.eqUdpPort;
+    modifyWithoutSave = true;
+  }
+  if (isset(_eqLogic.configuration.eqUdpAddr)) {
+    if (!isset(_eqLogic.configuration.eqAddr)) {
+      _eqLogic.configuration.eqAddr = _eqLogic.configuration.eqUdpAddr;
+    }
+    delete _eqLogic.configuration.eqUdpAddr;
+    modifyWithoutSave = true;
+  }
+  if (isset(_eqLogic.configuration.eqSerialInterface)) {
+    if (!isset(_eqLogic.configuration.eqPortSerial)) {
+      _eqLogic.configuration.eqPortSerial = _eqLogic.configuration.eqSerialInterface;
+    }
+    delete _eqLogic.configuration.eqSerialInterface;
+    modifyWithoutSave = true;
+  }
+  // Define the default configuration's value
+  if (!isset(_eqLogic.configuration.eqRefreshMode) || _eqLogic.configuration.eqRefreshMode == '') {
+    _eqLogic.configuration.eqRefreshMode = 'polling';
+    modifyWithoutSave = true;
+  }
+  if (!isset(_eqLogic.configuration.eqPolling) || _eqLogic.configuration.eqPolling == '') {
+    _eqLogic.configuration.eqPolling = '5';
+    modifyWithoutSave = true;
+  }
+  if (!isset(_eqLogic.configuration.eqTimeout) || _eqLogic.configuration.eqTimeout == '') {
+    _eqLogic.configuration.eqTimeout = '5';
+    modifyWithoutSave = true;
+  }
+  if (!isset(_eqLogic.configuration.eqWriteCmdCheckTimeout) || _eqLogic.configuration.eqWriteCmdCheckTimeout == '') {
+    _eqLogic.configuration.eqWriteCmdCheckTimeout = '0.01';
+    modifyWithoutSave = true;
+  }
+  if (!isset(_eqLogic.configuration.eqRetries) || _eqLogic.configuration.eqRetries == '') {
+    _eqLogic.configuration.eqRetries = '3';
+    modifyWithoutSave = true;
+  }
+  if (!isset(_eqLogic.configuration.eqFirstDelay) || _eqLogic.configuration.eqFirstDelay == '') {
+    _eqLogic.configuration.eqFirstDelay = '0';
+    modifyWithoutSave = true;
+  }
+  if (!isset(_eqLogic.configuration.eqErrorDelay) || _eqLogic.configuration.eqErrorDelay == '') {
+    _eqLogic.configuration.eqErrorDelay = '1';
+    modifyWithoutSave = true;
+  }
+  
+  // Afficher la partie variable de la configuration de l'équipement en fonction du protocole choisi
+  $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqProtocol]').off().on('change', function () {
+    if ($(this).val() != '' && !is_null($(this).val())) {
+      var show_shared = ($(this).val() === 'shared_from');
+      var show_network = ($(this).val() !== 'serial');
+      const sharedInterface = $('#div_sharedInterface');
+      const protocolParameters = $('#div_protocolParameters');
+      const networkConfig = $('#div_protocolParameters .networkConfig');
+      const serialConfig = $('#div_protocolParameters .serialConfig');
+      if (show_shared) {
+        sharedInterface.show();
+        protocolParameters.hide();
+      } else {
+        sharedInterface.hide();
+        protocolParameters.show();
+        if (show_network) {
+          networkConfig.show();
+          serialConfig.hide();
+        } else {
+          networkConfig.hide();
+          serialConfig.show();
+        }
+      }
+    }
+  });
+
+  const selectElement = document.getElementById('sharedInterface');
+  for (let i = 0; i < selectElement.options.length; i++) {
+    if (selectElement.options[i].value === _eqLogic.id) {
+      selectElement.options[i].classList.add('hidden');
+    }
+  }
+
+  const div_eqlogicId = document.getElementById('eqlogicId_in_tab');
+  let html_eqId = '<i class="fas fa-tachometer-alt"></i> {{Equipement}} (ID: ' + _eqLogic.id.toString() + ')';
+  div_eqlogicId.innerHTML = html_eqId;
+
+  // load values
+  $('#eqLogic').setValues(_eqLogic, '.eqLogicAttr');
 }
 
-//$("#table_cmd").delegate(".listEquipementInfo", 'click', function() {
-//    var el = $(this);
-//    jeedom.cmd.getSelectModal({cmd: {type: 'info'}}, function(result) {
-//        var calcul = el.closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=request]');
-//        calcul.atCaret('insert', result.human);
- //   });
-//});
-//$("#table_cmd").delegate(".listEquipementInfo1", 'click', function () {
-//  var el = $(this);
-//  jeedom.cmd.getSelectModal({cmd: {type: 'info'}}, function(result) {
-//    var calcul = el.closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=parameters]');
-//    calcul.atCaret('insert', result.human);
-//  });
-//});
+$('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRefreshMode]').off().on('change', function () {
+  if ($(this).val() == 'polling') {
+    $('#eqPolling').show();
+  } else {
+    $('#eqPolling').hide();
+  }
+});
+
+// Génère la liste déroulante de choix du bit dans deux octets
+var bitSelect = 
+      '         <div class="col-xs-4">' +
+      '           <select class="conditionAttr form-control" data-l1key="operande">' +
+      '             <optgroup label="{{Premier Octet}}">';
+for (let i = 0; i < 16; i++) {
+  if (i == 8) {
+    bitSelect +=
+      '             </optgroup>' +
+      '             <optgroup label="{{Second Octet}}">';
+  }
+  bitSelect += '               <option value="' + 2**i + '">Bit ' + i % 8 + '</option>';
+}
+bitSelect += 
+      '             </optgroup>' +
+      '           </select>' +
+      '         </div>';
+
+$("#table_cmd").delegate(".paramFiltre", 'click', function () {
+  var el = $(this);
+  var calcul = el.closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=cmdOption]');
+  var message = '<div class="row">  ' +
+      '   <div class="col-md-12"> ' +
+      '     <form class="form-horizontal" onsubmit="return false;"> ' +
+      '       <div class="form-group"> ' +
+      '         <label class="col-xs-5 control-label">{{Filtrer sur :}}</label>' +
+      bitSelect +
+      '       </div>' +
+      '     </form>' +
+      '   </div>' +
+      '</div>';
+  bootbox.dialog({
+    title: "{{Ajout d'un filtre}}",
+    message: message,
+    buttons: {
+      "{{Annuler}}": {
+        className: "btn-default",
+        callback: function () {
+          return;
+        }
+      },
+      success: {
+        label: "{{Valider}}",
+        className: "btn-primary",
+        callback: function () {
+          var condition = '#value# & ' + $('.conditionAttr[data-l1key=operande]').value();
+          calcul.atCaret('insert', condition);
+        }
+      },
+    }
+  });
+});
+
 $("#table_cmd").delegate(".listEquipementInfo", 'click', function () {
-	var el = $(this);
-	jeedom.cmd.getSelectModal({cmd: {type: 'info'}}, function (result) {
-		var calcul = el.closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=request]');
-		// définition de la structure du message 
-		var message = '<div class="row">  ' +
-			'<div class="col-md-12"> ' +
-			'<form class="form-horizontal" onsubmit="return false;"> ' +
-			'<div class="form-group"> ' +
-			'<label class="col-xs-5 control-label" >'+result.human+' {{=>}}</label>' +
-			'             <div class="col-xs-3">' +
-			'                <select class="conditionAttr form-control" data-l1key="operator">' +
-			'                    <option value="&">{{AND}}</option>' +
-			'                  <option value="|">{{OR}}</option>' +
-			'                  <option value="^">{{XOR}}</option>' +
-			'            </select>' +
-			'       </div>' +
-			'      <div class="col-xs-4">' +
-			'               <select class="conditionAttr form-control" data-l1key="operande">' +
-			'					<optgroup label="Premier Octet">' +
-			'                   <option value="1">{{Bit 1}}</option>' +
-			'                  	<option value="2">{{Bit 2}}</option>' +
-			'                  	<option value="4">{{Bit 3}}</option>' +	
-			'                  	<option value="8">{{Bit 4}}</option>' +
-			'                  	<option value="16">{{Bit 5}}</option>' +
-			'                  	<option value="32">{{Bit 6}}</option>' +
-			'                  	<option value="64">{{Bit 7}}</option>' +
-			'                  	<option value="128">{{Bit 8}}</option>' +
-			'					</optgroup>' +
-			'					<optgroup label="Second Octet">' +
-			'					<option value="256">{{Bit 1}}</option>' +
-			'                  	<option value="512">{{Bit 2}}</option>' +
-			'                  	<option value="1024">{{Bit 3}}</option>' +	
-			'                  	<option value="2048">{{Bit 4}}</option>' +
-			'                  	<option value="4096">{{Bit 5}}</option>' +
-			'                  	<option value="8192">{{Bit 6}}</option>' +
-			'                  	<option value="16384">{{Bit 7}}</option>' +
-			'                  	<option value="32768">{{Bit 8}}</option>' +
-			'					</optgroup>' +
-			'            	</select>' +			
-			'    </div>' +
-			'</div>' +
-			'<div class="form-group"> ' +
-			'<label class="col-xs-5 control-label" >{{Ensuite}}</label>' +
-			'             <div class="col-xs-3">' +
-			'                <select class="conditionAttr form-control" data-l1key="next">' +
-			'                    <option value="">rien</option>' +
-			'            </select>' +
-			'       </div>' +
-			'</div>' +
-			'</div> </div>' +
-			'</form> </div>  </div>';
-		bootbox.dialog({
-			title: "{{Ajout d'un filtre }}",
-			message: message,
-			buttons: {
-				"Ne rien mettre": {
-					className: "btn-default",
-					callback: function () {
-						calcul.atCaret('insert', result.human);
-					}
-				},
-				success: {
-					label: "Valider",
-					className: "btn-primary",
-					callback: function () {
-    					var condition = result.human;
-						condition += ' ' + $('.conditionAttr[data-l1key=operator]').value();
-						condition += ' ' + $('.conditionAttr[data-l1key=operande]').value();
-						condition += ' ' + $('.conditionAttr[data-l1key=next]').value()+' ';
-						calcul.atCaret('insert', condition);
-						if($('.conditionAttr[data-l1key=next]').value() != ''){
-							el.click();
-						}
-					}
-				},
-			}
-		});
-	});
-});
+  var el = $(this);
+  jeedom.cmd.getSelectModal({ cmd: { type: 'info' } }, function (result) {
+    var calcul = el.closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=' + el.data('input') + ']');
+    calcul.atCaret('insert', result.human);
+  })
+})
 
-$("#table_cmd").delegate(".listEquipementInfo1", 'click', function () {
-	var el = $(this);
-	jeedom.cmd.getSelectModal({cmd: {type: 'info'}}, function (result) {
-		var calcul = el.closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=parameters]');
-		// définition de la structure du message 
-		var message = '<div class="row">  ' +
-			'<div class="col-md-12"> ' +
-			'<form class="form-horizontal" onsubmit="return false;"> ' +
-			'<div class="form-group"> ' +
-			'<label class="col-xs-5 control-label" >'+result.human+' {{=>}}</label>' +
-			'             <div class="col-xs-3">' +
-			'                <select class="conditionAttr form-control" data-l1key="operator">' +
-			'                    <option value="&">{{AND}}</option>' +
-			'                  <option value="|">{{OR}}</option>' +
-			'                  <option value="^">{{XOR}}</option>' +
-			'            </select>' +
-			'       </div>' +
-			'      <div class="col-xs-4">' +
-			'               <select class="conditionAttr form-control" data-l1key="operande">' +
-			'					<optgroup label="Premier Octet">' +
-			'                   <option value="1">{{Bit 1}}</option>' +
-			'                  	<option value="2">{{Bit 2}}</option>' +
-			'                  	<option value="4">{{Bit 3}}</option>' +	
-			'                  	<option value="8">{{Bit 4}}</option>' +
-			'                  	<option value="16">{{Bit 5}}</option>' +
-			'                  	<option value="32">{{Bit 6}}</option>' +
-			'                  	<option value="64">{{Bit 7}}</option>' +
-			'                  	<option value="128">{{Bit 8}}</option>' +
-			'					</optgroup>' +
-			'					<optgroup label="Second Octet">' +
-			'					<option value="256">{{Bit 1}}</option>' +
-			'                  	<option value="512">{{Bit 2}}</option>' +
-			'                  	<option value="1024">{{Bit 3}}</option>' +	
-			'                  	<option value="2048">{{Bit 4}}</option>' +
-			'                  	<option value="4096">{{Bit 5}}</option>' +
-			'                  	<option value="8192">{{Bit 6}}</option>' +
-			'                  	<option value="16384">{{Bit 7}}</option>' +
-			'                  	<option value="32768">{{Bit 8}}</option>' +
-			'					</optgroup>' +
-			'            	</select>' +			
-			'    </div>' +
-			'</div>' +
-			'<div class="form-group"> ' +
-			'<label class="col-xs-5 control-label" >{{Ensuite}}</label>' +
-			'             <div class="col-xs-3">' +
-			'                <select class="conditionAttr form-control" data-l1key="next">' +
-			'                    <option value="">rien</option>' +
-		//	'                  <option value="OU">{{ou}}</option>' +
-			'            </select>' +
-			'       </div>' +
-			'</div>' +
-			'</div> </div>' +
-			'</form> </div>  </div>';
-		bootbox.dialog({
-			title: "{{Ajout d'un filtre }}",
-			message: message,
-			buttons: {
-				"Ne rien mettre": {
-					className: "btn-default",
-					callback: function () {
-						calcul.atCaret('insert', result.human);
-					}
-				},
-				success: {
-					label: "Valider",
-					className: "btn-primary",
-					callback: function () {
-    					var condition = result.human;
-						condition += ' ' + $('.conditionAttr[data-l1key=operator]').value();
-						condition += ' ' + $('.conditionAttr[data-l1key=operande]').value();
-						condition += ' ' + $('.conditionAttr[data-l1key=next]').value()+' ';
-						calcul.atCaret('insert', condition);
-						if($('.conditionAttr[data-l1key=next]').value() != ''){
-							el.click();
-						}
-					}
-				},
-			}
-		});
-	});
-});
+// inspired from jeedom.eqLogic.buildSelectCmd
+listSourceBlobs = function(_params) {
+  jeedom.eqLogic.getCmd({
+    id: _params.id,
+    async: false,
+    success: function(cmds) {
+      var resultBin = '';
+      var resultNum = '';
+      for (var i in cmds) {
+        if (cmds[i].configuration.cmdFormat === 'blob') {
+          resultBin += '<option value="' + cmds[i].id + '">' + cmds[i].name + '</option>';
+          if (cmds[i].subType !== 'binary') {
+            resultNum += '<option value="' + cmds[i].id + '">' + cmds[i].name + '</option>';
+          }
+        }
+      }
+      if (typeof(_params.success) == 'function') {
+        _params.success(resultBin, resultNum);
+      }
+    }
+  });
+}
+listSourceValues = function(_params) {
+  jeedom.eqLogic.getCmd({
+    id: _params.id,
+    async: false,
+    success: function(cmds) {
+      var result = '';
+      for (var i in cmds) {
+        if (cmds[i].type === 'info' && cmds[i].configuration.cmdFormat != 'blob' && cmds[i].logicalId === '') {
+          result += '<option value="' + cmds[i].id + '">' + cmds[i].name + '</option>';
+        }
+      }
+      if (typeof(_params.success) == 'function') {
+        _params.success(result);
+      }
+    }
+  });
+}
 
-$("#table_cmd").delegate(".listEquipementInfo2", 'click', function () {
-	var el = $(this);
-	var calcul = el.closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=request]');
-	var message = '<div class="row">  ' +
-			'<div class="col-md-12"> ' +
-			'<form class="form-horizontal" onsubmit="return false;"> ' +
-			'<div class="form-group"> ' +
-			'<label class="col-xs-5 control-label" >{{=>}}</label>' +
-			'             <div class="col-xs-3">' +
-			'                <select class="conditionAttr form-control" data-l1key="operator">' +
-			'                    <option value="&">{{AND}}</option>' +
-			'                  <option value="|">{{OR}}</option>' +
-			'                  <option value="^">{{XOR}}</option>' +
-			'            </select>' +
-			'       </div>' +
-			'      <div class="col-xs-4">' +
-			'               <select class="conditionAttr form-control" data-l1key="operande">' +
-			'					<optgroup label="Premier Octet">' +
-			'                   <option value="1">{{Bit 1}}</option>' +
-			'                  	<option value="2">{{Bit 2}}</option>' +
-			'                  	<option value="4">{{Bit 3}}</option>' +	
-			'                  	<option value="8">{{Bit 4}}</option>' +
-			'                  	<option value="16">{{Bit 5}}</option>' +
-			'                  	<option value="32">{{Bit 6}}</option>' +
-			'                  	<option value="64">{{Bit 7}}</option>' +
-			'                  	<option value="128">{{Bit 8}}</option>' +
-			'					</optgroup>' +
-			'					<optgroup label="Second Octet">' +
-			'					<option value="256">{{Bit 1}}</option>' +
-			'                  	<option value="512">{{Bit 2}}</option>' +
-			'                  	<option value="1024">{{Bit 3}}</option>' +	
-			'                  	<option value="2048">{{Bit 4}}</option>' +
-			'                  	<option value="4096">{{Bit 5}}</option>' +
-			'                  	<option value="8192">{{Bit 6}}</option>' +
-			'                  	<option value="16384">{{Bit 7}}</option>' +
-			'                  	<option value="32768">{{Bit 8}}</option>' +
-			'					</optgroup>' +
-			'            	</select>' +			
-			'    </div>' +
-			'</div>' +
-			'<div class="form-group"> ' +
-			'<label class="col-xs-5 control-label" >{{Ensuite}}</label>' +
-			'             <div class="col-xs-3">' +
-			'                <select class="conditionAttr form-control" data-l1key="next">' +
-			'                    <option value="">rien</option>' +
-		//	'                  <option value="OU">{{ou}}</option>' +
-			'            </select>' +
-			'       </div>' +
-			'</div>' +
-			'</div> </div>' +
-			'</form> </div>  </div>';
-		bootbox.dialog({
-			title: "{{Ajout d'un filtre }}",
-			message: message,
-			buttons: {
-				"Ne rien mettre": {
-					className: "btn-default",
-					callback: function () {
-						return;
-					}
-				},
-				success: {
-					label: "Valider",
-					className: "btn-primary",
-					callback: function () {
-    					var condition = '';
-						condition += ' ' + $('.conditionAttr[data-l1key=operator]').value();
-						condition += ' ' + $('.conditionAttr[data-l1key=operande]').value();
-						condition += ' ' + $('.conditionAttr[data-l1key=next]').value()+' ';
-						calcul.atCaret('insert', condition);
-						if($('.conditionAttr[data-l1key=next]').value() != ''){
-							el.click();
-						}
-					}
-				},
-			}
-		});
-	});
+function actualise_visible(me, source, _template = false) {
+  if (source !== 'first call') {
+    modifyWithoutSave = true;
+  }
+  //var cmdName = $(me).closest('tr').find('.cmdAttr[data-l1key=name]').value();
+  //console.log(cmdName + ' *-*-*-*-*-*-*-*-*-* ' + source);
+  var cmdLogicalId = $(me).closest('tr').find('.cmdAttr[data-l1key=logicalId]').value();
+  var cmdType = $(me).closest('tr').find('.cmdAttr[data-l1key=type]').value();
+  var subType = $(me).closest('tr').find('.cmdAttr[data-l1key=subType]').value();
+  var cmdFctModbusEl = $(me).closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=cmdFctModbus]');
+  var cmdFctModbus = $(cmdFctModbusEl).value();
+  var cmdFormatEl = $(me).closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=cmdFormat]');
+  var cmdFormat = $(cmdFormatEl).value();
+  var show_invertSetting = false;
+  
+  $(me).closest('tr').find('.formatNum').hide();
+  $(me).closest('tr').find('.formatBin').hide();
+  $(me).closest('tr').find('.FctBlobBin').hide();
+  $(me).closest('tr').find('.FctBlobNum').hide();
+  $(me).closest('tr').find('.notFctBlob').hide();
+  $(me).closest('tr').find('.invertSetting').hide();
+  $(me).closest('tr').find('.readFunction').hide();
+  $(me).closest('tr').find('.writeFunction').hide();
+  $(me).closest('tr').find('.readBin').hide();
+  $(me).closest('tr').find('.readNum').hide();
+  $(me).closest('tr').find('.withSlave').hide();
+  $(me).closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=listValue]').hide();
+  
+  if (_template || cmdLogicalId == '') { // without a logicalId
+    if (cmdFctModbus != 'fromBlob') {
+      $(me).closest('tr').find('.withSlave').show();
+    }
+    
+    if (cmdType == 'info') {
+      $(me).closest('tr').find('.readFunction').show();
+      if (subType == 'binary') {
+        $(me).closest('tr').find('.readBin').show();
+        $(me).closest('tr').find('.readNum').show();
+        if (cmdFctModbus == '1' || cmdFctModbus == '2') {
+          $(me).closest('tr').find('.formatBin').show();
+        } else {
+          $(me).closest('tr').find('.formatNum').show();
+        }
+      } else {
+        $(me).closest('tr').find('.readNum').show();
+        $(me).closest('tr').find('.formatNum').show();
+      }
+      if (cmdFctModbus != 'fromBlob') {
+        $(me).closest('tr').find('.notFctBlob').show();
+      } else {
+        if (subType == 'binary') {
+          $(me).closest('tr').find('.FctBlobBin').show();
+          $(me).closest('tr').find('.formatBin').show();
+          $(me).closest('tr').find('.formatNum').show();
+        } else {
+          $(me).closest('tr').find('.FctBlobNum').show();
+        }
+      }
+      if (cmdFormat != 'blob') {
+        show_invertSetting = true;
+      }
+      
+    } else { // action
+      $(me).closest('tr').find('.writeFunction').show();
+      if (cmdFctModbus == '5' || cmdFctModbus == '15') {
+        $(me).closest('tr').find('.formatBin').show();
+      } else {
+        $(me).closest('tr').find('.formatNum').show();
+      }
+      if (subType == 'select') {
+        $(me).closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=listValue]').show();
+      }
+      show_invertSetting = true;
+    }
 
-$("#bt_add_Action").on('click', function (event) {
-  addCmdToTable({type: 'action'});
-  modifyWithoutSave = true;
-});
+    if (show_invertSetting) {
+      $(me).closest('tr').find('.invertSetting').show();
+      var format64bit = ['q', 'Q', 'd', 's', 'blob'];
+      var format32bit = format64bit.concat(['i', 'I', 'f', 'i_sf', 'I_sf']);
+      if (format32bit.includes(cmdFormat)) {
+        $(me).closest('tr').find('.invertWords').show();
+      } else {
+        $(me).closest('tr').find('.invertWords').hide();
+      }
+      if (format64bit.includes(cmdFormat)) {
+        $(me).closest('tr').find('.invertDWords').show();
+      } else {
+        $(me).closest('tr').find('.invertDWords').hide();
+      }
+    }
+    
+    selectFirstVisible(cmdFctModbusEl);
+    selectFirstVisible(cmdFormatEl);
+    
+  } else { // with a logicalId
+    $(me).closest('tr').find('.input-group').hide();
+    $(me).closest('tr').find('.cmdAction[data-action=copy]').hide();
+    $(me).closest('tr').find('.cmdAttr[data-l1key=name]').prop('disabled', true);
+    
+    $(me).closest('tr').find('.cmdAttr[data-l1key=value').hide();
+  }
+}
 
-$("#bt_add_Info").on('click', function (event) {
-  addCmdToTable({type: 'info'});
+function selectFirstVisible(selectEl) {
+  var firstVisibleOption = null;
+  var wrongSelection = false;
+  selectEl.find('option').each(function() {
+    var option = $(this);
+    var visible = option[0].style.display !== "none";
+    if (option.is(':selected') && !visible) {
+      wrongSelection = true;
+    }
+    if (visible && firstVisibleOption === null) {
+      firstVisibleOption = option.value();
+    }
+  });
+  if (wrongSelection) {
+    $(selectEl).val(firstVisibleOption).change();
+  }
+}
+
+function getTrfromCmd(_cmd, _template = false) {
+  let formDisabled = (_template) ? ' disabled' : '';
+  // id
+  let dataCmdId = (!_template) ? 'data-cmd_id="' + init(_cmd.id) : '';
+  let tr = '<tr class="cmd" ' + dataCmdId + '">';
+  if (!_template) {
+    tr += ' <td class="hidden-xs">'
+    tr += '   <span class="cmdAttr" data-l1key="id" disabled></span>'
+    tr += '   <span class="cmdAttr" data-l1key="logicalId" hidden></span>'
+    tr += ' </td>'
+  }
+  // Nom
+  tr += ' <td class="name">';
+  tr += '   <input class="cmdAttr form-control input-sm" data-l1key="name"' + formDisabled + '>';
+  tr += '   <select class="cmdAttr form-control input-sm" data-l1key="value" style="display : none;margin-top : 5px;" title="{{Commande info liée}}"' + formDisabled + '>';
+  tr += '     <option value="">Aucune</option>';
+  tr += '   </select>';
+  tr += ' </td>';
+  // Valeur
+  if (!_template) {
+    tr += ' <td>';
+    tr += '   <span class="cmdAttr" data-l1key="htmlstate"></span>';
+    tr += ' </td>';
+  }
+  // Type
+  tr += ' <td>';
+  tr += '   <div class="input-group">';
+  tr += '     <span class="type" id="' + init(_cmd.type) + '" type="' + init(_cmd.type) + '">' + jeedom.cmd.availableType() + '</span>';
+  tr += '     <span class="subType" subType="' + init(_cmd.subType) + '"></span>';
+  tr += '   </div>';
+  tr += ' </td>';
+  // Adresse esclave
+  tr += ' <td><input class="cmdAttr form-control input-sm withSlave" data-l1key="configuration" data-l2key="cmdSlave"' + formDisabled + '></td>';
+  // Modbus function / Data format
+  tr += ' <td>';
+  tr += '   <div class="input-group" style="margin-bottom:5px;">';
+  tr += '     <select class="cmdAttr form-control input-sm" style="width:230px;" data-l1key="configuration" data-l2key="cmdFctModbus"' + formDisabled + '>';
+  tr += '       <option class="readBin" value="1">[0x01] Read coils</option>';
+  tr += '       <option class="readBin" value="2">[0x02] Read discrete inputs</option>';
+  tr += '       <option class="readNum" value="3">[0x03] Read holding registers</option>';
+  tr += '       <option class="readNum" value="4">[0x04] Read input registers</option>';
+  tr += '       <option class="writeFunction" value="5">[0x05] Write single coil</option>';
+  tr += '       <option class="writeFunction" value="15">[0x0F] Write coils</option>';
+  tr += '       <option class="writeFunction" value="6">[0x06] Write register</option>';
+  tr += '       <option class="writeFunction" value="16">[0x10] Write registers</option>';
+  tr += '       <option class="readFunction" value="fromBlob">{{Depuis une plage de registres}}</option>';
+  tr += '     </select>';
+  tr += '   </div>';
+  tr += '   <div class="input-group">';
+  tr += '     <select class="cmdAttr form-control input-sm" style="width:230px;" data-l1key="configuration" data-l2key="cmdFormat"' + formDisabled + '>';
+  tr += '       <option class="formatBin" value="bit">bit (0 / 1)</option>';
+  tr += '       <optgroup class="formatNum" label="8 bits">';
+  tr += '         <option class="formatNum" value="uint8">uint8 LSB (0 ... 255)</option>';
+  tr += '         <option class="formatNum" value="uint8-msb">uint8 MSB (0 ... 255)</option>';
+  tr += '       </optgroup>';
+  tr += '       <optgroup class="formatNum" label="16 bits">';
+  tr += '         <option class="formatNum" value="h">int16 (-32 768 ... 32 767)</option>';
+  tr += '         <option class="formatNum" value="H">uint16 (0 ... 65 535)</option>';
+  tr += '       </optgroup>';
+  tr += '       <optgroup class="formatNum" label="32 bits ({{2 registres}})">';
+  tr += '         <option class="formatNum" value="i">int32 (-2 147 483 648 ... 2 147 483 647)</option>';
+  tr += '         <option class="formatNum" value="I">uint32 (0 ... 4 294 967 295)</option>';
+  tr += '         <option class="formatNum" value="f">float32 (Real 32bit)</option>';
+  tr += '       </optgroup>';
+  tr += '       <optgroup class="formatNum" label="64 bits ({{4 registres}})">';
+  tr += '         <option class="formatNum" value="q">int64 (-9e18 ... 9e18)</option>';
+  tr += '         <option class="formatNum" value="Q">uint64 (0 ... 18e18)</option>';
+  tr += '         <option class="formatNum" value="d">float64 (Real 64bit)</option>';
+  tr += '       </optgroup>';
+  tr += '       <option class="formatNum" value="s">{{Chaine de caractères}}</option>';
+  tr += '       <option class="notFctBlob" value="blob">{{Plage de registres}}</option>';
+  tr += '       <optgroup class="formatNum" label="{{Spécial}}">';
+  tr += '         <option class="formatNum" value="h_sf">{{SunSpec scale factor int16}}</option>';
+  tr += '         <option class="formatNum" value="H_sf">{{SunSpec scale factor uint16}}</option>';
+  tr += '         <option class="formatNum" value="i_sf">{{SunSpec scale factor int32}}</option>';
+  tr += '         <option class="formatNum" value="I_sf">{{SunSpec scale factor uint32}}</option>';
+  tr += '       </optgroup>';
+  tr += '     </select>';
+  tr += '   </div>';
+  tr += ' </td>';
+  // Adresse Modbus
+  tr += ' <td>';
+  tr += '   <div class="input-group" style="width:100%;">';
+  tr += '     <select class="cmdAttr form-control input-sm FctBlobBin" style="width:100%;" data-l1key="configuration" data-l2key="cmdSourceBlobBin"' + formDisabled + '>';
+  tr += '     </select>';
+  tr += '     <select class="cmdAttr form-control input-sm FctBlobNum" style="width:100%;" data-l1key="configuration" data-l2key="cmdSourceBlobNum"' + formDisabled + '>';
+  tr += '     </select>';
+  tr += '     <input class="cmdAttr form-control input-sm" style="margin-top:5px;" data-l1key="configuration" data-l2key="cmdAddress"' + formDisabled + '/>';
+  tr += '     <label class="checkbox-inline invertSetting">';
+  tr += '       <input type="checkbox" class="cmdAttr checkbox-inline tooltips" data-l1key="configuration" data-l2key="cmdInvertBytes"' + formDisabled + '/>{{Inverser octets}}';
+  tr += '     </label></br>';
+  tr += '     <label class="checkbox-inline invertSetting invertWords">';
+  tr += '       <input type="checkbox" class="cmdAttr checkbox-inline tooltips" data-l1key="configuration" data-l2key="cmdInvertWords"' + formDisabled + '/>{{Inverser mots}}';
+  tr += '     </label></br>';
+  tr += '     <label class="checkbox-inline invertSetting invertDWords">';
+  tr += '       <input type="checkbox" class="cmdAttr checkbox-inline tooltips" data-l1key="configuration" data-l2key="cmdInvertDWords"' + formDisabled + '/>{{Inverser double-mots}}';
+  tr += '     </label></br>';
+  tr += '   </div>';
+  tr += ' </td>';
+  // Paramètre
+  tr += ' <td>';
+  tr += '   <div class="input-group">';
+  tr += '     <input class="cmdAttr form-control input-sm roundedLeft readFunction" data-l1key="configuration" data-l2key="cmdOption" placeholder="{{Option}}"' + formDisabled + '/>';
+  if (!_template) {
+    tr += '     <span class="input-group-btn">';
+    tr += '       <a class="btn btn-default btn-sm cursor paramFiltre roundedRight readFunction" data-input="configuration"><i class="fa fa-list-alt"></i></a>';
+    tr += '     </span>';
+  }
+  tr += '   </div>';
+  tr += '   <div class="input-group notFctBlob">';
+  tr += '     <label class="label">{{Lecture 1x sur :}}&nbsp;';
+  tr += '       <input class="cmdAttr form-inline input-sm" style="width:70px;" data-l1key="configuration" data-l2key="cmdFrequency" placeholder="{{1 par défaut}}"' + formDisabled + '/>';
+  tr += '     </label>';
+  tr += '   </div>';
+  tr += '   <div class="input-group" style="width:100%;">';
+  tr += '     <input class="cmdAttr form-control input-sm roundedLeft writeFunction" data-l1key="configuration" data-l2key="cmdWriteValue" placeholder="{{Valeur}}"' + formDisabled + '/>';
+  if (!_template) {
+    tr += '     <span class="input-group-btn">'
+    tr += '       <a class="btn btn-default btn-sm listEquipementInfo roundedRight writeFunction" data-input="cmdWriteValue"><i class="fas fa-list-alt"></i></a>'
+    tr += '     </span>'
+  }
+  tr += '   </div>';
+  tr += ' </td>';    
+  // Options
+  tr += ' <td>';
+  if (is_numeric(!_template && _cmd.id)) {
+    tr += '   <a class="btn btn-default btn-xs cmdAction" data-action="configure" title="{{Configuration de la commande}}""><i class="fas fa-cogs"></i></a>';
+    tr += '   <a class="btn btn-default btn-xs cmdAction" data-action="test" title="{{Tester}}"><i class="fas fa-rss"></i></a>';
+    tr += '   <a class="btn btn-default btn-xs cmdAction" data-action="copy" title="{{Dupliquer}}"><i class="far fa-clone"></i></a>';
+  }
+  tr += '   <label class="checkbox-inline"><input type="checkbox" class="cmdAttr checkbox-inline" data-l1key="isVisible" checked' + formDisabled + '/>{{Afficher}}</label>';
+  tr += '   <label class="checkbox-inline"><input type="checkbox" class="cmdAttr" data-l1key="isHistorized" data-size="mini"' + formDisabled + '/>{{Historiser}}</label>';
+  tr += '   <div class="input-group" style="margin-top:7px;">';
+  tr += '     <input class="tooltips cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="minValue" placeholder="{{Min}}" title="{{Min}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;"' + formDisabled + '/>';
+  tr += '     <input class="tooltips cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="maxValue" placeholder="{{Max}}" title="{{Max}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;"' + formDisabled + '/>';
+  tr += '     <input class="tooltips cmdAttr form-control input-sm" data-l1key="unite" placeholder="{{Unité}}" title="{{Unité}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;"' + formDisabled + '/>';
+  tr += '     <input class="tooltips cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="listValue" placeholder="{{Liste de \'valeur|texte\' séparés par \';\'}}" title="{{Liste}}" style="min-width:280px;width:290px;margin-right:2px;"' + formDisabled + '>';
+  tr += '   </div>';
+  tr += ' </td>';
+  // Delete button
+  if (!_template) {
+    tr += ' <td>';
+    tr += '   <div class="input-group">';
+    tr += '     <i class="fas fa-minus-circle pull-right cmdAction cursor" data-action="remove" title="{{Supprimer}}"></i>';
+    tr += '   </div>';
+    tr += ' </td>';
+  }
+  tr += '</tr>';
+
+  return tr;
+}
+
+$("#bt_add_command_top").on('click', function (event) {
+  addCmdToTable({});
   modifyWithoutSave = true;
 });
 
 function addCmdToTable(_cmd) {
-    if (!isset(_cmd)) {
-        var _cmd = {configuration: {}};
+  // Minimal structure for _cmd
+  if (!isset(_cmd)) {
+    var _cmd = {configuration: {}};
+  }
+  if (!isset(_cmd.configuration)) {
+    _cmd.configuration = {};
+  }
+  // Conversion from the old version of MyModbus
+  // ****************************************** info
+  if (init(_cmd.type) == 'info') {
+    if (isset(_cmd.configuration.location) && !isset(_cmd.configuration.cmdAddress)) {
+      _cmd.configuration.cmdAddress = _cmd.configuration.location;
+      delete _cmd.configuration.location;
+      modifyWithoutSave = true;
     }
-
-  	if (init(_cmd.type) == 'info') {
-    	var tr = '<tr class="cmd" data-cmd_id="' + init(_cmd.id) + '">';
-    	tr += '<td class="name">';
-    	tr += '<input class="cmdAttr form-control input-sm" data-l1key="id" style="display : none;">';
-    	tr += '<input class="cmdAttr form-control input-sm" data-l1key="name"></td>';
-    	//tr += '<td class="type" type="' + init(_cmd.type) + '">' + jeedom.cmd.availableType();
-      	tr += '<td>';
-    	tr += '<input class="cmdAttr form-control type input-sm" data-l1key="type" value="info" disabled style="margin-bottom : 5px;" />';
-   		tr += '<span class="subType" subType="' + init(_cmd.subType) + '"></span>';
-    	tr += '</td>';
-    	tr += '<td>';
-		tr += '<div class="input-group" style="margin-bottom : 5px;">';
-    	tr += '<select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="type"><option value="coils">Coil</option><option value="discrete_inputs">Discrete Input</option><option value="holding_registers">Holding Register</option><option value="input_registers">Input Register</option><option value="sign">Register Int</option><option value="virg">Register Float</option><option value="swapi32">Eastron Imput</option></select>';
-		tr += '</div>';
-		tr += '<div class="input-group">';
-		tr += '<select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="datatype"><option value="bitsize_16">16 bits</option><option value="bitsize_32">32 bits</option></select>';
-		tr += '</div>';
-		tr += '</td>';
-		tr += '<td><input class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="location"></td>';
-		tr += '<td>';
-		tr += '<div class="input-group" style="margin-bottom : 5px;">';
-		tr += '<input class="cmdAttr form-control input-sm roundedLeft" data-l1key="configuration" data-l2key="request" placeholder="{{Option}}" />';
-    	tr += '<span class="input-group-btn">';
-    	tr += '<a class="btn btn-default btn-sm cursor listEquipementInfo2 roundedRight" data-input="configuration"><i class="fa fa-list-alt "></i></a>';
-		tr += '</span>';
-		tr += '</div>';
-    	tr += '</td>';  
-		tr += '<td>';
-    	tr += '<input class="cmdAttr form-control tooltips input-sm" data-l1key="unite"  style="width : 100px;" placeholder="Unité" title="{{Unité}}">';
-    	tr += '<input class="tooltips cmdAttr form-control input-sm expertModeVisible" data-l1key="configuration" data-l2key="minValue" placeholder="{{Min}}" title="{{Min}}" style="margin-top : 5px;">';
-    	tr += '<input class="tooltips cmdAttr form-control input-sm expertModeVisible" data-l1key="configuration" data-l2key="maxValue" placeholder="{{Max}}" title="{{Max}}" style="margin-top : 5px;">';
-    	tr += '</td>';
-    	tr += '<td>';
-		if (is_numeric(_cmd.id)) {
-			tr += '<a class="btn btn-default btn-xs cmdAction" data-action="configure" title="{{Configuration de la commande}}""><i class="fas fa-cogs"></i></a> ';
-			tr += '<a class="btn btn-default btn-xs cmdAction" data-action="test"title="Tester"><i class="fas fa-rss"></i> </a>';
-			tr += ' <a class="btn btn-default btn-xs cmdAction" data-action="copy" title="Dupliquer"><i class="far fa-clone"></i></a> ';
-    	}
-		tr += '<span><label class="checkbox-inline"><input type="checkbox" class="cmdAttr " data-l1key="isHistorized" data-size="mini"/>{{Historiser}}</label></span> ';
-		tr += '<span><label class="checkbox-inline"><input type="checkbox" class="cmdAttr checkbox-inline" data-l1key="isVisible" checked/>{{Afficher}}</label></span> ';
-    	tr += '<span><label class="checkbox-inline"><input type="checkbox" class="cmdAttr" data-l1key="display" data-l2key="invertBinary"/>{{Inverser}}</label></span> ';
-		tr += '<i class="fas fa-minus-circle pull-right cmdAction cursor" data-action="remove"title="Supprimer"></i></td>';
-    	tr += '</tr>';
-    	$('#table_cmd tbody').append(tr);
-    	var tr = $('#table_cmd tbody tr:last');
-    	jeedom.eqLogic.builSelectCmd({
-    	id:  $('.eqLogicAttr[data-l1key=id]').value(),
-   		filter: {type: 'info'},
-    	error: function (error) {
-      	$('#div_alert').showAlert({message: error.message, level: 'danger'});
-    	},
-    	success: function (result) {
-      	tr.find('.cmdAttr[data-l1key=value]').append(result);
-      	tr.find('.cmdAttr[data-l1key=configuration][data-l2key=updateCmdId]').append(result);
-      	tr.setValues(_cmd, '.cmdAttr');
-      	jeedom.cmd.changeType(tr, init(_cmd.subType));
-    	}
-  		});
+    if (isset(_cmd.configuration.request) && !isset(_cmd.configuration.cmdOption)) {
+      _cmd.configuration.cmdoption = '#value# ' + _cmd.configuration.request;
+      delete _cmd.configuration.request;
+      modifyWithoutSave = true;
     }
-    if (init(_cmd.type) == 'action') {
-      	var tr = '<tr class="cmd" data-cmd_id="' + init(_cmd.id) + '">';
-    	tr += '<td class="name">';
-    	tr += '<input class="cmdAttr form-control input-sm" data-l1key="id" style="display : none;">';
-    	tr += '<input class="cmdAttr form-control input-sm" data-l1key="name"></td>';
-    	//tr += '<td class="type" type="' + init(_cmd.type) + '">' + jeedom.cmd.availableType();
-    	//tr += '<span class="subType" subType="' + init(_cmd.subType) + '"></span></td>';
-      	tr += '<td>';
-    	tr += '<input class="cmdAttr form-control type input-sm" data-l1key="type" value="action" disabled style="margin-bottom : 5px;" />';
-   		tr += '<span class="subType" subType="' + init(_cmd.subType) + '"></span>';
-    	tr += '</td>';
-    	tr += '<td><select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="type"><option value="coils">Coil</option><option value="discrete_inputs">Discrete Input</option><option value="holding_registers">Holding Register</option><option value="Write_Multiple_Holding">Write Multiple Holding</option><option value="input_registers">Input Register</option></select></td>'
-    	tr += '<td><input class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="location"></td>';
-		tr += '<td>';
-    	tr += '<div class="input-group" style="margin-bottom : 5px;">';
-    	tr += '<input class="cmdAttr form-control input-sm roundedLeft" data-l1key="configuration" data-l2key="request" placeholder="{{Valeur}}"/>';
-    	tr += '<span class="input-group-btn">';
-    	tr += '<a class="btn btn-default btn-sm cursor listEquipementInfo roundedRight" data-input="configuration"><i class="fa fa-list-alt "></i></a>';
-    	tr += '</span>';
-    	tr += '</div>';
-    	tr += '<div class="input-group">';
-    	tr += '<input class="cmdAttr form-control input-sm roundedLeft" data-l1key="configuration" data-l2key="parameters" placeholder="{{Valeur de retour }}" />';
-    	tr += '<span class="input-group-btn">';
-    	tr += '<a class="btn btn-default btn-sm cursor listEquipementInfo1 roundedRight" data-input="configuration"><i class="fa fa-list-alt "></i></a>';
-    	tr += '</span>';
-    	tr += '</div>';
-    	tr += '</td>';  
-		tr += '<td>';
-    	tr += '<input class="cmdAttr form-control tooltips input-sm" data-l1key="unite"  style="width : 100px;" placeholder="Unité" title="{{Unité}}">';
-    	tr += '<input class="tooltips cmdAttr form-control input-sm expertModeVisible" data-l1key="configuration" data-l2key="minValue" placeholder="{{Min}}" title="{{Min}}" style="margin-top : 5px;">';
-    	tr += '<input class="tooltips cmdAttr form-control input-sm expertModeVisible" data-l1key="configuration" data-l2key="maxValue" placeholder="{{Max}}" title="{{Max}}" style="margin-top : 5px;">';
-    	tr += '</td>';
-    	tr += '<td>';
-		if (is_numeric(_cmd.id)) {
-			tr += '<a class="btn btn-default btn-xs cmdAction" data-action="configure" title="{{Configuration de la commande}}""><i class="fas fa-cogs"></i></a> ';
-			tr += '<a class="btn btn-default btn-xs cmdAction" data-action="test"title="Tester"><i class="fas fa-rss"></i> </a>';
-			tr += ' <a class="btn btn-default btn-xs cmdAction" data-action="copy" title="Dupliquer"><i class="far fa-clone"></i></a> ';
-    	}
-		tr += '<span><label class="checkbox-inline"><input type="checkbox" class="cmdAttr " data-l1key="isHistorized" data-size="mini" />{{Historiser}}</label></span> ';
-		tr += '<span><label class="checkbox-inline"><input type="checkbox" class="cmdAttr checkbox-inline" data-l1key="isVisible" checked/>{{Afficher}}</label></span> ';
-    	tr += '<span><label class="checkbox-inline"><input type="checkbox" class="cmdAttr" data-l1key="display" data-l2key="invertBinary"/>{{Inverser}}</label></span> ';
-		tr += '<i class="fas fa-minus-circle pull-right cmdAction cursor" data-action="remove"title="Supprimer"></i></td>';
-    	tr += '</tr>';
-    	$('#table_cmd tbody').append(tr);
-    	var tr = $('#table_cmd tbody tr:last');
-    	jeedom.eqLogic.builSelectCmd({
-    	id:  $('.eqLogicAttr[data-l1key=id]').value(),
-   		filter: {type: 'info'},
-    	error: function (error) {
-      	$('#div_alert').showAlert({message: error.message, level: 'danger'});
-    	},
-    	success: function (result) {
-      	tr.find('.cmdAttr[data-l1key=value]').append(result);
-      	tr.find('.cmdAttr[data-l1key=configuration][data-l2key=updateCmdId]').append(result);
-      	tr.setValues(_cmd, '.cmdAttr');
-      	jeedom.cmd.changeType(tr, init(_cmd.subType));
-    	}
-  		});
+    if (isset(_cmd.configuration.type) && init(_cmd.configuration.type) != '' &&
+        !isset(_cmd.configuration.cmdFctModbus) && !isset(_cmd.configuration.cmdFormat)) {
+      if (init(_cmd.configuration.type) == 'coils') {
+        _cmd.configuration.cmdFctModbus = '1';
+        _cmd.configuration.cmdFormat = 'bit';
+      } else if (init(_cmd.configuration.type) == 'discrete_inputs') {
+        _cmd.configuration.cmdFctModbus = '2';
+        _cmd.configuration.cmdFormat = 'bit';
+      } else if (init(_cmd.configuration.type) == 'holding_registers') {
+        _cmd.configuration.cmdFctModbus = '3';
+        _cmd.configuration.cmdFormat = 'H';
+      } else if (init(_cmd.configuration.type) == 'input_registers') {
+        _cmd.configuration.cmdFctModbus = '4';
+        _cmd.configuration.cmdFormat = 'H';
+      } else if (init(_cmd.configuration.type) == 'sign') {
+        _cmd.configuration.cmdFctModbus = '3';
+        _cmd.configuration.cmdFormat = 'h';
+      } else if (init(_cmd.configuration.type) == 'virg') {
+        _cmd.configuration.cmdFctModbus = '3';
+        _cmd.configuration.cmdFormat = 'f';
+      } else if (init(_cmd.configuration.type) == 'swapi32') {
+        _cmd.configuration.cmdFctModbus = '4';
+        _cmd.configuration.cmdFormat = 'f';
+      }
+      
+      delete _cmd.configuration.type;
     }
+    // was never used
+    delete _cmd.configuration.datatype;
+    modifyWithoutSave = true;
+    
+  // ****************************************** action
+  } else if (init(_cmd.type) == 'action') {
+    if (isset(_cmd.configuration.location) && !isset(_cmd.configuration.cmdAddress)) {
+      _cmd.configuration.cmdAddress = _cmd.configuration.location;
+      delete _cmd.configuration.location;
+      modifyWithoutSave = true;
+    }
+    if (isset(_cmd.configuration.request) && !isset(_cmd.configuration.cmdWriteValue)) {
+      _cmd.configuration.cmdWriteValue = _cmd.configuration.request;
+      delete _cmd.configuration.request;
+      modifyWithoutSave = true;
+    }
+    if (isset(_cmd.configuration.type) && init(_cmd.configuration.type) != '' &&
+        !isset(_cmd.configuration.cmdFctModbus) && !isset(_cmd.configuration.cmdFormat)) {
+      if (init(_cmd.configuration.type) == 'coils') {
+        _cmd.configuration.cmdFctModbus = '5';
+        _cmd.configuration.cmdFormat = 'bit';
+      } else if (init(_cmd.configuration.type) == 'holding_registers') {
+        _cmd.configuration.cmdFctModbus = '6';
+        _cmd.configuration.cmdFormat = 'H';
+      } else if (init(_cmd.configuration.type) == 'Write_Multiple_Holding') {
+        _cmd.configuration.cmdFctModbus = '16';
+        _cmd.configuration.cmdFormat = 'H';
+      }
+      
+      delete _cmd.configuration.type;
+    }
+    // was never used
+    delete _cmd.configuration.datatype;
+    modifyWithoutSave = true;
+  }
+  if (isset(_cmd.configuration.cmdFormat)) {
+    format_replace = {
+      'uint8-lsb':   'uint8',
+      'int16':       'h',
+      'uint16':      'H',
+      'int32':       'i',
+      'uint32':      'I',
+      'float32':     'f',
+      'int64':       'q',
+      'uint64':      'Q',
+      'float64':     'd',
+      'string':      's',
+      'int16sp-sf':  'h_sf',
+      'uint16sp-sf': 'H_sf',
+      'uint32sp-sf': 'I_sf'
+    };
+    for (let [search, replace] of Object.entries(format_replace)) {
+      if (_cmd.configuration.cmdFormat == search) {
+        _cmd.configuration.cmdFormat = replace;
+        continue;
+      }
+    }
+  }
+  
+  // Default value for new added commands
+  if (!isset(_cmd.id)) {
+    _cmd.configuration.cmdFctModbus = '3';
+    _cmd.configuration.cmdFormat = 'h';
+  }
+  if (!isset(_cmd.configuration.cmdSlave)) {
+    _cmd.configuration.cmdSlave = '1';
+  }
+  if (!isset(_cmd.configuration.cmdFrequency)){
+    _cmd.configuration.cmdFrequency = '1';
+  }
+  
+  //console.log('CMD - ' + init(JSON.stringify(_cmd)));
+  
+  // The function getTrFromCmd returns the html code for the whole row in the table <tr>...</tr>
+  var tr = getTrfromCmd(_cmd);
+  $('#table_cmd tbody').append(tr);
+  
+  var tr = $('#table_cmd tbody tr:last');
+  listSourceBlobs({
+    id:  mymodbus.getEqId(),
+    error: function (error) {
+      $('#div_alert').showAlert({message: error.message, level: 'danger'});
+    },
+    success: function (resultBin, resultNum) {
+      tr.find('.cmdAttr[data-l1key=configuration][data-l2key=cmdSourceBlobBin]').append(resultBin);
+      tr.find('.cmdAttr[data-l1key=configuration][data-l2key=cmdSourceBlobNum]').append(resultNum);
+    }
+  });
+  
+  listSourceValues({
+    id:  mymodbus.getEqId(),
+    error: function (error) {
+      $('#div_alert').showAlert({message: error.message, level: 'danger'});
+    },
+    success: function (result) {
+      tr.find('.cmdAttr[data-l1key=value]').append(result);
+    }
+  });
+  
+  tr.find('.cmdAttr[data-l1key=type]').off();
+  tr.find('.cmdAttr[data-l1key=subType]').off();
+  tr.find('.cmdAttr[data-l1key=cmdFctModbus]').off();
+  
+  tr.setValues(_cmd, '.cmdAttr');
+  jeedom.cmd.changeType(tr, init(_cmd.subType));
+  
+  tr.find('.cmdAttr[data-l1key=type]').on('change', function () {
+    actualise_visible($(this), 'type');
+  });
+  tr.find('.cmdAttr[data-l1key=subType]').on('change', function () {
+    actualise_visible($(this), 'subType');
+  });
+  tr.find('.cmdAttr[data-l1key=configuration][data-l2key=cmdFctModbus]').on('change', function () {
+    actualise_visible($(this), 'cmdFctModbus');
+  });
+  tr.find('.cmdAttr[data-l1key=configuration][data-l2key=cmdFormat]').on('change', function () {
+    actualise_visible($(this), 'cmdFormat');
+  });
+  
+  actualise_visible($(tr.find('.cmdAttr[data-l1key=type]')), 'first call');
 }

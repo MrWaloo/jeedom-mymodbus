@@ -16,48 +16,98 @@
  * along with Jeedom. If not, see <http://www.gnu.org/licenses/>.
  */
 
-require_once dirname(__FILE__) . '/../../../core/php/core.inc.php';
+require_once __DIR__ . '/../../../core/php/core.inc.php';
 
-function mymodbus_install() {
-	
-    $cron = cron::byClassAndFunction('mymodbus', 'cronDaily');
-    if (!is_object($cron)) {
-        $cron = new cron();
-        $cron->setClass('mymodbus');
-        $cron->setFunction('cronDaily');
-        $cron->setEnable(1);
-        $cron->setDeamon(0);
-        $cron->setSchedule('30 0 * * *');
-        $cron->save();
+function mydeltree($_dir) {
+  if (!is_dir($_dir)) {
+    return;
+  }
+
+  // On utilise scandir avec le drapeau SCANDIR_SORT_DESCENDING pour parcourir les éléments du plus profond au moins profond
+  foreach (scandir($_dir, SCANDIR_SORT_DESCENDING) as $element) {
+    if ($element === '.' || $element === '..') {
+      continue; // On ignore les répertoires . et ..
     }
-}
-    
+    $file_or_dir = "$_dir/$element";
+    if (is_dir($file_or_dir)) {
+      mydeltree($file_or_dir);
+    } else {
+      if (!unlink($file_or_dir)) {
+        // Gestion des erreurs en cas d'échec de la suppression
+        throw new RuntimeException("Impossible de supprimer le fichier $file_or_dir");
+      }
+    }
+  }
 
+  // On supprime le répertoire vide
+  if (!rmdir($_dir)) {
+    throw new RuntimeException("Impossible de supprimer le répertoire $_dir");
+  }
+}
+
+function delete_unused_files() {
+  $dir = realpath(__DIR__ . '/..') . '/';
+  $files = [
+    'core/php/mymodbus.inc.php',
+    'desktop/images/adam_icon.png',
+    'desktop/images/crouzet_m3_icon.png',
+    'desktop/images/logo_icon.png',
+    'desktop/images/rtu_icon.png',
+    'desktop/images/rtuovertcp_icon.png',
+    'desktop/images/tcpip_icon.png',
+    'desktop/images/wago_icon.png',
+    'desktop/modal/adam.configuration.php',
+    'desktop/modal/crouzet_m3.configuration.php',
+    'desktop/modal/logo.configuration.php',
+    'desktop/modal/rtu.configuration.php',
+    'desktop/modal/rtuovertcp.configuration.php',
+    'desktop/modal/tcpip.configuration.php',
+    'desktop/modal/wago.configuration.php',
+    'desktop/modal/configuration.serial.php',
+    'desktop/modal/configuration.tcp.php',
+    'desktop/modal/configuration.udp.php',
+    'desktop/modal/eqConfig.php',
+    'desktop/modal/eqConfig_serial.php',
+    'desktop/modal/eqConfig_tcp.php',
+    'desktop/modal/eqConfig_udp.php'
+  ];
+  foreach($files as $file) {
+    if (is_file($dir . $file)) {
+      unlink($dir . $file);
+    }
+  }
+
+  $directories = [
+    'ressources',
+  ];
+  foreach($directories as $directory) {
+    if (is_dir($dir . $directory)) {
+      mydeltree($dir . $directory);
+    }
+  }
+}
 
 function mymodbus_update() {
-	
+
+  do {
     $cron = cron::byClassAndFunction('mymodbus', 'cronDaily');
-    if (!is_object($cron)) {
-        $cron = new cron();
-        $cron->setClass('mymodbus');
-        $cron->setFunction('cronDaily');
-        $cron->setEnable(1);
-        $cron->setDeamon(0);
-        $cron->setSchedule('30 0 * * *');
-        $cron->save();
-    }
-    $cron->stop();
-}
-    
-
-
-function mymodbus_remove() {
-	
-	$cron = cron::byClassAndFunction('mymodbus', 'cronDaily');
     if (is_object($cron)) {
-        $cron->remove();
+      $cron->remove(true);
+    } else {
+      break;
     }
-    
+  } while (true);
+
+  delete_unused_files();
+
 }
+
+function mymodbus_install() {
+  delete_unused_files();
+}
+
+/*
+    function mymodbus_remove() {}
+ */
 
 ?>

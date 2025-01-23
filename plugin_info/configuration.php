@@ -15,33 +15,34 @@
  * along with Jeedom. If not, see <http://www.gnu.org/licenses/>.
  */
 
-require_once dirname(__FILE__) . '/../../../core/php/core.inc.php';
+require_once __DIR__ . '/../../../core/php/core.inc.php';
 include_file('core', 'authentification', 'php');
 if (!isConnect()) {
-    include_file('desktop', '404', 'php');
-    die();
+  include_file('desktop', '404', 'php');
+  die();
 }
 ?>
 <form class="form-horizontal">
-    <fieldset>
- <legend><i class="icon loisir-darth"></i> {{Gestion des démons}}</legend>
-<div class="form-group expertModeVisible">
-    <label class="col-lg-4 control-label">{{Port socket interne (doit être identique sur l esclaves)}}</label>
-    <div class="col-lg-2">
-        <input class="configKey form-control" data-l1key="socketport" placeholder="{{Futur Beta Mymodbus}}"/>
+  <fieldset>
+    <div class="col-sm-6">
+      <legend><i class="icon loisir-darth"></i>{{Gestion du démon}}</legend>
+      <div class="form-group expertModeVisible">
+        <label class="col-sm-8 control-label">{{Port du socket interne (pour éviter un conflit avec un autre plugin)&nbsp;:}}
+          <i class="fas fa-question-circle tooltips" title="{{55502 par défaut si non précisé}}"></i>
+        </label>
+        <div class="col-sm-4">
+          <input class="configKey form-control" data-l1key="socketport" placeholder="55502"/>
+        </div>
+      </div>
+      <legend><i class="icon loisir-darth"></i>{{Interfaces série personnalisées}}</legend>
+      <div class="form-group expertModeVisible">
+        <label class="col-sm-8 control-label">{{Liste des interfaces personnalisées&nbsp;:}}
+          <i class="fas fa-question-circle tooltips" title="{{séparées par des ';'}}"></i>
+        </label>
+        <div class="col-sm-4">
+          <input class="configKey form-control" data-l1key="interfaces"/>
+        </div>
+      </div>
     </div>
-</div>
-<div class="form-group" >
-	<label class="col-lg-4 control-label">{{Activer les logs séparés des démons locaux}} <i class="fas fa-question-circle tooltips" title="{{Nécéssite un redémarrage des démons}}"></i></label>
-		<div class="col-lg-3">
-			<input type="checkbox"disabled="disabled" class="configKey " data-l1key="ActiveDemonLog" />
-		</div>
-</div>
-<div class="form-group" >
-	<label class="col-lg-4 control-label">{{Activer le redémarrage des démons locaux (t/mn) }} <i class="fas fa-question-circle tooltips" title="{{Nécéssite un redémarrage des démons}}"></i></label>
-		<div class="col-lg-3">
-			<input type="checkbox" class="configKey " data-l1key="ActiveRestart" />
-		</div>
-</div>
-</fieldset>
+  </fieldset>
 </form>
