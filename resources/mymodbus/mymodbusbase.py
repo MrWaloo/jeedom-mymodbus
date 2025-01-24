@@ -31,10 +31,10 @@ class MyModbusBase(object):
   }
 
   def __init__(
-      self,
-      eqConfig: dict[str, any],
-      log: logging.Logger | None = None
-    ) -> None:
+    self,
+    eqConfig: dict[str, any],
+    log: logging.Logger | None = None
+  ) -> None:
 
     self.eqConfig = eqConfig
     if log:
@@ -86,7 +86,7 @@ class MyModbusBase(object):
       "name": self.eqConfig["name"],
       "timeout": float(self.eqConfig["eqTimeout"]),
       "retries": float(self.eqConfig["eqRetries"]),
-      "on_connect_callback": self.on_connect_callback,
+      "trace_connect": self.trace_connect_callback,
     }
     framer = None
     self._requests = {}
@@ -322,8 +322,8 @@ class MyModbusBase(object):
       payload = Lib.dwordswap(payload, cmd, blob)
     return payload
   
-  def on_connect_callback(self, connected: bool):
-    self.log.debug(f"{self.eqConfig['name']}: 'on_connect_callback' called with connected = {connected}")
+  def trace_connect_callback(self, connected: bool):
+    self.log.debug(f"{self.eqConfig['name']}: 'trace_connect_callback' called with connected = {connected}")
     if connected:
       self.connected.set()
     else:
