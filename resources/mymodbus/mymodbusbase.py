@@ -8,6 +8,7 @@ The logic is the same than in the modbus implementation in Home Assistant as far
 
 import asyncio
 import logging
+from abc import abstractmethod
 from array import array
 from statistics import fmean
 
@@ -140,8 +141,8 @@ class MyModbusBase(object):
           self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
           continue
         address, count = Lib.get_request_addr_count(cmd)
-        slave = int(cmd["cmdSlave"])
-        self._requests[cmd["id"]] = request_func(address, count, slave)
+        dev_id = int(cmd["cmdSlave"])
+        self._requests[cmd["id"]] = request_func(address=address, count=count, dev_id=dev_id)
         self.log.debug(f"{self.eqConfig['name']}: 'read_eqConfig' Modbus request for cmd id {cmd['id']}: {self._requests[cmd['id']]}")
 
   async def read_downstream(self) -> None:
@@ -223,6 +224,7 @@ class MyModbusBase(object):
         name = f"run_loop_{self.eqConfig['id']}"
       ))
 
+  @abstractmethod
   async def run_loop(self) -> None:
     """
     The daemon main loop
@@ -286,6 +288,7 @@ class MyModbusBase(object):
     except Exception as e:
       raise e
 
+  @abstractmethod
   async def command_write(self, command: dict) -> None:
     """
     Execute the write request

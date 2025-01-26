@@ -22,13 +22,6 @@ from mymodbusbase import MyModbusBase
 
 class MyModbusClient(MyModbusBase):
 
-  def __init__(
-    self,
-    eqConfig: dict[str, any],
-    log: logging.Logger | None = None
-  ) -> None:
-    super().__init__(eqConfig, log)
-
   async def run_loop(self) -> None:
     """
     The daemon main loop
@@ -129,22 +122,22 @@ class MyModbusClient(MyModbusBase):
         try:
           async with self._lock:
             self.log.debug(f"{self.eqConfig['name']}: 'one_cycle_read'/{cmd['name']}: requesting read")
-            rr: ModbusPDU = await self.client.execute(no_response_expected=False, request=pmb_req)
+            rr: ModbusPDU = await self.client.execute(False, pmb_req)
         except ModbusException as exc:
           error_on_current_read = True
-          error = f"exception during read request on slave id {pmb_req.slave_id}, address {pmb_req.address} -> {exc!s}"
+          error = f"exception during read request on device id {pmb_req.dev_id}, address {pmb_req.address} -> {exc!s}"
         if not error_on_current_read:
           try:
             if rr.isError():
               error_on_current_read = True
-              error = f"error during read request on slave id {pmb_req.slave_id}, address {pmb_req.address} -> {rr}"
+              error = f"error during read request on device id {pmb_req.dev_id}, address {pmb_req.address} -> {rr}"
           except AttributeError:
             error_on_current_read = True
-            error = f"return error during read request on slave id {pmb_req.slave_id}, address {pmb_req.address} -> {rr}"
+            error = f"return error during read request on device id {pmb_req.dev_id}, address {pmb_req.address} -> {rr}"
         if not error_on_current_read:
           if isinstance(rr, ExceptionResponse):
             error_on_current_read = True
-            error = f"exception during read request on slave id {pmb_req.slave_id}, address {pmb_req.address} -> {rr}"
+            error = f"exception during read request on device id {pmb_req.dev_id}, address {pmb_req.address} -> {rr}"
         
         if error_on_current_read:
           self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
@@ -262,22 +255,23 @@ class MyModbusClient(MyModbusBase):
             self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' register creation for the write command not possible: {e!s}")
             return
 
+        self.log.debug(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' payload = {payload}")
+
         attr = Lib.get_request_attribute(int(cmd["cmdFctModbus"]))
         req_payload = None
-        if request_func.function_code in (1, 2, 5, 15):
-          req_payload = value
+        if request_func.function_code in (1, 2, 5, 15): # bit or bits
+          req_payload = [value]
         else:
           payload = self.get_ordered_payload(array('H', payload), cmd)
           req_payload = payload
-        if not attr.endswith("s") and hasattr(req_payload, "__iter__"):
-          req_payload = req_payload[0]
 
         write_req_params = {
           "address": address,
-          "slave": int(cmd["cmdSlave"]),
+          "dev_id": int(cmd["cmdSlave"]),
           attr: req_payload
         }
         self.log.debug(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' write_req_params = {write_req_params}")
+        self.log.debug(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' request_func = {request_func}")
 
         pmb_write_req = request_func(**write_req_params)
         self.log.debug(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' Fonction {pmb_write_req}")
@@ -288,19 +282,19 @@ class MyModbusClient(MyModbusBase):
         try:
           async with self._lock:
             self.log.debug(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' Request sent")
-            rr: DecodePDU = await self.client.execute(no_response_expected=False, request=pmb_write_req)
+            rr: DecodePDU = await self.client.execute(False, pmb_write_req)
         except ModbusException as exc:
-          error = f"modbus exception during write request on slave id {pmb_write_req.slave_id}, address {pmb_write_req.address} -> {exc!s}"
+          error = f"modbus exception during write request on device id {pmb_write_req.dev_id}, address {pmb_write_req.address} -> {exc!s}"
           self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' {error}")
           err_handeled = True
         if not err_handeled:
           if rr.isError():
-            error = f"error during write request on slave id {pmb_write_req.slave_id}, address {pmb_write_req.address} -> {rr}"
+            error = f"error during write request on device id {pmb_write_req.dev_id}, address {pmb_write_req.address} -> {rr}"
             self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' {error}")
             err_handeled = True
         if not err_handeled:
           if isinstance(rr, ExceptionResponse):
-            error = f"exception response during write request on slave id {pmb_write_req.slave_id}, address {pmb_write_req.address} -> {rr}"
+            error = f"exception response during write request on device id {pmb_write_req.dev_id}, address {pmb_write_req.address} -> {rr}"
             self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' {error}")
       
         if pause is not None:

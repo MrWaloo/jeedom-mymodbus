@@ -34,19 +34,19 @@ PMB_READ_REQUESTS: list[Request] = [
 PMB_WRITE_REQUESTS: list[Request] = [
   Request(
     5,
-    "value"
+    "bits"
   ),
   Request(
     15,
-    "values"
+    "bits"
   ),
   Request(
     6,
-    "value"
+    "registers"
   ),
   Request(
     16,
-    "values"
+    "registers"
   ),
 ]
 PMB_REQUESTS: list[Request] = []
