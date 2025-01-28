@@ -308,8 +308,10 @@ $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRefreshMode]').off().on('
 $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRegTest]').off().on('change', function () {
   if ($(this).value() == '0') {
     $('#div_RegTestParameters').hide();
+    $('.btn_add_command').show();
   } else {
     $('#div_RegTestParameters').show();
+    $('.btn_add_command').hide();
   }
 });
 
@@ -567,7 +569,7 @@ function getTrfromCmd(_cmd, _template = false) {
   tr += '   </div>';
   tr += ' </td>';
   // Adresse esclave
-  tr += ' <td><input class="cmdAttr form-control input-sm withSlave" data-l1key="configuration" data-l2key="cmdSlave"' + formDisabled + '></td>';
+  tr += ' <td><input type="number" class="cmdAttr form-control input-sm withSlave" data-l1key="configuration" data-l2key="cmdSlave"' + formDisabled + '></td>';
   // Modbus function / Data format
   tr += ' <td>';
   tr += '   <div class="input-group" style="margin-bottom:5px;">';
@@ -646,7 +648,7 @@ function getTrfromCmd(_cmd, _template = false) {
   tr += '   </div>';
   tr += '   <div class="input-group notFctBlob">';
   tr += '     <label class="label">{{Lecture 1x sur :}}&nbsp;';
-  tr += '       <input class="cmdAttr form-inline input-sm" style="width:70px;" data-l1key="configuration" data-l2key="cmdFrequency" placeholder="{{1 par défaut}}"' + formDisabled + '/>';
+  tr += '       <input type="number" class="cmdAttr form-inline input-sm" style="width:70px;" data-l1key="configuration" data-l2key="cmdFrequency" placeholder="{{1 par défaut}}"' + formDisabled + '/>';
   tr += '     </label>';
   tr += '   </div>';
   tr += '   <div class="input-group" style="width:100%;">';
@@ -668,8 +670,8 @@ function getTrfromCmd(_cmd, _template = false) {
   tr += '   <label class="checkbox-inline"><input type="checkbox" class="cmdAttr checkbox-inline" data-l1key="isVisible" checked' + formDisabled + '/>{{Afficher}}</label>';
   tr += '   <label class="checkbox-inline"><input type="checkbox" class="cmdAttr" data-l1key="isHistorized" data-size="mini"' + formDisabled + '/>{{Historiser}}</label>';
   tr += '   <div class="input-group" style="margin-top:7px;">';
-  tr += '     <input class="tooltips cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="minValue" placeholder="{{Min}}" title="{{Min}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;"' + formDisabled + '/>';
-  tr += '     <input class="tooltips cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="maxValue" placeholder="{{Max}}" title="{{Max}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;"' + formDisabled + '/>';
+  tr += '     <input class="tooltips cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="minValue" placeholder="{{Min}}" title="{{Min}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;" type="number"' + formDisabled + '/>';
+  tr += '     <input class="tooltips cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="maxValue" placeholder="{{Max}}" title="{{Max}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;" type="number"' + formDisabled + '/>';
   tr += '     <input class="tooltips cmdAttr form-control input-sm" data-l1key="unite" placeholder="{{Unité}}" title="{{Unité}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;"' + formDisabled + '/>';
   tr += '     <input class="tooltips cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="listValue" placeholder="{{Liste de \'valeur|texte\' séparés par \';\'}}" title="{{Liste}}" style="min-width:280px;width:290px;margin-right:2px;"' + formDisabled + '>';
   tr += '   </div>';
@@ -687,7 +689,7 @@ function getTrfromCmd(_cmd, _template = false) {
   return tr;
 }
 
-$("#bt_add_command_top").on('click', function (event) {
+$("#bt_add_command").on('click', function (event) {
   addCmdToTable({});
   modifyWithoutSave = true;
 });

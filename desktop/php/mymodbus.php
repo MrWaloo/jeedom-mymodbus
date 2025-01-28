@@ -119,12 +119,11 @@ require_once 'mymodbusEqConfig.class.php';
       
       <!-- Onglet des commandes de l'équipement -->
       <div role="tabpanel" class="tab-pane" id="commandtab">
-        <div class="input-group" style="display:inline-flex;margin-top:5px;position:fixed;z-index:10;right:30px;">
+        <div class="input-group btn_add_command" style="display:inline-flex;margin-top:5px;position:fixed;z-index:10;right:35px;">
           <span class="input-group-btn">
-            <a class="btn btn-warning btn-sm rounded" id="bt_add_command_top"><i class="fas fa-plus-circle"></i> {{Ajouter une commande}} </a>
+            <a class="btn btn-warning btn-sm rounded" id="bt_add_command"><i class="fas fa-plus-circle"></i> {{Ajouter une commande}} </a>
           </span>
         </div>
-        <br/><br/>
         <div class="table-responsive">
           <table id="table_cmd" class="table table-bordered table-condensed">
             <thead>

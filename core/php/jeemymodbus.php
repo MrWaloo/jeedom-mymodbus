@@ -32,16 +32,7 @@ if (!is_array($result)) {
   die();
 }
 
-if (isset($result['heartbeat_request'])) {
-  $message = [];
-  $message['CMD'] = 'heartbeat_answer';
-  $message['answer'] = $result['heartbeat_request'];
-  mymodbus::sendToDaemon($message);
-  
-} elseif (isset($result['getConfig'])) {
-  mymodbus::sendNewConfig();
-  
-} elseif (isset($result['values'])) {
+if (isset($result['values'])) {
   $names = '';
   $sharedEqs = null;
   $conv = [
@@ -112,6 +103,9 @@ if (isset($result['heartbeat_request'])) {
     }
   }
   #log::add('mymodbus', 'debug', 'jeemymodbus.php: Mise à jour des commandes info :' . $names);
+
+} elseif (isset($result['test'])) {
+  
 } else {
   log::add('mymodbus', 'error', 'jeemymodbus.php: unknown message received from daemon');
 }

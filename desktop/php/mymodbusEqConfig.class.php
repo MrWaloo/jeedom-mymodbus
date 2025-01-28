@@ -99,7 +99,7 @@ class mymodbusEqConfig {
             <sup><i class="fas fa-question-circle tooltips" title="{{En mode Polling: raffraichissement des valeurs toutes les n secondes, minimum 1}}"></i></sup>
           </label>
           <div class="col-sm-6">
-            <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqPolling" placeholder="60"<?= $disabled ?>/>
+            <input type="number" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqPolling" placeholder="60"<?= $disabled ?>/>
           </div>
         </div>
         <div class="form-group nonShared" id="eqTimeout">
@@ -107,13 +107,13 @@ class mymodbusEqConfig {
             <sup><i class="fas fa-question-circle tooltips" title="{{Temps maximum d'attente de réponse à une requête}}"></i></sup>
           </label>
           <div class="col-sm-6">
-            <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqTimeout" placeholder="60"<?= $disabled ?>/>
+            <input type="number" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqTimeout" placeholder="60"<?= $disabled ?>/>
           </div>
         </div>
         <div class="form-group nonShared">
           <label class="col-sm-4 control-label">{{Nombre de tentatives en cas d'erreur}}</label>
           <div class="col-sm-6">
-            <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRetries" placeholder="3"<?= $disabled ?>/>
+            <input type="number" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRetries" placeholder="3"<?= $disabled ?>/>
           </div>
         </div>
         <div class="form-group nonShared">
@@ -121,19 +121,19 @@ class mymodbusEqConfig {
             <sup><i class="fas fa-question-circle tooltips" title="{{Egalement le temps aloué à la vérification de l'envoi d'une commande action par Jeedom}}"></i></sup>
           </label>
           <div class="col-sm-6">
-            <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqWriteCmdCheckTimeout" placeholder="1"<?= $disabled ?>/>
+            <input type="number" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqWriteCmdCheckTimeout" placeholder="1"<?= $disabled ?>/>
           </div>
         </div>
         <div class="form-group nonShared">
           <label class="col-sm-4 control-label">{{Temps d'attente après la connexion (s)}}</label>
           <div class="col-sm-6">
-            <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqFirstDelay" placeholder="0"<?= $disabled ?>/>
+            <input type="number" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqFirstDelay" placeholder="0"<?= $disabled ?>/>
           </div>
         </div>
         <div class="form-group nonShared">
           <label class="col-sm-4 control-label">{{Temps d'attente après une erreur de lecture (s)}}</label>
           <div class="col-sm-6">
-            <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqErrorDelay" placeholder="0"<?= $disabled ?>/>
+            <input type="number" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqErrorDelay" placeholder="0"<?= $disabled ?>/>
           </div>
         </div>
         <?php
@@ -143,40 +143,49 @@ class mymodbusEqConfig {
         <div class="form-group nonShared">
           <label class="col-sm-4 control-label">{{Equipement destiné à tester l'existence des registres}}</label>
           <div class="col-sm-6">
-            <input type="checkbox" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRegTest"<?= $disabled ?>/>
+            <label class="checkbox-inline">
+              <input type="checkbox" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRegTest"<?= $disabled ?>/>
+              <div class="danger">
+                <i class="fas fa-exclamation-triangle"></i>
+                {{ATTENTION : lors de la sauvegarde de l'équipement toutes les commandes seront supprimées sans demande de confirmation si l'équipement est activé}}
+            </div>
+            </label>
           </div>
         </div>
 
-        <div id="div_RegTestParameters">
+        <div id="div_RegTestParameters" hidden>
           <div class="form-group nonShared">
             <label class="col-sm-4 control-label">{{Premier registre à tester}}</label>
             <div class="col-sm-6">
-              <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRegTestFirst"<?= $disabled ?>/>
+              <input type="number" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRegTestFirst"<?= $disabled ?>/>
             </div>
           </div>
           <div class="form-group nonShared">
             <label class="col-sm-4 control-label">{{Dernier registre à tester}}</label>
             <div class="col-sm-6">
-              <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRegTestLast"<?= $disabled ?>/>
+              <input type="number" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRegTestLast"<?= $disabled ?>/>
+            </div>
+          </div>
+          <div class="form-group nonShared">
+            <label class="col-sm-4 control-label">{{Adresse de l'esclave}}</label>
+            <div class="col-sm-6">
+              <input type="number" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRegTestSlave"<?= $disabled ?>/>
             </div>
           </div>
           <div class="form-group nonShared">
             <label class="col-sm-4 control-label">{{Fonction à utiliser}}</label>
               <div class="col-sm-6">
                 <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRegTestFunction"<?= $disabled ?>>
-                  <option disabled selected value>-- {{Selectionnez un mode}} --</option>
+                  <option disabled selected value>-- {{Selectionnez une fonction}} --</option>
                   <option value="1">[0x01] Read coils</option>
                   <option value="2">[0x02] Read discrete inputs</option>
                   <option value="3">[0x03] Read holding registers</option>
                   <option value="4">[0x04] Read input registers</option>
-                  <option value="5">[0x05] Write single coil</option>
-                  <option value="15">[0x0F] Write coils</option>
-                  <option value="6">[0x06] Write register</option>
-                  <option value="16">[0x10] Write registers</option>
                 </select>
               </div>
           </div>
         </div>
+
       </div>
     </div>
 
@@ -221,7 +230,7 @@ class mymodbusEqConfig {
     <div class="form-group networkConfig" hidden>
       <label class="col-sm-4 control-label">{{Port}}</label>
       <div class="col-sm-6">
-        <input type="text" class="eqLogicAttr form-control networkConfig" data-l1key="configuration" data-l2key="eqPortNetwork" placeholder="502"/>
+        <input type="number" class="eqLogicAttr form-control networkConfig" data-l1key="configuration" data-l2key="eqPortNetwork" placeholder="502"/>
       </div>
     </div>
     <?php

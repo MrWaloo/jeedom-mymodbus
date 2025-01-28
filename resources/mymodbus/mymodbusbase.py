@@ -12,6 +12,7 @@ from abc import abstractmethod
 from array import array
 from statistics import fmean
 
+from pymodbus import FramerType
 from pymodbus.client import AsyncModbusSerialClient, AsyncModbusTcpClient, AsyncModbusUdpClient
 from pymodbus.exceptions import ModbusException
 from pymodbus.logging import pymodbus_apply_logging_config
@@ -73,19 +74,6 @@ class MyModbusBase(object):
     ))
 
   @abstractmethod
-  def read_eqConfig(self, eqConfig: dict[str, any] | None = None) -> None:
-    """
-    Creates the client and the requests according to the configuration
-
-    Sets:
-    - eventually self.eqConfig
-    - self._client_params
-    - self._requests
-    - self._blob_dest
-    """
-    pass
-
-  @abstractmethod
   async def run_loop(self) -> None:
     """
     The daemon main loop
@@ -98,6 +86,61 @@ class MyModbusBase(object):
     Execute the write request
     """
     pass
+
+  def read_eqConfig(self, eqConfig: dict[str, any] | None = None) -> None:
+    """
+    Creates the client and the requests according to the configuration
+
+    Sets:
+    - eventually self.eqConfig
+    - self._client_params
+    - self._requests (in the subclass)
+    - self._blob_dest (in the subclass)
+    """
+    if self.client and self.client.connected or self.connected.is_set():
+      self.close()
+    if eqConfig is not None:
+      self.eqConfig = eqConfig
+    del self.client
+    self.client = None
+    self._client_params = {
+      "name": self.eqConfig["name"],
+      "timeout": float(self.eqConfig["eqTimeout"]),
+      "retries": float(self.eqConfig["eqRetries"]),
+      "trace_connect": self.trace_connect_callback,
+    }
+    framer = None
+
+    # Client pymodbus
+    if self.eqConfig["eqProtocol"] == "serial":
+      # Liaison série
+      if self.eqConfig["eqSerialMethod"] == "ascii":
+        framer = FramerType.ASCII
+      else:
+        framer = FramerType.RTU
+      self._client_params.update(
+        {
+          "port": self.eqConfig["eqPort"],
+          "baudrate": int(self.eqConfig["eqSerialBaudrate"]),
+          "stopbits": int(self.eqConfig["eqSerialStopbits"]),
+          "bytesize": int(self.eqConfig["eqSerialBytesize"]),
+          "parity": self.eqConfig["eqSerialParity"],
+        }
+      )
+    else:
+      # Liaison Ethernet
+      self._client_params.update(
+        {
+          "port": int(self.eqConfig["eqPort"]),
+        }
+      )
+      if self.eqConfig["eqProtocol"] == "rtuovertcp":
+        framer = FramerType.RTU
+      else:
+        framer = FramerType.SOCKET
+      self._client_params["host"] = self.eqConfig["eqAddr"]
+    self._client_params["framer"] = framer
+    self.log.debug(f"{self.eqConfig['name']}: 'read_eqConfig' client params for {self.eqConfig['name']}: {self._client_params}")
 
   async def read_downstream(self) -> None:
     self.log.debug(f"{self.eqConfig['name']}: 'read_downstream' launched")

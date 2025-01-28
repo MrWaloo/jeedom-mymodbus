@@ -111,7 +111,7 @@ class MyModbusd(BaseDaemon):
   
   async def start_client(self, eqConfig: dict) -> None:
     new_client = None
-    if eqConfig["id"] == "test":
+    if eqConfig["eqRegTest"] == "1":
       new_client = MyModbusTest(eqConfig)
     else:
       new_client = MyModbusClient(eqConfig)
@@ -121,10 +121,10 @@ class MyModbusd(BaseDaemon):
     ))
     new_client.read_eqConfig()
     new_client.connect()
-    if eqConfig["id"] != "test":
-      self._logger.info(f"{self.__n}: Starting the task for the equipement {eqConfig['name']}")
+    if eqConfig["eqRegTest"] == "1":
+      self._logger.info(f"{self.__n}: Starting the task to test anthe equipement {eqConfig['name']}")
     else:
-      self._logger.info(f"{self.__n}: Starting the task to test an equipement")
+      self._logger.info(f"{self.__n}: Starting the task for the equipement {eqConfig['name']}")
     self._mymodbus_clients[eqConfig["id"]] = new_client
 
   async def terminate_client(self, eqId: str) -> None:
