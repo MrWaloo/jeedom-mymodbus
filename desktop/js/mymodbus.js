@@ -19,9 +19,10 @@
 $('.eqLogicAction[data-action=bt_addMymodbusEq]').off('click').on('click', function() {
   let dialog_message = '<label class="control-label">{{Nom du nouvel équipement :}}</label>';
   dialog_message += '<input class="bootbox-input bootbox-input-text form-control" autocomplete="nope" type="text" id="addMymodbusEqName"><br><br>';
-  dialog_message += '<label class="control-label">{{Utiliser un template :}}</label>';
-  dialog_message += '<select class="bootbox-input bootbox-input-select form-control" id="addMymodbusTplSelector">';
-  dialog_message += '</select>';
+  dialog_message += '<label class="control-label">{{Utiliser un template :}}';
+  dialog_message += '  <select class="bootbox-input bootbox-input-select form-control" id="addMymodbusTplSelector">';
+  dialog_message += '  </select>';
+  dialog_message += '</label>';
   bootbox.confirm({
     title: "{{Ajouter un nouvel équipement MyModbus}}",
     message: dialog_message,
@@ -61,8 +62,8 @@ $('.eqLogicAction[data-action=bt_addMymodbusEq]').off('click').on('click', funct
                   jeedomUtils.loadPage(url);
                 }
               });
-            }
-            if (eqTemplate == '') {
+
+            } else {
               var vars = getUrlVars();
               var url = 'index.php?';
               for (var i in vars) {
@@ -109,11 +110,7 @@ $('#bt_move_cmd').on('click', function () {
   $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=move_cmd').dialog('open');
 });
 
-$('.eqLogicAction[data-action=bt_docSpecific]').on('click', function () {
-  window.open('https://mrwaloo.github.io/jeedom-plugins-doc/fr_FR/mymodbus_doc');
-});
-
-// *********** Evénements de la page de l'édition d'un équipement
+// *********** Evénements de la page d'édition d'un équipement
 
 $('.eqLogicAction[data-action=createTemplate]').off('click').on('click', function () {
   bootbox.prompt({
@@ -305,6 +302,14 @@ $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRefreshMode]').off().on('
     $('#eqPolling').show();
   } else {
     $('#eqPolling').hide();
+  }
+});
+
+$('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRegTest]').off().on('change', function () {
+  if ($(this).value() == '0') {
+    $('#div_RegTestParameters').hide();
+  } else {
+    $('#div_RegTestParameters').show();
   }
 });
 
@@ -655,7 +660,7 @@ function getTrfromCmd(_cmd, _template = false) {
   tr += ' </td>';    
   // Options
   tr += ' <td>';
-  if (is_numeric(!_template && _cmd.id)) {
+  if (!_template && is_numeric(_cmd.id)) {
     tr += '   <a class="btn btn-default btn-xs cmdAction" data-action="configure" title="{{Configuration de la commande}}""><i class="fas fa-cogs"></i></a>';
     tr += '   <a class="btn btn-default btn-xs cmdAction" data-action="test" title="{{Tester}}"><i class="fas fa-rss"></i></a>';
     tr += '   <a class="btn btn-default btn-xs cmdAction" data-action="copy" title="{{Dupliquer}}"><i class="far fa-clone"></i></a>';

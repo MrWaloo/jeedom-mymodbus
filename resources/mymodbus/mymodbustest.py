@@ -22,6 +22,18 @@ from mymodbusbase import MyModbusBase
 
 
 class MyModbusTest(MyModbusBase):
+  
+  def read_eqConfig(self, eqConfig: dict[str, any] | None = None) -> None:
+    """
+    Creates the client and the requests according to the configuration
+
+    Sets:
+    - eventually self.eqConfig
+    - self._client_params
+    - self._requests
+    - self._blob_dest
+    """
+    pass
 
   async def run_loop(self) -> None:
     """

@@ -706,8 +706,8 @@ class mymodbus extends eqLogic {
 
     // Suppression de l'ancienne configuration
     log::add(__CLASS__, 'info', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('Suppression de la configuration inutile', __FILE__));
-    foreach (array('protocol', 'addr', 'port', 'keepopen', 'polling', 'mheure', 'auto_cmd', 'unit', 'baudrate', 'parity', 'bytesize', 'stopbits',
-        'eqKeepopen', 'eqTcpPort', 'eqTcpAddr', 'eqUdpPort', 'eqUdpAddr', 'eqSerialInterface') as $attribut) {
+    foreach (['protocol', 'addr', 'port', 'keepopen', 'polling', 'mheure', 'auto_cmd', 'unit', 'baudrate', 'parity', 'bytesize', 'stopbits',
+        'eqKeepopen', 'eqTcpPort', 'eqTcpAddr', 'eqUdpPort', 'eqUdpAddr', 'eqSerialInterface'] as $attribut) {
       // log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('Check de la conf ', __FILE__) . sprintf("*'%s'*", var_export($attribut, true)));
       if (isset($this->configuration[$attribut])) {
         log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('Suppression de la conf ', __FILE__) . sprintf("*'%s'*", var_export($attribut, true)));
@@ -733,8 +733,7 @@ class mymodbus extends eqLogic {
   }
 
   // Fonction exécutée automatiquement après la sauvegarde de l'équipement (création ou mise à jour)
-  public function postSave() {
-  }
+  // public function postSave() {}
   
   public function postAjax() {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
@@ -795,6 +794,7 @@ class mymodbus extends eqLogic {
     $eqConfig['eqRetries'] = trim($this->getConfiguration('eqRetries', '3'));
     $eqConfig['eqFirstDelay'] = trim($this->getConfiguration('eqFirstDelay', '0'));
     $eqConfig['eqErrorDelay'] = trim($this->getConfiguration('eqErrorDelay', '1'));
+
     if ($eqProtocol === 'serial') {
       $eqConfig['eqPort'] = trim($this->getConfiguration('eqPortSerial'));
       $eqConfig['eqSerialMethod'] = $this->getConfiguration('eqSerialMethod');
@@ -808,6 +808,16 @@ class mymodbus extends eqLogic {
       $eqConfig['eqPort'] = trim($this->getConfiguration('eqPortNetwork'));
       
     }
+    
+    $eqConfig['eqRegTest'] = trim($this->getConfiguration('eqRegTest', '0'));
+    if ($eqConfig['eqRegTest'] != '0') {
+      
+      // TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      // Si c'est un équipement de test de registres, les commandes ne sont pas exportées
+      return $eqConfig;
+    }
+    
     $eqConfig['cmds'] = [];
     foreach ($this->getCmd() as $cmdMymodbus) { // boucle sur les commandes
       if (in_array($cmdMymodbus->getLogicalId(), ['refresh', 'refresh time', 'cycle ok', 'polling'])) {
@@ -816,7 +826,7 @@ class mymodbus extends eqLogic {
       $eqConfig['cmds'][] = $cmdMymodbus->getCmdConfiguration();
     }
     
-    // Recherche des équipement qui utilise cette interface
+    // Recherche des équipements qui utilisent cette interface
     foreach (self::byType(__CLASS__) as $eqMymodbus) { // boucle sur les équipements
       if ($eqMymodbus->getIsEnable()
       && $eqMymodbus->getConfiguration('eqProtocol') === 'shared_from'

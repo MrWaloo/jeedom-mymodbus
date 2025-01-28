@@ -46,11 +46,6 @@ require_once 'mymodbusEqConfig.class.php';
         <br/>
         <span>{{Tester des registres}}</span>
       </div>
-      <div class="cursor eqLogicAction logoSecondary" data-action="bt_docSpecific" >
-        <i class="fas fa-book" style="color:#0F9DE8;"></i>
-        <br>
-        <span>{{Documentation}}</span>
-      </div>
     </div>
     <legend><i class="fas fa-table"></i> {{Mes équipements}}</legend>
     <?php

@@ -13,6 +13,7 @@ import re
 from array import array
 from statistics import fmean
 
+from pymodbus import FramerType
 from pymodbus.exceptions import ModbusException
 from pymodbus.pdu import DecodePDU, ExceptionResponse, ModbusPDU
 
@@ -21,6 +22,78 @@ from mymodbusbase import MyModbusBase
 
 
 class MyModbusClient(MyModbusBase):
+
+  def read_eqConfig(self, eqConfig: dict[str, any] | None = None) -> None:
+    """
+    Creates the client and the requests according to the configuration
+    """
+    if self.client and self.client.connected or self.connected.is_set():
+      self.close()
+    if eqConfig is not None:
+      self.eqConfig = eqConfig
+    del self.client
+    self.client = None
+    self._client_params = {
+      "name": self.eqConfig["name"],
+      "timeout": float(self.eqConfig["eqTimeout"]),
+      "retries": float(self.eqConfig["eqRetries"]),
+      "trace_connect": self.trace_connect_callback,
+    }
+    framer = None
+    self._requests = {}
+    self._blob_dest = {}
+
+    # Client pymodbus
+    if self.eqConfig["eqProtocol"] == "serial":
+      # Liaison série
+      if self.eqConfig["eqSerialMethod"] == "ascii":
+        framer = FramerType.ASCII
+      else:
+        framer = FramerType.RTU
+      self._client_params.update(
+        {
+          "port": self.eqConfig["eqPort"],
+          "baudrate": int(self.eqConfig["eqSerialBaudrate"]),
+          "stopbits": int(self.eqConfig["eqSerialStopbits"]),
+          "bytesize": int(self.eqConfig["eqSerialBytesize"]),
+          "parity": self.eqConfig["eqSerialParity"],
+        }
+      )
+    else:
+      # Liaison Ethernet
+      self._client_params.update(
+        {
+          "port": int(self.eqConfig["eqPort"]),
+        }
+      )
+      if self.eqConfig["eqProtocol"] == "rtuovertcp":
+        framer = FramerType.RTU
+      else:
+        framer = FramerType.SOCKET
+      self._client_params["host"] = self.eqConfig["eqAddr"]
+    self._client_params["framer"] = framer
+    self.log.debug(f"{self.eqConfig['name']}: 'read_eqConfig' client params for {self.eqConfig['name']}: {self._client_params}")
+    
+    # Création de la liste des requêtes pymodbus
+    decoder = DecodePDU(True)
+    for cmd in self.eqConfig["cmds"]:
+      if cmd["type"] != "info":
+        continue
+      if cmd["cmdFctModbus"] == "fromBlob":
+        if self._blob_dest.get(int(cmd["cmdSourceBlob"]), None) is None:
+          self._blob_dest[int(cmd["cmdSourceBlob"])] = []
+        self._blob_dest[int(cmd["cmdSourceBlob"])].append(cmd["id"])
+        
+      else: # not fromBlob
+        request_func = decoder.lookup.get(int(cmd["cmdFctModbus"]), None)
+        if request_func is None:
+          error = f"le code de fonction Modbus n'est pas disponible: {cmd['cmdFctModbus']}"
+          self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
+          continue
+        address, count = Lib.get_request_addr_count(cmd)
+        dev_id = int(cmd["cmdSlave"])
+        self._requests[cmd["id"]] = request_func(address=address, count=count, dev_id=dev_id)
+        self.log.debug(f"{self.eqConfig['name']}: 'read_eqConfig' Modbus request for cmd id {cmd['id']}: {self._requests[cmd['id']]}")
 
   async def run_loop(self) -> None:
     """

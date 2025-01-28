@@ -18,8 +18,7 @@ class MyModbusd(BaseDaemon):
     )
     self.set_logger_log_level("MyModbus")
 
-    self._mymodbus_clients: dict[str, MyModbusClient] = {}
-    self._mymodbus_test: MyModbusTest | None = None
+    self._mymodbus_clients: dict[str, MyModbusClient | MyModbusTest] = {}
     self._async_tasks: list[asyncio.Task] = []
     self.__n = self.__class__.__name__
 
@@ -124,10 +123,9 @@ class MyModbusd(BaseDaemon):
     new_client.connect()
     if eqConfig["id"] != "test":
       self._logger.info(f"{self.__n}: Starting the task for the equipement {eqConfig['name']}")
-      self._mymodbus_clients[eqConfig["id"]] = new_client
     else:
       self._logger.info(f"{self.__n}: Starting the task to test an equipement")
-      self._mymodbus_test = new_client
+    self._mymodbus_clients[eqConfig["id"]] = new_client
 
   async def terminate_client(self, eqId: str) -> None:
     await self.send_downstream(eqId, {"quit": None})
