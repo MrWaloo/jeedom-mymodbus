@@ -670,7 +670,7 @@ class mymodbus extends eqLogic {
           ->setType('info')
           ->setSubType('numeric')
           ->setUnite('s')
-          ->setOrder(0)
+          ->setOrder(1)
           ->save();
       }
       $refreshCmdTest = $this->getCmd('action', 'refresh');
@@ -683,9 +683,11 @@ class mymodbus extends eqLogic {
           ->setType('action')
           ->setSubType('other');
         $refreshTimeCmd = $this->getCmd('info', 'refresh time');
-        $refreshTimeCmd->setOrder(1);
-        $refreshTimeCmd->save();
-        $refreshCmd->setOrder(0);
+        if (is_object($refreshTimeCmd)) {
+          $refreshTimeCmd->setOrder(2);
+          $refreshTimeCmd->save();
+        }
+        $refreshCmd->setOrder(1);
         $refreshCmd->save();
       }
       $cycleOkCmdTest = $this->getCmd('info', 'cycle ok');
@@ -711,31 +713,24 @@ class mymodbus extends eqLogic {
           ->setUnite('s')
           ->save();
       }
-      
-      if ($this->getConfiguration('eqRegTest', '0') != '1') {
-        $offset = 0;
-        if (!is_object($refreshTimeCmdTest)) {
-          $offset++;
-        }
-        if (!is_object($refreshCmdTest)) {
-          $offset++;
-        }
-        if ($offset > 0) {
-          foreach ($this->getCmd() as $cmdMymodbus) { // boucle sur les commandes
-            if (in_array($cmdMymodbus->getLogicalId(), ['refresh', 'refresh time', 'cycle ok', 'polling'])) {
-              continue;
-            }
-            if ($cmdMymodbus->getId() != '') {
-              $cmdMymodbus->setOrder($cmdMymodbus->getOrder() + $offset);
-              $cmdMymodbus->save();
-            }
-          }
+      // Création des commandes info
+      if ($this->getConfiguration('eqRegTest', '0') === '1') {
+        $order = 2;
+        for ($i = intval($eqRegTestFirst); $i <= intval($eqRegTestLast); $i++) {
+          $cmdTest = (new mymodbusCmd)
+            ->setLogicalId('RegTest_' . $i)
+            ->setEqLogic_id($this->getId())
+            ->setName($i)
+            ->setOrder($order++)
+            ->setType('info')
+            ->setSubType('string')
+            ->save();
         }
       }
     }
 
     // Suppression de l'ancienne configuration
-    log::add(__CLASS__, 'info', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('Suppression de la configuration inutile', __FILE__));
+    //log::add(__CLASS__, 'info', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('Suppression de la configuration inutile', __FILE__));
     foreach (['protocol', 'addr', 'port', 'keepopen', 'polling', 'mheure', 'auto_cmd', 'unit', 'baudrate', 'parity', 'bytesize', 'stopbits',
         'eqKeepopen', 'eqTcpPort', 'eqTcpAddr', 'eqUdpPort', 'eqUdpAddr', 'eqSerialInterface'] as $attribut) {
       // log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('Check de la conf ', __FILE__) . sprintf("*'%s'*", var_export($attribut, true)));
@@ -845,6 +840,11 @@ class mymodbus extends eqLogic {
       $eqConfig['eqRegTestLast'] = trim($this->getConfiguration('eqRegTestLast'));
       $eqConfig['eqRegTestSlave'] = trim($this->getConfiguration('eqRegTestSlave'));
       $eqConfig['eqRegTestFunction'] = $this->getConfiguration('eqRegTestFunction');
+      $eqConfig['eqRegTestFormat'] = $this->getConfiguration('eqRegTestFormat');
+      $eqConfig['eqRegTestInvertBytes'] = $this->getConfiguration('eqRegTestInvertBytes');
+      $eqConfig['eqRegTestInvertWords'] = $this->getConfiguration('eqRegTestInvertWords');
+      $eqConfig['eqRegTestInvertDWords'] = $this->getConfiguration('eqRegTestInvertDWords');
+      
       // Si c'est un équipement de test de registres, les commandes ne sont pas exportées
       return $eqConfig;
     }
@@ -1043,7 +1043,7 @@ class mymodbusCmd extends cmd {
       $this->_changed = true;
     }
 
-    if (in_array($this->getLogicalId(), ['refresh', 'refresh time', 'cycle ok', 'polling'])) {
+    if ($this->getLogicalId() != '') {
       return true;
     }
     $cmdSlave = $this->getConfiguration('cmdSlave');

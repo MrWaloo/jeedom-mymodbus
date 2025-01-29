@@ -225,6 +225,26 @@ class Lib():
     return payload
 
   @classmethod
+  def wordswap_strict(cls, payload: array) -> array:
+    i = 0
+    for e0, e1 in zip(payload[0::2], payload[1::2]):
+      payload[i] = e1
+      payload[i + 1] = e0
+      i += 2
+    return payload
+
+  @classmethod
+  def dwordswap_strict(cls, payload: array) -> array:
+    i = 0
+    for e0, e1, e2, e3 in zip(payload[0::4], payload[1::4], payload[2::4], payload[3::4]):
+      payload[i] = e2
+      payload[i + 1] = e3
+      payload[i + 2] = e0
+      payload[i + 3] = e1
+      i += 4
+    return payload
+
+  @classmethod
   def get_request_attribute(cls, func_code) -> str | None:
     for entry in PMB_REQUESTS:
       if entry.func_code == func_code:

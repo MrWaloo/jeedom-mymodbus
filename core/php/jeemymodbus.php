@@ -104,8 +104,8 @@ if (isset($result['values'])) {
   }
   #log::add('mymodbus', 'debug', 'jeemymodbus.php: Mise à jour des commandes info :' . $names);
 
-} elseif (isset($result['test'])) {
-  
+} elseif (isset($result['RegTest'])) {
+
 } else {
   log::add('mymodbus', 'error', 'jeemymodbus.php: unknown message received from daemon');
 }

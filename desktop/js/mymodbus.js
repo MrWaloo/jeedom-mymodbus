@@ -309,9 +309,26 @@ $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRegTest]').off().on('chan
   if ($(this).value() == '0') {
     $('#div_RegTestParameters').hide();
     $('.btn_add_command').show();
+    $('.noRegTest').show();
   } else {
     $('#div_RegTestParameters').show();
     $('.btn_add_command').hide();
+    $('.noRegTest').hide();
+  }
+});
+
+$('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRegTestFunction]').off().on('change', function () {
+  if ($(this).val() != '' && !is_null($(this).val())) {
+    var show_num = ($(this).val() === '3' || $(this).val() === '4');
+    if (show_num) {
+      $('.formatTestBin').hide();
+      $('.formatTestNum').show();
+    } else {
+      $('.formatTestBin').show();
+      $('.formatTestNum').hide();
+    }
+    var eqRegTestFormat = $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRegTestFormat]');
+    selectFirstVisible(eqRegTestFormat);
   }
 });
 

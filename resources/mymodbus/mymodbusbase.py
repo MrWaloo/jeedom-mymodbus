@@ -16,8 +16,7 @@ from pymodbus import FramerType
 from pymodbus.client import AsyncModbusSerialClient, AsyncModbusTcpClient, AsyncModbusUdpClient
 from pymodbus.exceptions import ModbusException
 from pymodbus.logging import pymodbus_apply_logging_config
-from pymodbus.pdu import DecodePDU, ModbusPDU
-from pymodbus.utilities import pack_bitstring, unpack_bitstring
+from pymodbus.pdu import ModbusPDU
 
 from mymodbuslib import Lib
 
@@ -220,91 +219,6 @@ class MyModbusBase(object):
         self.run_loop(),
         name = f"run_loop_{self.eqConfig['id']}"
       ))
-
-  def cmd_decode(self, response: DecodePDU, cmd: dict, blob: dict | None = None) -> any:
-    self.log.debug(f"{self.eqConfig['name']}: 'cmd_decode' launched for command id = {cmd['id']}")
-    address, count = Lib.get_request_addr_count(cmd)
-    cmd_format: str = cmd["cmdFormat"]
-    #data_type = Lib.get_data_type(cmd_format) # not needed
-    payload = self.get_payload(response, cmd, blob)
-    if blob is not None:
-      blob_addr, blob_count = Lib.get_request_addr_count(blob)
-      if address < blob_addr or address + count > blob_addr + blob_count:
-        error = f"the size of the register range {blob['name']} is too small"
-        self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
-        return
-      offset = address - blob_addr
-      if cmd_format == "bit":
-        payload = payload.tobytes()[offset // 8:]
-      else:
-        payload = payload.tolist()[offset:]
-    
-    try:
-      # Bit
-      if cmd_format == "bit":
-        mask = 1
-        if blob is not None:
-          offset = address - blob_addr
-          mask = 2 ** offset % 8
-        return int(payload[0]) & mask != 0
-
-      # Type: Byte
-      elif cmd_format.startswith("uint8"):
-        if cmd_format.endswith("-msb"):
-          return payload[0] >> 8
-        return payload[0] & 255
-
-      # Type: Word (16bit) || Dword (32bit) || Double Dword (64bit) || String
-      elif Lib.is_normal_number(cmd) or cmd_format == "s":
-        payload = payload[:count]
-        return Lib.convert_from_registers(payload, cmd_format)
-
-      # Type: ScaleFactor
-      elif cmd_format.endswith("_sf"):
-        val_data_type = Lib.get_data_type(cmd_format[0])
-        val_addr, sf_addr = Lib.get_val_sf(cmd)
-
-        val_payload = payload[val_addr - address:val_addr - address + val_data_type.value[1]]
-        val = Lib.convert_from_registers(val_payload, cmd_format[0])
-
-        if val_data_type.value[1] >= 2 and cmd["cmdInvertWords"] != "0":
-          payload = Lib.wordswap(payload, cmd)
-        sf_payload = payload[sf_addr - address:sf_addr - address + 1]
-        sf = Lib.convert_from_registers(sf_payload, "h")
-
-        return val * 10 ** sf
-      
-    except Exception as e:
-      raise e
-  
-  def get_cmd_conf(self, cmd_id: str) -> dict | None:
-    for cmd in self.eqConfig["cmds"]:
-      if cmd["id"] == cmd_id:
-        return cmd
-    return None
-
-  def get_payload(self, response: DecodePDU, cmd: dict, blob: dict | None = None) -> array:
-    attr = Lib.get_request_attribute(response.function_code)
-    result = getattr(response, attr)
-    payload = b''
-    if attr == "bits":
-      payload = pack_bitstring(result)
-      if len(payload) % 2 == 1:
-        payload += b'\x00'
-    else:
-      payload = result
-    payload = array("H", payload)
-    return self.get_ordered_payload(payload, cmd, blob)
-  
-  def get_ordered_payload(self, payload: array, cmd: dict, blob: dict | None = None) -> array:
-    payload = array("H", payload)
-    if cmd["cmdInvertBytes"] != "0":
-      payload.byteswap()
-    if cmd["cmdInvertWords"] != "0":
-      payload = Lib.wordswap(payload, cmd, blob)
-    if cmd["cmdInvertDWords"] != "0":
-      payload = Lib.dwordswap(payload, cmd, blob)
-    return payload
   
   def trace_connect_callback(self, connected: bool):
     self.log.debug(f"{self.eqConfig['name']}: 'trace_connect_callback' called with connected = {connected}")
