@@ -188,7 +188,7 @@ class mymodbusEqConfig {
             <label class="col-sm-6 control-label">{{Format des registres}}</label>
             <div class="col-sm-6">
               <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRegTestFormat"<?= $disabled ?>>
-                <option class="formatTestBin" value="bit">bit (0 / 1)</option>
+                <option class="formatTestBin" value="bits">bit (0 / 1)</option>
                 <optgroup class="formatTestNum" label="16 bits">
                   <option class="formatTestNum" value="h">int16 (-32 768 ... 32 767)</option>
                   <option class="formatTestNum" value="H">uint16 (0 ... 65 535)</option>

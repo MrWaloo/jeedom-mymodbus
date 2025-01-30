@@ -134,7 +134,7 @@ class Lib():
       if format.startswith("uint8"):
         return cls.Uint8.UINT8
       for data_type in ModbusClientMixin.DATATYPE:
-          if data_type.value[0] == format[0]:
+          if data_type.value[0] == format:
               return data_type
 
   @classmethod

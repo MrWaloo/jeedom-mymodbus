@@ -26,13 +26,13 @@ if (init('test') != '') {
   echo 'OK';
   die();
 }
-$result = json_decode(file_get_contents("php://input"), true);
-log::add('mymodbus', 'debug', 'jeemymodbus.php: $result *' . json_encode($result) . '* type: ' . gettype($result));
-if (!is_array($result)) {
+$input = json_decode(file_get_contents("php://input"), true);
+log::add('mymodbus', 'debug', 'jeemymodbus.php: $input *' . json_encode($input) . '* type: ' . gettype($input));
+if (!is_array($input)) {
   die();
 }
 
-if (isset($result['values'])) {
+if (isset($input['values'])) {
   $names = '';
   $sharedEqs = null;
   $conv = [
@@ -40,7 +40,7 @@ if (isset($result['values'])) {
     'cycle_ok'    => 'cycle ok',
     'polling'     => 'polling'
   ];
-  foreach ($result['values'] as $cmd_id => $new_value) {
+  foreach ($input['values'] as $cmd_id => $new_value) {
     #log::add('mymodbus', 'debug', 'jeemymodbus.php: Traitement cmd_id = ' . $cmd_id . ' -> new value: ' . sprintf("%d", $new_value));
     
     if (is_null($sharedEqs) && isset($new_value['eqId'])) { // Déterminé qu'une seule fois
@@ -104,7 +104,25 @@ if (isset($result['values'])) {
   }
   #log::add('mymodbus', 'debug', 'jeemymodbus.php: Mise à jour des commandes info :' . $names);
 
-} elseif (isset($result['RegTest'])) {
+} elseif (isset($input['RegTest'])) {
+  foreach ($input['RegTest'] as $eqLogic_id => $results) {
+//    log::add('mymodbus', 'debug', "jeemymodbus.php: ***DEBUG*** \$eqLogic_id '$eqLogic_id'...");
+    $eqLogic = mymodbus::byId($eqLogic_id);
+    if (is_object($eqLogic)) {
+      $eq_name = $eqLogic->getName();
+      log::add('mymodbus', 'debug', "jeemymodbus.php: Mise à jour équipement de test '$eq_name'...");
+      foreach ($results as $address => $new_value) {
+//        log::add('mymodbus', 'debug', "jeemymodbus.php: ***DEBUG*** \$address '$address'...");
+//        log::add('mymodbus', 'debug', "jeemymodbus.php: ***DEBUG*** \$new_value '$new_value'...");
+        $cmd = mymodbusCmd::byEqLogicIdAndLogicalId($eqLogic_id, 'RegTest_' . $address);
+        if (is_object($cmd)) {
+          $cmd_name =$cmd->getName();
+          log::add('mymodbus', 'debug', "jeemymodbus.php: Mise à jour cmd '$cmd_name' -> new value: '$new_value'");
+          $eqLogic->checkAndUpdateCmd($cmd, $new_value);
+        }
+      }
+    }
+  }
 
 } else {
   log::add('mymodbus', 'error', 'jeemymodbus.php: unknown message received from daemon');

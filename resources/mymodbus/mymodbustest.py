@@ -34,20 +34,23 @@ class MyModbusTest(MyModbusBase):
     - self._blob_dest (in the subclass)
     """
     super().read_eqConfig(eqConfig)
+    self.log.debug(f"{self.eqConfig['name']}: 'read_eqConfig' self.eqConfig = {self.eqConfig}") # DEBUG !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
     self._requests = {}
     self._blob_dest = {}
+    self._changes = {}
     
     # Création de la liste des requêtes pymodbus
     decoder = DecodePDU(True)
-    request_func = decoder.lookup.get(int(eqConfig["eqRegTestFunction"]), None)
+    request_func = decoder.lookup.get(int(self.eqConfig["eqRegTestFunction"]), None)
+    self.log.debug(f"{self.eqConfig['name']}: 'read_eqConfig' request_func = {request_func}") # DEBUG !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     if request_func is None:
-      error = f"le code de fonction Modbus n'est pas disponible: {eqConfig["eqRegTestFunction"]}"
+      error = f"le code de fonction Modbus n'est pas disponible: {eqConfig['eqRegTestFunction']}"
       self.log.error(f"{self.eqConfig['name']}: {error}")
       return
-    eqRegTestFirst = int(eqConfig['eqRegTestFirst'])
-    eqRegTestLast = int(eqConfig['eqRegTestLast'])
-    dev_id = int(eqConfig['eqRegTestSlave'])
+    eqRegTestFirst = int(self.eqConfig['eqRegTestFirst'])
+    eqRegTestLast = int(self.eqConfig['eqRegTestLast'])
+    dev_id = int(self.eqConfig['eqRegTestSlave'])
     count = self.get_count()
     for address in range(eqRegTestFirst, eqRegTestLast + 1):
       self._requests[address] = request_func(address=address, count=count, dev_id=dev_id)
@@ -61,46 +64,52 @@ class MyModbusTest(MyModbusBase):
     eqWriteCmdCheckTimeout = float(self.eqConfig['eqWriteCmdCheckTimeout'])
     eqErrorDelay = float(self.eqConfig['eqErrorDelay'])
     try:
-      self.log.debug(f"{self.eqConfig['name']}: 'run_loop' wait for CMD read")
-      await self.read.wait()
-      if not self.should_stop.is_set():
-        self.stopped.clear()
-        await self.async_connect()
-
-        for reg_add, pmb_req in self._requests.items():
-          if self.should_stop.is_set():
-            break
-
+      while not self.should_stop.is_set():
+        self.log.debug(f"{self.eqConfig['name']}: 'run_loop' wait for CMD read")
+        await self.read.wait()
+        if not self.should_stop.is_set():
+          self.stopped.clear()
           await self.async_connect()
-          error_on_current_read = False
 
-          try:
-            async with self._lock:
-              self.log.debug(f"{self.eqConfig['name']}: 'run_loop' in test mode requesting read register address = {reg_add}")
-              rr: ModbusPDU = await self.client.execute(False, pmb_req)
-          except ModbusException as exc:
-            error_on_current_read = True
-            error = f"exception during read request on device id {pmb_req.dev_id}, address {pmb_req.address} -> {exc!s}"
-          if not error_on_current_read:
+          for reg_add, pmb_req in self._requests.items():
+            if self.should_stop.is_set():
+              break
+
+            await self.async_connect()
+            error_on_current_read = False
+
             try:
-              if rr.isError():
+              async with self._lock:
+                self.log.debug(f"{self.eqConfig['name']}: 'run_loop' in test mode requesting read register address = {reg_add}")
+                rr: ModbusPDU = await self.client.execute(False, pmb_req)
+            except ModbusException as exc:
+              error_on_current_read = True
+              error = f"exception during read request on device id {pmb_req.dev_id}, address {pmb_req.address} -> {exc!s}"
+            if not error_on_current_read:
+              try:
+                if rr.isError():
+                  error_on_current_read = True
+                  error = f"error during read request on device id {pmb_req.dev_id}, address {pmb_req.address} -> {rr}"
+              except AttributeError:
                 error_on_current_read = True
-                error = f"error during read request on device id {pmb_req.dev_id}, address {pmb_req.address} -> {rr}"
-            except AttributeError:
-              error_on_current_read = True
-              error = f"return error during read request on device id {pmb_req.dev_id}, address {pmb_req.address} -> {rr}"
-          if not error_on_current_read:
-            if isinstance(rr, ExceptionResponse):
-              error_on_current_read = True
-              error = f"exception during read request on device id {pmb_req.dev_id}, address {pmb_req.address} -> {rr}"
-          
-          if error_on_current_read:
-            self.log.error(f"{self.eqConfig['name']}: {error}")
-            await asyncio.sleep(eqErrorDelay) # Laisse le temps pour revenir à la normale
+                error = f"return error during read request on device id {pmb_req.dev_id}, address {pmb_req.address} -> {rr}"
+            if not error_on_current_read:
+              if isinstance(rr, ExceptionResponse):
+                error_on_current_read = True
+                error = f"exception during read request on device id {pmb_req.dev_id}, address {pmb_req.address} -> {rr}"
             
-          else:
-            self.loop.create_task(self.send_test_result(reg_add, rr))
-            await asyncio.sleep(eqWriteCmdCheckTimeout) # Cède le contrôle aux autres tâches
+            if error_on_current_read:
+              self.log.error(f"{self.eqConfig['name']}: {error}")
+              await asyncio.sleep(eqErrorDelay) # Laisse le temps pour revenir à la normale
+              
+            else:
+              await asyncio.sleep(eqWriteCmdCheckTimeout) # Cède le contrôle aux autres tâches
+            
+            self.loop.create_task(self.send_test_result(reg_add, rr, error_on_current_read))
+
+        self.read.clear()
+        self.close()
+        self.stopped.set()
 
     except asyncio.CancelledError:
       self.log.debug(f"{self.eqConfig['name']}: 'run_loop' cancelled")
@@ -108,19 +117,22 @@ class MyModbusTest(MyModbusBase):
     self.close()
     self.log.debug(f"{self.eqConfig['name']}: 'run_loop' exit")
 
-  async def send_test_result(self, reg_add: int, response: ModbusPDU) -> None:
+  async def send_test_result(self, reg_add: int, response: ModbusPDU, error: bool) -> None:
     """
     Reads ModbusPDU and returns the value(s) to Jeedom
     """
     self.log.debug(f"{self.eqConfig['name']}: 'send_test_result' launched for address = {reg_add}")
     change = {}
     value = None
-    payload = self.get_payload(response)
-    cmd_format: str = self.eqConfig["eqRegTestFormat"]
-    if cmd_format == 'bit':
-      value = int(payload[0]) & 1 != 0
+    if error:
+      value = 'ERROR'
     else:
-      value = Lib.convert_from_registers(payload, cmd_format)
+      payload = self.get_payload(response)
+      cmd_format: str = self.eqConfig["eqRegTestFormat"]
+      if cmd_format == 'bits':
+        value = int(payload[0])
+      else:
+        value = Lib.convert_from_registers(payload, cmd_format)
     change[f"RegTest::{self.eqConfig['id']}::{reg_add}"] = value
     await self.add_change(change)
 
