@@ -194,9 +194,10 @@ class mymodbus extends eqLogic {
       return True;
     }
     
-    $message = [];
-    $message['CMD'] = 'newDaemonConfig';
-    $message['config'] = self::getCompleteConfiguration();
+    $message = [
+      'CMD' => 'newDaemonConfig',
+      'config' => self::getCompleteConfiguration()
+    ];
     self::sendToDaemon($message);
   }
   
@@ -253,7 +254,10 @@ class mymodbus extends eqLogic {
 
   public static function dependancy_install() {
       log::remove(__CLASS__ . '_update');
-      return ['script' => __DIR__ . '/../../resources/install_#stype#.sh', 'log' => log::getPathToLog(__CLASS__ . '_update')];
+      return [
+        'script' => __DIR__ . '/../../resources/install_#stype#.sh',
+        'log' => log::getPathToLog(__CLASS__ . '_update')
+      ];
   }
 
   public static function dependancy_info() {
@@ -335,7 +339,7 @@ class mymodbus extends eqLogic {
   // Fonction inspirée du plugin jMQTT
   public static function templateByName($_name) {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . sprintf(" * name = '%s'", $_name));
-    if (strpos($_name , mymodbusConst::PREFIX_TEMPLATE_USER) === 0) {
+    if (strpos($_name, mymodbusConst::PREFIX_TEMPLATE_USER) === 0) {
       // Get personal templates
       $name = substr($_name, strlen(mymodbusConst::PREFIX_TEMPLATE_USER));
       $folder = '/../../' . mymodbusConst::PATH_TEMPLATES_USER;
@@ -450,7 +454,7 @@ class mymodbus extends eqLogic {
 
   // Fonction inspirée du plugin jMQTT
   public function applyATemplate($_template, $_keepCmd = true) {
-    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . sprintf(" * template = '%s', keepCmd = '%s'", $_template, $_keepCmd));
+    log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . sprintf(" * template = '%s', keepCmd = '%s'", var_export($_template, true), $_keepCmd));
     // import template
     $this->import($_template, $_keepCmd);
     $this->save();
@@ -625,11 +629,39 @@ class mymodbus extends eqLogic {
           throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le port doit être un nombre.', __FILE__));
         }
       }
+
+      if ($this->getConfiguration('eqRegTest', '0') === '1') {
+        // Equipement de test de registres
+        foreach ($this->getCmd() as $cmdMymodbus) { // boucle sur les commandes
+          if ($cmdMymodbus->getLogicalId() != 'refresh') {
+            $cmdMymodbus->remove();
+          }
+        }
+        $eqRegTestFirst = $this->getConfiguration('eqRegTestFirst');
+        $eqRegTestLast = $this->getConfiguration('eqRegTestLast');
+        $eqRegTestSlave = $this->getConfiguration('eqRegTestSlave');
+        $eqRegTestFunction = $this->getConfiguration('eqRegTestFunction');
+        if (!is_numeric($eqRegTestFirst) || intval($eqRegTestFirst) < 0  || intval($eqRegTestFirst) > 65535) {
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le premier registre doit être un nombre positif compris entre 0 et 65535.', __FILE__));
+        }
+        if (!is_numeric($eqRegTestLast) || intval($eqRegTestLast) < 0  || intval($eqRegTestLast) > 65535) {
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le dernier registre doit être un nombre positif compris entre 0 et 65535.', __FILE__));
+        }
+        if (intval($eqRegTestLast) < intval($eqRegTestFirst)) {
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le premier registre doit être inférieur au dernier registre.', __FILE__));
+        }
+        if (!is_numeric($eqRegTestSlave) || intval($eqRegTestSlave) < 0  || intval($eqRegTestSlave) > 247) {
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'adresse de l\'esclave doit être un nombre positif compris entre 0 et 247.', __FILE__));
+        }
+        if (!is_numeric($eqRegTestFunction) || $eqRegTestFunction < 1 || $eqRegTestFunction > 4) {
+          throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La fonction Modbus doit être un nombre entre 1 et 4.', __FILE__));
+        }
+      }
     }
 
     if ($this->getId() != '') {
       $refreshTimeCmdTest = $this->getCmd('info', 'refresh time');
-      if (!is_object($refreshTimeCmdTest)) {
+      if (!is_object($refreshTimeCmdTest) && $this->getConfiguration('eqRegTest', '0') != '1') {
         log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('Création de commande : Temps de rafraîchissement', __FILE__));
         $refreshTimeCmd = (new mymodbusCmd)
           ->setLogicalId('refresh time')
@@ -638,7 +670,7 @@ class mymodbus extends eqLogic {
           ->setType('info')
           ->setSubType('numeric')
           ->setUnite('s')
-          ->setOrder(0)
+          ->setOrder(1)
           ->save();
       }
       $refreshCmdTest = $this->getCmd('action', 'refresh');
@@ -651,13 +683,15 @@ class mymodbus extends eqLogic {
           ->setType('action')
           ->setSubType('other');
         $refreshTimeCmd = $this->getCmd('info', 'refresh time');
-        $refreshTimeCmd->setOrder(1);
-        $refreshTimeCmd->save();
-        $refreshCmd->setOrder(0);
+        if (is_object($refreshTimeCmd)) {
+          $refreshTimeCmd->setOrder(2);
+          $refreshTimeCmd->save();
+        }
+        $refreshCmd->setOrder(1);
         $refreshCmd->save();
       }
       $cycleOkCmdTest = $this->getCmd('info', 'cycle ok');
-      if (!is_object($cycleOkCmdTest)) {
+      if (!is_object($cycleOkCmdTest) && $this->getConfiguration('eqRegTest', '0') != '1') {
         log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('Création de commande : Cycle OK', __FILE__));
         $cycleOkCmd = (new mymodbusCmd)
           ->setLogicalId('cycle ok')
@@ -668,7 +702,7 @@ class mymodbus extends eqLogic {
           ->save();
       }
       $pollingCmdTest = $this->getCmd('info', 'polling');
-      if (!is_object($pollingCmdTest)) {
+      if (!is_object($pollingCmdTest) && $this->getConfiguration('eqRegTest', '0') != '1') {
         log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('Création de commande : Polling', __FILE__));
         $pollingCmd = (new mymodbusCmd)
           ->setLogicalId('polling')
@@ -679,31 +713,26 @@ class mymodbus extends eqLogic {
           ->setUnite('s')
           ->save();
       }
-      
-      $offset = 0;
-      if (!is_object($refreshTimeCmdTest)) {
-        $offset++;
-      }
-      if (!is_object($refreshCmdTest)) {
-        $offset++;
-      }
-      if ($offset > 0) {
-        foreach ($this->getCmd() as $cmdMymodbus) { // boucle sur les commandes
-          if (in_array($cmdMymodbus->getLogicalId(), ['refresh', 'refresh time', 'cycle ok', 'polling'])) {
-            continue;
-          }
-          if ($cmdMymodbus->getId() != '') {
-            $cmdMymodbus->setOrder($cmdMymodbus->getOrder() + $offset);
-            $cmdMymodbus->save();
-          }
+      // Création des commandes info
+      if ($this->getConfiguration('eqRegTest', '0') === '1') {
+        $order = 2;
+        for ($i = intval($eqRegTestFirst); $i <= intval($eqRegTestLast); $i++) {
+          $cmdTest = (new mymodbusCmd)
+            ->setLogicalId('RegTest_' . $i)
+            ->setEqLogic_id($this->getId())
+            ->setName($i)
+            ->setOrder($order++)
+            ->setType('info')
+            ->setSubType('string')
+            ->save();
         }
       }
     }
 
     // Suppression de l'ancienne configuration
-    log::add(__CLASS__, 'info', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('Suppression de la configuration inutile', __FILE__));
-    foreach (array('protocol', 'addr', 'port', 'keepopen', 'polling', 'mheure', 'auto_cmd', 'unit', 'baudrate', 'parity', 'bytesize', 'stopbits',
-        'eqKeepopen', 'eqTcpPort', 'eqTcpAddr', 'eqUdpPort', 'eqUdpAddr', 'eqSerialInterface') as $attribut) {
+    //log::add(__CLASS__, 'info', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('Suppression de la configuration inutile', __FILE__));
+    foreach (['protocol', 'addr', 'port', 'keepopen', 'polling', 'mheure', 'auto_cmd', 'unit', 'baudrate', 'parity', 'bytesize', 'stopbits',
+        'eqKeepopen', 'eqTcpPort', 'eqTcpAddr', 'eqUdpPort', 'eqUdpAddr', 'eqSerialInterface'] as $attribut) {
       // log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('Check de la conf ', __FILE__) . sprintf("*'%s'*", var_export($attribut, true)));
       if (isset($this->configuration[$attribut])) {
         log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('Suppression de la conf ', __FILE__) . sprintf("*'%s'*", var_export($attribut, true)));
@@ -729,8 +758,7 @@ class mymodbus extends eqLogic {
   }
 
   // Fonction exécutée automatiquement après la sauvegarde de l'équipement (création ou mise à jour)
-  public function postSave() {
-  }
+  // public function postSave() {}
   
   public function postAjax() {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
@@ -791,6 +819,7 @@ class mymodbus extends eqLogic {
     $eqConfig['eqRetries'] = trim($this->getConfiguration('eqRetries', '3'));
     $eqConfig['eqFirstDelay'] = trim($this->getConfiguration('eqFirstDelay', '0'));
     $eqConfig['eqErrorDelay'] = trim($this->getConfiguration('eqErrorDelay', '1'));
+
     if ($eqProtocol === 'serial') {
       $eqConfig['eqPort'] = trim($this->getConfiguration('eqPortSerial'));
       $eqConfig['eqSerialMethod'] = $this->getConfiguration('eqSerialMethod');
@@ -804,6 +833,22 @@ class mymodbus extends eqLogic {
       $eqConfig['eqPort'] = trim($this->getConfiguration('eqPortNetwork'));
       
     }
+    
+    $eqConfig['eqRegTest'] = $this->getConfiguration('eqRegTest', '0');
+    if ($eqConfig['eqRegTest'] != '0') {
+      $eqConfig['eqRegTestFirst'] = trim($this->getConfiguration('eqRegTestFirst'));
+      $eqConfig['eqRegTestLast'] = trim($this->getConfiguration('eqRegTestLast'));
+      $eqConfig['eqRegTestSlave'] = trim($this->getConfiguration('eqRegTestSlave'));
+      $eqConfig['eqRegTestFunction'] = $this->getConfiguration('eqRegTestFunction');
+      $eqConfig['eqRegTestFormat'] = $this->getConfiguration('eqRegTestFormat');
+      $eqConfig['eqRegTestInvertBytes'] = $this->getConfiguration('eqRegTestInvertBytes');
+      $eqConfig['eqRegTestInvertWords'] = $this->getConfiguration('eqRegTestInvertWords');
+      $eqConfig['eqRegTestInvertDWords'] = $this->getConfiguration('eqRegTestInvertDWords');
+      
+      // Si c'est un équipement de test de registres, les commandes ne sont pas exportées
+      return $eqConfig;
+    }
+    
     $eqConfig['cmds'] = [];
     foreach ($this->getCmd() as $cmdMymodbus) { // boucle sur les commandes
       if (in_array($cmdMymodbus->getLogicalId(), ['refresh', 'refresh time', 'cycle ok', 'polling'])) {
@@ -812,7 +857,7 @@ class mymodbus extends eqLogic {
       $eqConfig['cmds'][] = $cmdMymodbus->getCmdConfiguration();
     }
     
-    // Recherche des équipement qui utilise cette interface
+    // Recherche des équipements qui utilisent cette interface
     foreach (self::byType(__CLASS__) as $eqMymodbus) { // boucle sur les équipements
       if ($eqMymodbus->getIsEnable()
       && $eqMymodbus->getConfiguration('eqProtocol') === 'shared_from'
@@ -998,7 +1043,7 @@ class mymodbusCmd extends cmd {
       $this->_changed = true;
     }
 
-    if (in_array($this->getLogicalId(), ['refresh', 'refresh time', 'cycle ok', 'polling'])) {
+    if ($this->getLogicalId() != '') {
       return true;
     }
     $cmdSlave = $this->getConfiguration('cmdSlave');

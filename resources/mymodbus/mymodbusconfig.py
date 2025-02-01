@@ -1,6 +1,6 @@
 import json
 
-from jeedomdaemon.base_config import BaseConfig # type: ignore
+from jeedomdaemon.base_config import BaseConfig
 
 
 class MyModbusConfig(BaseConfig):

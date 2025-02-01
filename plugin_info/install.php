@@ -32,7 +32,7 @@ function mydeltree($_dir) {
     if (is_dir($file_or_dir)) {
       mydeltree($file_or_dir);
     } else {
-      if (!unlink($file_or_dir)) {
+      if (!unlink(realpath($file_or_dir))) {
         // Gestion des erreurs en cas d'échec de la suppression
         throw new RuntimeException("Impossible de supprimer le fichier $file_or_dir");
       }
@@ -73,7 +73,7 @@ function delete_unused_files() {
   ];
   foreach($files as $file) {
     if (is_file($dir . $file)) {
-      unlink($dir . $file);
+      unlink(realpath($dir . $file));
     }
   }
 
@@ -88,6 +88,8 @@ function delete_unused_files() {
 }
 
 function mymodbus_update() {
+  $pluginId = basename(realpath(__DIR__ . '/..'));
+  log::add($pluginId, 'info', 'mymodbus_update');
 
   do {
     $cron = cron::byClassAndFunction('mymodbus', 'cronDaily');
@@ -103,11 +105,15 @@ function mymodbus_update() {
 }
 
 function mymodbus_install() {
+  $pluginId = basename(realpath(__DIR__ . '/..'));
+  log::add($pluginId, 'info', 'mymodbus_install');
+
   delete_unused_files();
 }
 
 /*
     function mymodbus_remove() {}
  */
+
 
 ?>

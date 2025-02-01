@@ -3,6 +3,7 @@ import asyncio
 from jeedomdaemon.base_daemon import BaseDaemon
 
 from mymodbusclient import MyModbusClient
+from mymodbustest import MyModbusTest
 from mymodbusconfig import MyModbusConfig
 
 
@@ -17,7 +18,7 @@ class MyModbusd(BaseDaemon):
     )
     self.set_logger_log_level("MyModbus")
 
-    self._mymodbus_clients: dict[str, MyModbusClient] = {}
+    self._mymodbus_clients: dict[str, MyModbusClient | MyModbusTest] = {}
     self._async_tasks: list[asyncio.Task] = []
     self.__n = self.__class__.__name__
 
@@ -109,14 +110,21 @@ class MyModbusd(BaseDaemon):
           asyncio.create_task(self.start_client(eqConfig))
   
   async def start_client(self, eqConfig: dict) -> None:
-    new_client = MyModbusClient(eqConfig)
+    new_client = None
+    if eqConfig["eqRegTest"] == "1":
+      new_client = MyModbusTest(eqConfig)
+    else:
+      new_client = MyModbusClient(eqConfig)
     self._async_tasks.append(asyncio.create_task(
       self.read_upstream(new_client.upstream, eqConfig["id"]),
       name = eqConfig["id"]
     ))
     new_client.read_eqConfig()
     new_client.connect()
-    self._logger.info(f"{self.__n}: Starting the task for the equipement {eqConfig['name']}")
+    if eqConfig["eqRegTest"] == "1":
+      self._logger.info(f"{self.__n}: Starting the task to test anthe equipement {eqConfig['name']}")
+    else:
+      self._logger.info(f"{self.__n}: Starting the task for the equipement {eqConfig['name']}")
     self._mymodbus_clients[eqConfig["id"]] = new_client
 
   async def terminate_client(self, eqId: str) -> None:
@@ -152,7 +160,7 @@ class MyModbusd(BaseDaemon):
     """
     mymodbus_client = self._mymodbus_clients.get(eqId, None)
     if mymodbus_client is None:
-      self._logger.error(f"{self.__n}: No equipment ID in the message to send to MyModbusClient: {payload}")
+      self._logger.error(f"{self.__n}: No MyModbusClient instance has been started yet for the given equipment ID: {payload}")
       return
     await mymodbus_client.downstream.put(payload)
 

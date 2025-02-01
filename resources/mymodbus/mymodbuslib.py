@@ -34,19 +34,19 @@ PMB_READ_REQUESTS: list[Request] = [
 PMB_WRITE_REQUESTS: list[Request] = [
   Request(
     5,
-    "value"
+    "bits"
   ),
   Request(
     15,
-    "values"
+    "bits"
   ),
   Request(
     6,
-    "value"
+    "registers"
   ),
   Request(
     16,
-    "values"
+    "registers"
   ),
 ]
 PMB_REQUESTS: list[Request] = []
@@ -134,7 +134,7 @@ class Lib():
       if format.startswith("uint8"):
         return cls.Uint8.UINT8
       for data_type in ModbusClientMixin.DATATYPE:
-          if data_type.value[0] == format[0]:
+          if data_type.value[0] == format:
               return data_type
 
   @classmethod
@@ -222,6 +222,26 @@ class Lib():
         payload[i + 2] = e0
         payload[i + 3] = e1
         i += 4
+    return payload
+
+  @classmethod
+  def wordswap_strict(cls, payload: array) -> array:
+    i = 0
+    for e0, e1 in zip(payload[0::2], payload[1::2]):
+      payload[i] = e1
+      payload[i + 1] = e0
+      i += 2
+    return payload
+
+  @classmethod
+  def dwordswap_strict(cls, payload: array) -> array:
+    i = 0
+    for e0, e1, e2, e3 in zip(payload[0::4], payload[1::4], payload[2::4], payload[3::4]):
+      payload[i] = e2
+      payload[i + 1] = e3
+      payload[i + 2] = e0
+      payload[i + 3] = e1
+      i += 4
     return payload
 
   @classmethod

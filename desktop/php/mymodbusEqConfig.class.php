@@ -15,7 +15,7 @@ class mymodbusEqConfig {
     <div class="<?= $colSmClass ?>">
       <legend><i class="fa fa-wrench"></i> {{Equipement :}}</legend>
       <div class="form-group">
-        <label class="col-sm-4 control-label">{{Nom de l'équipement}}</label>
+        <label class="col-sm-6 control-label">{{Nom de l'équipement}}</label>
         <div class="col-sm-6">
           <input type="text" class="eqLogicAttr form-control" data-l1key="id" style="display:none;" />
           <input type="text" class="eqLogicAttr form-control" data-l1key="name" placeholder="{{Nom de l'équipement}}"<?= $disabled ?>/>
@@ -25,7 +25,7 @@ class mymodbusEqConfig {
       if (!$_is_template) {
       ?>
       <div class="form-group">
-        <label class="col-sm-4 control-label">{{Objet parent}}</label>
+        <label class="col-sm-6 control-label">{{Objet parent}}</label>
         <div class="col-sm-6">
           <select id="sel_object" class="eqLogicAttr form-control" data-l1key="object_id">
             <option value="">{{Aucun}}</option>
@@ -41,7 +41,7 @@ class mymodbusEqConfig {
       }
       ?>
       <div class="form-group eqCategories">
-        <label class="col-sm-4 control-label">{{Catégorie}}</label>
+        <label class="col-sm-6 control-label">{{Catégorie}}</label>
         <div class="col-sm-6">
           <?php
           foreach (jeedom::getConfiguration('eqLogic:category') as $key => $value) {
@@ -53,7 +53,7 @@ class mymodbusEqConfig {
         </div>
       </div>
       <div class="form-group">
-        <label class="col-sm-4 control-label">{{Options}}</label>
+        <label class="col-sm-6 control-label">{{Options}}</label>
         <div class="col-sm-6">
           <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isEnable" checked<?= $disabled ?>/>{{Activer}}</label>
           <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isVisible" checked<?= $disabled ?>/>{{Visible}}</label>
@@ -63,7 +63,7 @@ class mymodbusEqConfig {
       <!-- *********************************** -->
       <legend><i class="fa fa-list-alt"></i> {{Configuration :}}</legend>
       <div class="form-group">
-        <label class="col-sm-4 control-label">{{Protocol de connexion}}</label>
+        <label class="col-sm-6 control-label">{{Protocol de connexion}}</label>
         <div class="col-sm-6">
           <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqProtocol"<?= $disabled ?>>
             <option disabled selected value>-- {{Choisir un protocol de connexion}} --</option>
@@ -83,64 +83,151 @@ class mymodbusEqConfig {
       </div>
       <!-- Paramètres propres au protocol -->
       <div id="div_protocolParameters">
-        <div class="form-group nonShared">
-          <label class="col-sm-4 control-label">{{Mode de rafraîchissement}}</label>
+        <div class="form-group nonShared noRegTest">
+          <label class="col-sm-6 control-label">{{Mode de rafraîchissement}}</label>
           <div class="col-sm-6">
             <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRefreshMode"<?= $disabled ?>>
               <option disabled selected value>-- {{Selectionnez un mode}} --</option>
               <option value="polling">{{Polling}}</option>
               <option value="cyclic">{{Cyclique}}</option>
-                <option value="on_event">{{Sur événement}}</option>
+              <option value="on_event">{{Sur événement}}</option>
             </select>
           </div>
         </div>
-        <div class="form-group nonShared" id="eqPolling">
-          <label class="col-sm-4 control-label">{{Polling (s)}}
+        <div class="form-group nonShared noRegTest" id="eqPolling">
+          <label class="col-sm-6 control-label">{{Polling (s)}}
             <sup><i class="fas fa-question-circle tooltips" title="{{En mode Polling: raffraichissement des valeurs toutes les n secondes, minimum 1}}"></i></sup>
           </label>
           <div class="col-sm-6">
-            <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqPolling" placeholder="60"<?= $disabled ?>/>
+            <input type="number" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqPolling" placeholder="60"<?= $disabled ?>/>
           </div>
         </div>
-        <div class="form-group nonShared" id="eqTimeout">
-          <label class="col-sm-4 control-label">{{Timeout (s)}}
+        <div class="form-group nonShared">
+          <label class="col-sm-6 control-label">{{Timeout (s)}}
             <sup><i class="fas fa-question-circle tooltips" title="{{Temps maximum d'attente de réponse à une requête}}"></i></sup>
           </label>
           <div class="col-sm-6">
-            <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqTimeout" placeholder="60"<?= $disabled ?>/>
+            <input type="number" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqTimeout" placeholder="60"<?= $disabled ?>/>
           </div>
         </div>
         <div class="form-group nonShared">
-          <label class="col-sm-4 control-label">{{Nombre de tentatives en cas d'erreur}}</label>
+          <label class="col-sm-6 control-label">{{Nombre de tentatives en cas d'erreur}}</label>
           <div class="col-sm-6">
-            <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRetries" placeholder="3"<?= $disabled ?>/>
+            <input type="number" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRetries" placeholder="3"<?= $disabled ?>/>
           </div>
         </div>
         <div class="form-group nonShared">
-          <label class="col-sm-4 control-label">{{Temps entre 2 requêtes de lecture (s)}}
+          <label class="col-sm-6 control-label">{{Temps entre 2 requêtes de lecture (s)}}
             <sup><i class="fas fa-question-circle tooltips" title="{{Egalement le temps aloué à la vérification de l'envoi d'une commande action par Jeedom}}"></i></sup>
           </label>
           <div class="col-sm-6">
-            <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqWriteCmdCheckTimeout" placeholder="1"<?= $disabled ?>/>
+            <input type="number" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqWriteCmdCheckTimeout" placeholder="1"<?= $disabled ?>/>
           </div>
         </div>
         <div class="form-group nonShared">
-          <label class="col-sm-4 control-label">{{Temps d'attente après la connexion (s)}}</label>
+          <label class="col-sm-6 control-label">{{Temps d'attente après la connexion (s)}}</label>
           <div class="col-sm-6">
-            <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqFirstDelay" placeholder="0"<?= $disabled ?>/>
+            <input type="number" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqFirstDelay" placeholder="0"<?= $disabled ?>/>
           </div>
         </div>
         <div class="form-group nonShared">
-          <label class="col-sm-4 control-label">{{Temps d'attente après une erreur de lecture (s)}}</label>
+          <label class="col-sm-6 control-label">{{Temps d'attente après une erreur de lecture (s)}}</label>
           <div class="col-sm-6">
-            <input type="text" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqErrorDelay" placeholder="0"<?= $disabled ?>/>
+            <input type="number" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqErrorDelay" placeholder="0"<?= $disabled ?>/>
           </div>
         </div>
         <?php
         self::show_network_config();
         self::show_serial_config();
         ?>
-      </div>
+        <div class="form-group nonShared">
+          <label class="col-sm-6 control-label">{{Equipement destiné à tester l'existence des registres}}</label>
+          <div class="col-sm-6">
+            <label class="checkbox-inline">
+              <input type="checkbox" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRegTest"<?= $disabled ?>/>
+              <div class="danger">
+                <i class="fas fa-exclamation-triangle"></i>
+                {{ATTENTION : lors de la sauvegarde de l'équipement, si l'équipement est activé, toutes les commandes seront supprimées sans demande de confirmation}}
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div id="div_RegTestParameters" hidden>
+          <div class="form-group nonShared">
+            <label class="col-sm-6 control-label">{{Premier registre à tester}}</label>
+            <div class="col-sm-6">
+              <input type="number" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRegTestFirst"<?= $disabled ?>/>
+            </div>
+          </div>
+          <div class="form-group nonShared">
+            <label class="col-sm-6 control-label">{{Dernier registre à tester}}</label>
+            <div class="col-sm-6">
+              <input type="number" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRegTestLast"<?= $disabled ?>/>
+            </div>
+          </div>
+          <div class="form-group nonShared">
+            <label class="col-sm-6 control-label">{{Adresse de l'esclave}}</label>
+            <div class="col-sm-6">
+              <input type="number" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRegTestSlave"<?= $disabled ?>/>
+            </div>
+          </div>
+          <div class="form-group nonShared">
+            <label class="col-sm-6 control-label">{{Fonction à utiliser}}</label>
+            <div class="col-sm-6">
+              <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRegTestFunction"<?= $disabled ?>>
+                <option disabled selected value>-- {{Selectionnez une fonction}} --</option>
+                <option value="1">[0x01] Read coils</option>
+                <option value="2">[0x02] Read discrete inputs</option>
+                <option value="3">[0x03] Read holding registers</option>
+                <option value="4">[0x04] Read input registers</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group nonShared">
+            <label class="col-sm-6 control-label">{{Format des registres}}</label>
+            <div class="col-sm-6">
+              <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRegTestFormat"<?= $disabled ?>>
+                <option class="formatTestBin" value="bits">bit (0 / 1)</option>
+                <optgroup class="formatTestNum" label="16 bits">
+                  <option class="formatTestNum" value="h">int16 (-32 768 ... 32 767)</option>
+                  <option class="formatTestNum" value="H">uint16 (0 ... 65 535)</option>
+                </optgroup>
+                <optgroup class="formatTestNum" label="32 bits ({{2 registres}})">
+                  <option class="formatTestNum" value="i">int32 (-2 147 483 648 ... 2 147 483 647)</option>
+                  <option class="formatTestNum" value="I">uint32 (0 ... 4 294 967 295)</option>
+                  <option class="formatTestNum" value="f">float32 (Real 32bit)</option>
+                </optgroup>
+                <optgroup class="formatTestNum" label="64 bits ({{4 registres}})">
+                  <option class="formatTestNum" value="q">int64 (-9e18 ... 9e18)</option>
+                  <option class="formatTestNum" value="Q">uint64 (0 ... 18e18)</option>
+                  <option class="formatTestNum" value="d">float64 (Real 64bit)</option>
+                </optgroup>
+                <option class="formatTestNum" value="s">{{Chaine de caractères}}</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group nonShared">
+            <label class="col-sm-6 control-label">{{Inverser les octets}}</label>
+            <div class="col-sm-6">
+              <input type="checkbox" class="eqLogicAttr" data-l1key="configuration" data-l2key="eqRegTestInvertBytes"<?= $disabled ?>/>
+            </div>
+          </div>
+          <div class="form-group nonShared">
+            <label class="col-sm-6 control-label">{{Inverser les mots}}</label>
+            <div class="col-sm-6">
+              <input type="checkbox" class="eqLogicAttr" data-l1key="configuration" data-l2key="eqRegTestInvertWords"<?= $disabled ?>/>
+            </div>
+          </div>
+          <div class="form-group nonShared">
+            <label class="col-sm-6 control-label">{{Inverser les double-mots}}</label>
+            <div class="col-sm-6">
+              <input type="checkbox" class="eqLogicAttr" data-l1key="configuration" data-l2key="eqRegTestInvertDWords"<?= $disabled ?>/>
+            </div>
+          </div>
+        </div>
+
+      </div> <!-- div_protocolParameters -->
     </div>
 
     <div class="<?= $colSmClass ?>">
@@ -158,7 +245,7 @@ class mymodbusEqConfig {
   static function show_shared_interface() {
     ?>
     <div class="form-group sharedInterface">
-      <label class="col-sm-4 control-label">{{Utilisation de l'interface de l'équipement}}</label>
+      <label class="col-sm-6 control-label">{{Utilisation de l'interface de l'équipement}}</label>
       <div class="col-sm-6">
         <select id="sharedInterface" class="eqLogicAttr form-control sharedInterface" data-toggle="tooltip" data-placement="top" data-html="true" data-l1key="configuration" data-l2key="eqInterfaceFromEqId">
         <?php
@@ -175,16 +262,16 @@ class mymodbusEqConfig {
   static function show_network_config() {
     ?>
     <div class="form-group networkConfig" hidden>
-      <label class="col-sm-4 control-label">{{Adresse IP}}</label>
+      <label class="col-sm-6 control-label">{{Adresse IP}}</label>
       <div class="col-sm-6">
         <input type="text" class="eqLogicAttr form-control networkConfig" data-l1key="configuration" data-l2key="eqAddr" placeholder="192.168.1.55"/>
       </div>
     </div>
 
     <div class="form-group networkConfig" hidden>
-      <label class="col-sm-4 control-label">{{Port}}</label>
+      <label class="col-sm-6 control-label">{{Port}}</label>
       <div class="col-sm-6">
-        <input type="text" class="eqLogicAttr form-control networkConfig" data-l1key="configuration" data-l2key="eqPortNetwork" placeholder="502"/>
+        <input type="number" class="eqLogicAttr form-control networkConfig" data-l1key="configuration" data-l2key="eqPortNetwork" placeholder="502"/>
       </div>
     </div>
     <?php
@@ -193,7 +280,7 @@ class mymodbusEqConfig {
   static function show_serial_config() {
     ?>
     <div class="form-group serialConfig" hidden>
-      <label class="col-sm-4 control-label">{{Interface}}</label>
+      <label class="col-sm-6 control-label">{{Interface}}</label>
       <div class="col-sm-6">
         <select class="eqLogicAttr form-control serialConfig" data-toggle="tooltip" data-placement="top" data-html="true" data-l1key="configuration" data-l2key="eqPortSerial">
           <?php
@@ -206,7 +293,7 @@ class mymodbusEqConfig {
     </div>
 
     <div class="form-group serialConfig" hidden>
-      <label class="col-sm-4 control-label">{{Méthode de transport}}</label>
+      <label class="col-sm-6 control-label">{{Méthode de transport}}</label>
       <div class="col-sm-6">
         <select class="eqLogicAttr form-control serialConfig" data-l1key="configuration" data-l2key="eqSerialMethod">
           <option value="rtu">{{RTU}}</option>
@@ -216,7 +303,7 @@ class mymodbusEqConfig {
     </div>
 
     <div class="form-group serialConfig" hidden>
-      <label class="col-sm-4 control-label">{{Vitesse de transmission}}</label>
+      <label class="col-sm-6 control-label">{{Vitesse de transmission}}</label>
       <div class="col-sm-6">
         <select class="eqLogicAttr form-control serialConfig" data-l1key="configuration" data-l2key="eqSerialBaudrate">
           <option disabled selected value>-- {{Selectionnez une valeur}} --</option>
@@ -240,7 +327,7 @@ class mymodbusEqConfig {
     </div>
 
     <div class="form-group serialConfig" hidden>
-      <label class="col-sm-4 control-label">{{Nombre de bits par octet}}</label>
+      <label class="col-sm-6 control-label">{{Nombre de bits par octet}}</label>
       <div class="col-sm-6">
         <select class="eqLogicAttr form-control serialConfig" data-l1key="configuration" data-l2key="eqSerialBytesize">
           <option disabled selected value>-- {{Selectionnez une valeur}} --</option>
@@ -251,7 +338,7 @@ class mymodbusEqConfig {
     </div>
 
     <div class="form-group serialConfig" hidden>
-      <label class="col-sm-4 control-label">{{Parité}}</label>
+      <label class="col-sm-6 control-label">{{Parité}}</label>
       <div class="col-sm-6">
         <select class="eqLogicAttr form-control serialConfig" data-l1key="configuration" data-l2key="eqSerialParity">
           <option disabled selected value>-- {{Selectionnez une valeur}} --</option>
@@ -263,7 +350,7 @@ class mymodbusEqConfig {
     </div>
 
     <div class="form-group serialConfig" hidden>
-      <label class="col-sm-4 control-label">{{Bits de stop}}</label>
+      <label class="col-sm-6 control-label">{{Bits de stop}}</label>
       <div class="col-sm-6">
         <select class="eqLogicAttr form-control serialConfig" data-l1key="configuration" data-l2key="eqSerialStopbits">
           <option disabled selected value>-- {{Selectionnez une valeur}} --</option>
