@@ -53,7 +53,6 @@ function delete_unused_files() {
     'desktop/images/crouzet_m3_icon.png',
     'desktop/images/logo_icon.png',
     'desktop/images/rtu_icon.png',
-    'desktop/images/rtuovertcp_icon.png',
     'desktop/images/tcpip_icon.png',
     'desktop/images/wago_icon.png',
     'desktop/modal/adam.configuration.php',
