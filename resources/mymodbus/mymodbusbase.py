@@ -6,6 +6,8 @@ In this code 'pmb' is used for PyModBus
 The logic is the same than in the modbus implementation in Home Assistant as far as I could
 """
 
+import re
+
 import asyncio
 import logging
 from abc import abstractmethod
@@ -183,9 +185,15 @@ class MyModbusBase(object):
 
   async def add_change(self, payload) -> None:
     self.log.debug(f"{self.eqConfig['name']}: 'add_change' launched with payload = {payload}")
+    repeat = {}
+    for cmd in self.eqConfig["cmds"]:
+      repeat[cmd['id']] = not cmd['repeat'] == '0'
+    re_values = re.compile(r'values::(\d*)')
     changes_to_send: dict = {}
     for k, v in payload.items():
-      if k not in self._changes.keys() or self._changes[k] != v:
+      match_repeat = re_values.fullmatch(k)
+      send_repeat = match_repeat and repeat.get(match_repeat.group(1), False)
+      if k not in self._changes.keys() or self._changes[k] != v or send_repeat:
         changes_to_send[k] = self._changes[k] = v
     if changes_to_send:
       try:
