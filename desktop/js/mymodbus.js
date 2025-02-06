@@ -255,6 +255,22 @@ function printEqLogic(_eqLogic) {
     _eqLogic.configuration.eqErrorDelay = '1';
     modifyWithoutSave = true;
   }
+  if (!isset(_eqLogic.configuration.eqRegTest) || _eqLogic.configuration.eqRegTest == '') {
+    _eqLogic.configuration.eqRegTest = '0';
+    modifyWithoutSave = true;
+  }
+  if (!isset(_eqLogic.configuration.eqRegTestInvertBytes) || _eqLogic.configuration.eqRegTestInvertBytes == '') {
+    _eqLogic.configuration.eqRegTestInvertBytes = '0';
+    modifyWithoutSave = true;
+  }
+  if (!isset(_eqLogic.configuration.eqRegTestInvertWords) || _eqLogic.configuration.eqRegTestInvertWords == '') {
+    _eqLogic.configuration.eqRegTestInvertWords = '0';
+    modifyWithoutSave = true;
+  }
+  if (!isset(_eqLogic.configuration.eqRegTestInvertDWords) || _eqLogic.configuration.eqRegTestInvertDWords == '') {
+    _eqLogic.configuration.eqRegTestInvertDWords = '0';
+    modifyWithoutSave = true;
+  }
   
   // Afficher la partie variable de la configuration de l'équipement en fonction du protocole choisi
   $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqProtocol]').off().on('change', function () {
