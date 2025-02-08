@@ -1,0 +1,16 @@
+name: translate
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - beta
+
+jobs:
+  auto-translate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: Mips2648/plugins-translations@v1
+        with:
+          deepl_api_key: ${{ secrets.DEEPL_API_KEY }}
+          use_core_translations: false
