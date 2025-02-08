@@ -14,3 +14,4 @@ jobs:
         with:
           deepl_api_key: ${{ secrets.DEEPL_API_KEY }}
           use_core_translations: false
+          debug: true
