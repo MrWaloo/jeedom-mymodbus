@@ -632,11 +632,6 @@ class mymodbus extends eqLogic {
 
       if ($this->getConfiguration('eqRegTest', '0') === '1') {
         // Equipement de test de registres
-        foreach ($this->getCmd() as $cmdMymodbus) { // boucle sur les commandes
-          if ($cmdMymodbus->getLogicalId() != 'refresh') {
-            $cmdMymodbus->remove();
-          }
-        }
         $eqRegTestFirst = $this->getConfiguration('eqRegTestFirst');
         $eqRegTestLast = $this->getConfiguration('eqRegTestLast');
         $eqRegTestSlave = $this->getConfiguration('eqRegTestSlave');
@@ -670,7 +665,6 @@ class mymodbus extends eqLogic {
           ->setType('info')
           ->setSubType('numeric')
           ->setUnite('s')
-          ->setOrder(1)
           ->save();
       }
       $refreshCmdTest = $this->getCmd('action', 'refresh');
@@ -682,12 +676,6 @@ class mymodbus extends eqLogic {
           ->setName(__('Rafraîchir', __FILE__))
           ->setType('action')
           ->setSubType('other');
-        $refreshTimeCmd = $this->getCmd('info', 'refresh time');
-        if (is_object($refreshTimeCmd)) {
-          $refreshTimeCmd->setOrder(2);
-          $refreshTimeCmd->save();
-        }
-        $refreshCmd->setOrder(1);
         $refreshCmd->save();
       }
       $cycleOkCmdTest = $this->getCmd('info', 'cycle ok');
@@ -715,7 +703,21 @@ class mymodbus extends eqLogic {
       }
       // Création des commandes info
       if ($this->getConfiguration('eqRegTest', '0') === '1') {
-        $order = 2;
+        foreach ($this->getCmd() as $cmdMymodbus) { // boucle sur les commandes
+          if ($cmdMymodbus->getLogicalId() != 'refresh') {
+            $cmdMymodbus->remove();
+          }
+        }
+        $eqRegTestFirst = $this->getConfiguration('eqRegTestFirst');
+        $eqRegTestLast = $this->getConfiguration('eqRegTestLast');
+        $eqRegTestSlave = $this->getConfiguration('eqRegTestSlave');
+        $eqRegTestFunction = $this->getConfiguration('eqRegTestFunction');
+        $order = 1;
+        $refreshCmd = $this->getCmd('action', 'refresh');
+        if (is_object($refreshCmd)) {
+          $refreshCmd->setOrder($order++);
+          $refreshCmd->save();
+        }
         for ($i = intval($eqRegTestFirst); $i <= intval($eqRegTestLast); $i++) {
           $cmdTest = (new mymodbusCmd)
             ->setLogicalId('RegTest_' . $i)
@@ -725,6 +727,13 @@ class mymodbus extends eqLogic {
             ->setType('info')
             ->setSubType('string')
             ->save();
+        }
+
+      } else {
+        foreach ($this->getCmd() as $cmdMymodbus) { // boucle sur les commandes
+          if (substr($cmdMymodbus->getLogicalId(), 0, 8) === 'RegTest_') {
+            $cmdMymodbus->remove();
+          }
         }
       }
     }
@@ -751,9 +760,6 @@ class mymodbus extends eqLogic {
       }
     }
 
-    //if ($this->getChanged()) {
-    //  $this->save();
-    //}
     //log::add(__CLASS__, 'debug', 'Validation de la configuration pour l\'équipement *' . $this->getHumanName() . '* : OK');
   }
 
@@ -1011,7 +1017,7 @@ class mymodbusCmd extends cmd {
   // Fonction exécutée automatiquement avant la sauvegarde de la commande (création ou mise à jour)
   // La levée d'une exception invalide la sauvegarde
   public function preSave() {
-    log::add('mymodbus', 'debug', __CLASS__ . '::' . __FUNCTION__);
+    log::add('mymodbus', 'debug', __CLASS__ . '::' . __FUNCTION__ . sprintf(' * %s * %s *', $this->getId(), $this->getHumanName()));
     // Suppression de l'ancienne configuration
     foreach (array('type', 'datatype', 'location', 'request', 'parameters') as $attribut) {
       if (isset($this->configuration[$attribut])) {

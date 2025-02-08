@@ -186,8 +186,9 @@ class MyModbusBase(object):
   async def add_change(self, payload) -> None:
     self.log.debug(f"{self.eqConfig['name']}: 'add_change' launched with payload = {payload}")
     repeat = {}
-    for cmd in self.eqConfig["cmds"]:
-      repeat[cmd['id']] = not cmd['repeat'] == '0'
+    if self.eqConfig.get("cmds", None) is not None:
+      for cmd in self.eqConfig["cmds"]:
+        repeat[cmd['id']] = not cmd['repeat'] == '0'
     re_values = re.compile(r'values::(\d*)')
     changes_to_send: dict = {}
     for k, v in payload.items():
