@@ -70,7 +70,7 @@
         "Le port doit être un nombre.": "Der Port muss eine Zahl sein.",
         "Le premier registre doit être inférieur au dernier registre.": "Das erste Register muss kleiner sein als das letzte Register.",
         "Le premier registre doit être un nombre positif compris entre 0 et 65535.": "Das erste Register muss eine positive Zahl zwischen 0 und 65535 sein.",
-        "Le protocol n\\'est pas défini correctement.": "Das Protokoll ist nicht richtig definiert.",
+        "Le protocole n\\'est pas défini correctement.": "Das Protokoll ist nicht richtig definiert.",
         "Le template demandé n'existe pas !": "Das angeforderte Template existiert nicht!",
         "On ne peut pas extraire une plage de registres d\\'une plage de registres.": "Man kann nicht einfach einen Bereich von Registern aus einem Bereich von Registern extrahieren.",
         "Plage de registres non définie.": "Registerbereich nicht definiert.",
@@ -147,7 +147,7 @@
         "Désactivé": "Deaktiviert",
         "Id": "Id",
         "Nom": "Name",
-        "Protocol": "Protokoll"
+        "Protocole": "Protokoll"
     },
     "plugins\/mymodbus\/desktop\/modal\/move_cmd.php": {
         "Aucun équipement ne partage sa configuration de connexion": "Kein Gerät teilt seine Verbindungskonfiguration",
@@ -213,7 +213,6 @@
         "Sauvegarder": "Speichern",
         "Supprimer": "Löschen",
         "Templates": "Templates",
-        "Tester des registres": "Register testen",
         "Type": "Typ",
         "Valeur": "Wert"
     },
@@ -230,7 +229,7 @@
         "Bits de stop": "Stopp-Bits",
         "Catégorie": "Kategorie",
         "Chaine de caractères": "Zeichenkette",
-        "Choisir un protocol de connexion": "Wählen Sie ein Verbindungsprotokoll",
+        "Choisir un protocole de connexion": "Verbindungsprotokoll wählen",
         "Configuration :": "Konfiguration :",
         "Cyclique": "Zyklisch",
         "Dernier registre à tester": "Letztes Register zum Testen",
@@ -261,7 +260,7 @@
         "Polling (s)": "Polling (s)",
         "Port": "Port",
         "Premier registre à tester": "Erste Registrierung zum Testen",
-        "Protocol de connexion": "Verbindungsprotokoll",
+        "Protocole de connexion": "Verbindungsprotokoll",
         "RTU": "RTU",
         "Selectionnez un mode": "Wählen Sie einen Modus",
         "Selectionnez une fonction": "Wählen Sie eine Funktion",
