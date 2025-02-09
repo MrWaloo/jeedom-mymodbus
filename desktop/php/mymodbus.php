@@ -6,7 +6,8 @@ $plugin = plugin::byId('mymodbus');
 sendVarToJS('eqType', $plugin->getId());
 include_file('desktop', 'mymodbus.functions', 'js', 'mymodbus');
 $eqLogics = eqLogic::byType($plugin->getId());
-require_once 'mymodbusEqConfig.class.php';
+// require_once 'mymodbusEqConfig.class.php';
+include_file('desktop', 'mymodbusEqConfig.class', 'php', 'mymodbus');
 
 ?>
 
@@ -40,11 +41,6 @@ require_once 'mymodbusEqConfig.class.php';
         <i class="fas fa-arrow-right" style="color:#0F9DE8;"></i>
         <br/>
         <span>{{Déplacer les commandes}}</span>
-      </div>
-      <div class="cursor logoSecondary" id="bt_test_registers">
-        <i class="fas fa-stethoscope" style="color:#0F9DE8;"></i> <!-- fa-search fa-stethoscope  fa-question  -->
-        <br/>
-        <span>{{Tester des registres}}</span>
       </div>
     </div>
     <legend><i class="fas fa-table"></i> {{Mes équipements}}</legend>

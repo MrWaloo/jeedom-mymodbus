@@ -26,7 +26,7 @@ $eqLogics = mymodbus::byType('mymodbus');
 		<tr>
 			<th>{{Nom}}</th>
   		<th>{{Id}}</th>
-			<th>{{Protocol}}</th>
+			<th>{{Protocole}}</th>
 			<th>{{Activé}}</th>
 			<th>{{Dernière communication}}</th>
 			<th>{{Date de création}}</th>

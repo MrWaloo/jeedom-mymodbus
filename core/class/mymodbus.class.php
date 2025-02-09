@@ -532,7 +532,7 @@ class mymodbus extends eqLogic {
       
       $eqProtocol = $this->getConfiguration('eqProtocol');
       if (!in_array($eqProtocol, self::supportedProtocols())) {
-        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le protocol n\'est pas défini correctement.', __FILE__));
+        throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le protocole n\'est pas défini correctement.', __FILE__));
       }
       if ($eqProtocol != 'shared_from') {
         $eqRefreshMode = $this->getConfiguration('eqRefreshMode');

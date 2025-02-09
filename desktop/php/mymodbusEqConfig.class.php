@@ -63,10 +63,10 @@ class mymodbusEqConfig {
       <!-- *********************************** -->
       <legend><i class="fa fa-list-alt"></i> {{Configuration :}}</legend>
       <div class="form-group">
-        <label class="col-sm-6 control-label">{{Protocol de connexion}}</label>
+        <label class="col-sm-6 control-label">{{Protocole de connexion}}</label>
         <div class="col-sm-6">
           <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqProtocol"<?= $disabled ?>>
-            <option disabled selected value>-- {{Choisir un protocol de connexion}} --</option>
+            <option disabled selected value>-- {{Choisir un protocole de connexion}} --</option>
             <?php
             foreach (mymodbus::supportedProtocols() as $protocol) {
               $prot_name = $protocol === 'shared_from' ? __("Interface d'un autre équipement", __FILE__) : $protocol;
@@ -81,7 +81,7 @@ class mymodbusEqConfig {
         self::show_shared_interface();
         ?>
       </div>
-      <!-- Paramètres propres au protocol -->
+      <!-- Paramètres propres au protocole -->
       <div id="div_protocolParameters">
         <div class="form-group nonShared noRegTest">
           <label class="col-sm-6 control-label">{{Mode de rafraîchissement}}</label>
