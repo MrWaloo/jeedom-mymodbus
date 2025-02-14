@@ -23,6 +23,7 @@ if (!jeedom::apiAccess(init('apikey'), 'mymodbus')) {
 }
 if (init('test') != '') {
   log::add('mymodbus', 'debug', 'jeemymodbus.php: Premier message de test reçu');
+  mymodbus::sendNewConfig();
   echo 'OK';
   die();
 }

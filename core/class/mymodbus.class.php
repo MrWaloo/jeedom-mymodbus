@@ -99,8 +99,6 @@ class mymodbus extends eqLogic {
       log::add(__CLASS__, 'error', __('Démarrage du démon impossible, veuillez vérifier la configuration de MyModbus', __FILE__));
       return true;
     }
-    
-    $eqConfig = self::getCompleteConfiguration();
 
     $path = realpath(__DIR__ . '/../../resources/' . __CLASS__);
     $daemon_script_name = __CLASS__ . 'd.py';
@@ -110,7 +108,6 @@ class mymodbus extends eqLogic {
     $cmd .= ' --callback ' . escapeshellarg(self::getCallbackUrl());
     $cmd .= ' --apikey ' . escapeshellarg(jeedom::getApiKey(__CLASS__));
     $cmd .= ' --pid ' . jeedom::getTmpFolder(__CLASS__) . '/daemon.pid';
-    $cmd .= ' --json ' . escapeshellarg(json_encode($eqConfig));
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * Ligne de commande : ' . $cmd);
 
     log::add(__CLASS__, 'info', __CLASS__ . '::' . __FUNCTION__ . ' * Lancement du démon MyModbus');
