@@ -185,6 +185,9 @@ class MyModbusBase(object):
 
   async def add_change(self, payload) -> None:
     self.log.debug(f"{self.eqConfig['name']}: 'add_change' launched with payload = {payload}")
+    if self.should_stop.is_set() or self.stopped.is_set():
+      self.log.debug(f"{self.eqConfig['name']}: 'add_change' daemon is stopping, no modification sent")
+      return
     repeat = {}
     if self.eqConfig.get("cmds", None) is not None:
       for cmd in self.eqConfig["cmds"]:
@@ -260,7 +263,7 @@ class MyModbusBase(object):
         await asyncio.wait_for(self.stopped.wait(), 2)
       except TimeoutError:
         self.cancel_run_loop()
-    if self.eqConfig["eqRefreshMode"] == "on_event":
+    if self.eqConfig["eqRefreshMode"] == "on_event" or self.eqConfig["eqRegTest"] == "1":
       self.cancel_run_loop()
     self.remove_done_run_loop()
 
