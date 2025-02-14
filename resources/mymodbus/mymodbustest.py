@@ -34,7 +34,6 @@ class MyModbusTest(MyModbusBase):
     - self._blob_dest (in the subclass)
     """
     super().read_eqConfig(eqConfig)
-    self.log.debug(f"{self.eqConfig['name']}: 'read_eqConfig' self.eqConfig = {self.eqConfig}") # DEBUG !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
     self._requests = {}
     self._blob_dest = {}
@@ -43,7 +42,7 @@ class MyModbusTest(MyModbusBase):
     # Création de la liste des requêtes pymodbus
     decoder = DecodePDU(True)
     request_func = decoder.lookup.get(int(self.eqConfig["eqRegTestFunction"]), None)
-    self.log.debug(f"{self.eqConfig['name']}: 'read_eqConfig' request_func = {request_func}") # DEBUG !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    
     if request_func is None:
       error = f"le code de fonction Modbus n'est pas disponible: {eqConfig['eqRegTestFunction']}"
       self.log.error(f"{self.eqConfig['name']}: {error}")
