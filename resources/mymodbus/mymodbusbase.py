@@ -12,6 +12,7 @@ import asyncio
 import logging
 from abc import abstractmethod
 from array import array
+from math import isnan
 from statistics import fmean
 
 from pymodbus import FramerType
@@ -197,7 +198,7 @@ class MyModbusBase(object):
     for k, v in payload.items():
       match_repeat = re_values.fullmatch(k)
       send_repeat = match_repeat and repeat.get(match_repeat.group(1), False)
-      if k not in self._changes.keys() or self._changes[k] != v or send_repeat:
+      if (k not in self._changes.keys() or self._changes[k] != v or send_repeat) and not isnan(v):
         changes_to_send[k] = self._changes[k] = v
     if changes_to_send:
       try:

@@ -185,7 +185,7 @@ class mymodbus extends eqLogic {
     socket_close($socket);
   }
 
-  public function sendNewConfig() {
+  public static function sendNewConfig() {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     if (self::getDeamonState() != 'ok') {
       return True;
