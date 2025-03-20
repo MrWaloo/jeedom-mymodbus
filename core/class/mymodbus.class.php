@@ -962,12 +962,12 @@ class mymodbusCmd extends cmd {
     
     $command = [];
     $command['eqId'] = $eqMymodbus->getId();
+    if ($eqMymodbus->getConfiguration('eqProtocol') === 'shared_from') {
+      $command['eqId'] = $eqMymodbus->getConfiguration('eqInterfaceFromEqId');
+    }
     
     $message = [];
     if ($this->getLogicalId() === 'refresh') {
-      if ($eqMymodbus->getConfiguration('eqProtocol') === 'shared_from') {
-        $command['eqId'] = $eqMymodbus->getConfiguration('eqInterfaceFromEqId');
-      }
       $message['CMD'] = 'read';
       $message['read_cmd'] = $command;
       
