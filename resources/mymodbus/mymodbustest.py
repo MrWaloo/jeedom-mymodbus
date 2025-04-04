@@ -71,6 +71,7 @@ class MyModbusTest(MyModbusBase):
           await self.async_connect()
 
           for reg_add, pmb_req in self._requests.items():
+            self.log.debug(f"{self.eqConfig['name']}: 'run_loop' Modbus request for address {reg_add}: {pmb_req}")
             if self.should_stop.is_set():
               break
 
@@ -108,6 +109,7 @@ class MyModbusTest(MyModbusBase):
 
         self.read.clear()
         self.close()
+        await asyncio.sleep(eqWriteCmdCheckTimeout) # Cède le contrôle aux autres tâches
         self.stopped.set()
 
     except asyncio.CancelledError:

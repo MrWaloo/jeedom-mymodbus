@@ -123,7 +123,7 @@ class MyModbusd(BaseDaemon):
     new_client.read_eqConfig()
     new_client.connect()
     if eqConfig["eqRegTest"] == "1":
-      self._logger.info(f"{self.__n}: Starting the task to test anthe equipement {eqConfig['name']}")
+      self._logger.info(f"{self.__n}: Starting the task to test the equipement {eqConfig['name']}")
     else:
       self._logger.info(f"{self.__n}: Starting the task for the equipement {eqConfig['name']}")
     self._mymodbus_clients[eqConfig["id"]] = new_client
