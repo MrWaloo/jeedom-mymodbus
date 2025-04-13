@@ -108,6 +108,7 @@
         "Equipement": "Equipment",
         "Filtrer sur :": "Filter on :",
         "Gestion des templates d'équipement MyModbus": "MyModbus equipment template management",
+        "Gestion des templates d'équipements mymobus": "Mymobus equipment template management",
         "Historiser": "History",
         "Inverser double-mots": "Invert double-words",
         "Inverser mots": "Invert words",
@@ -122,6 +123,7 @@
         "Min": "Min",
         "Nom du nouveau template ?": "Name of new template?",
         "Nom du nouvel équipement :": "Name of new equipment :",
+        "Notes": "Notes",
         "Option": "Option",
         "Plage de registres": "Register range",
         "Premier Octet": "First Byte",
@@ -135,10 +137,32 @@
         "SunSpec scale factor uint32": "SunSpec scale factor uint32",
         "Supprimer": "Delete",
         "Tester": "Test",
+        "Testeur d'expression": "Expression tester",
         "Unité": "Unit",
         "Utiliser un template :": "Using a template :",
         "Valeur": "Value",
         "Valider": "Confirm"
+    },
+    "plugins\/mymodbus\/desktop\/modal\/adam.configuration.php": {
+        "401 - Accès non autorisé": "401 - Unauthorized access",
+        "502": "502",
+        "Activer": "Activate",
+        "Adresse IP": "IP address",
+        "Création auto des commandes": "Automatic creation of commands",
+        "Garder la connexion active": "Keep connection active",
+        "Polling en secondes": "Polling in seconds",
+        "Port": "Port"
+    },
+    "plugins\/mymodbus\/desktop\/modal\/crouzet_m3.configuration.php": {
+        "401 - Accès non autorisé": "401 - Unauthorized access",
+        "502": "502",
+        "Activer": "Activate",
+        "Adresse IP": "IP address",
+        "Création auto des commandes": "Automatic creation of commands",
+        "Garder la connexion active": "Keep connection active",
+        "Mise à l'heure auto": "Auto time setting",
+        "Polling en secondes": "Polling in seconds",
+        "Port": "Port"
     },
     "plugins\/mymodbus\/desktop\/modal\/health.php": {
         "Activé": "On",
@@ -148,6 +172,13 @@
         "Id": "Id",
         "Nom": "Name",
         "Protocole": "Protocol"
+    },
+    "plugins\/mymodbus\/desktop\/modal\/logo.configuration.php": {
+        "401 - Accès non autorisé": "401 - Unauthorized access",
+        "502": "502",
+        "Adresse IP": "IP address",
+        "Polling en secondes": "Polling in seconds",
+        "Port": "Port"
     },
     "plugins\/mymodbus\/desktop\/modal\/move_cmd.php": {
         "Aucun équipement ne partage sa configuration de connexion": "No equipment shares its connection configuration",
@@ -162,6 +193,44 @@
         "Selectionnez un équipement destination": "Select a destination device",
         "Selectionnez un équipement source": "Select a source device",
         "Source :": "Source :"
+    },
+    "plugins\/mymodbus\/desktop\/modal\/rtu.configuration.php": {
+        "1 Stop Bit": "1 Stop Bit",
+        "2 Stop Bit": "2 Stop Bit",
+        "401 - Accès non autorisé": "401 - Unauthorized access",
+        "7 Data Bits": "7 Data Bits",
+        "8 Data Bits": "8 Data Bits",
+        "Aucun": "No",
+        "Aucune": "No",
+        "Bit de fin": "End bit",
+        "Impaire": "Odd",
+        "Matériel :": "Hardware :",
+        "Paire": "Pair",
+        "Parité": "Parity",
+        "Polling en secondes": "Polling in seconds",
+        "Port série": "Serial port",
+        "Taille de l'octet": "Byte size",
+        "Unit ID": "Unit ID",
+        "Vitesse": "Speed"
+    },
+    "plugins\/mymodbus\/desktop\/modal\/rtuovertcp.configuration.php": {
+        "401 - Accès non autorisé": "401 - Unauthorized access",
+        "502": "502",
+        "Adresse IP": "IP address",
+        "Polling en secondes": "Polling in seconds",
+        "Port": "Port",
+        "Unit ID": "Unit ID"
+    },
+    "plugins\/mymodbus\/desktop\/modal\/tcpip.configuration.php": {
+        "1": "1",
+        "401 - Accès non autorisé": "401 - Unauthorized access",
+        "502": "502",
+        "Activer": "Activate",
+        "Adresse IP": "IP address",
+        "Garder la connexion active": "Keep connection active",
+        "Polling en secondes": "Polling in seconds",
+        "Port": "Port",
+        "Unit ID": "Unit ID"
     },
     "plugins\/mymodbus\/desktop\/modal\/templates.php": {
         "**Erreur format**": "**format error",
@@ -182,6 +251,15 @@
         "Type": "Type",
         "Télécharger": "Download",
         "Êtes-vous sûr de vouloir supprimer ce template :": "Are you sure you want to delete this template :"
+    },
+    "plugins\/mymodbus\/desktop\/modal\/wago.configuration.php": {
+        "401 - Accès non autorisé": "401 - Unauthorized access",
+        "502": "502",
+        "Activer": "Activate",
+        "Adresse IP": "IP address",
+        "Garder la connexion active": "Keep connection active",
+        "Polling en secondes": "Polling in seconds",
+        "Port": "Port"
     },
     "plugins\/mymodbus\/desktop\/php\/mymodbus.php": {
         "'1' si pas de bus série": "1' if no serial bus",
