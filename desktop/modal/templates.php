@@ -18,7 +18,8 @@
 if (!isConnect('admin')) {
   throw new Exception('401 Unauthorized');
 }
-require_once __DIR__ . '/../php/mymodbusEqConfig.class.php';
+//require_once __DIR__ . '/../php/mymodbusEqConfig.class.php';
+include_file('desktop', 'mymodbusEqConfig.class', 'php', 'mymodbus');
 ?>
 
 <div class="col-lg-2 col-md-2 col-sm-2" style="height:100%">

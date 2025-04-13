@@ -6,7 +6,8 @@ $plugin = plugin::byId('mymodbus');
 sendVarToJS('eqType', $plugin->getId());
 include_file('desktop', 'mymodbus.functions', 'js', 'mymodbus');
 $eqLogics = eqLogic::byType($plugin->getId());
-require_once 'mymodbusEqConfig.class.php';
+// require_once 'mymodbusEqConfig.class.php';
+include_file('desktop', 'mymodbusEqConfig.class', 'php', 'mymodbus');
 
 ?>
 
@@ -40,11 +41,6 @@ require_once 'mymodbusEqConfig.class.php';
         <i class="fas fa-arrow-right" style="color:#0F9DE8;"></i>
         <br/>
         <span>{{Déplacer les commandes}}</span>
-      </div>
-      <div class="cursor eqLogicAction logoSecondary" data-action="bt_docSpecific" >
-        <i class="fas fa-book" style="color:#0F9DE8;"></i>
-        <br>
-        <span>{{Documentation}}</span>
       </div>
     </div>
     <legend><i class="fas fa-table"></i> {{Mes équipements}}</legend>
@@ -119,12 +115,11 @@ require_once 'mymodbusEqConfig.class.php';
       
       <!-- Onglet des commandes de l'équipement -->
       <div role="tabpanel" class="tab-pane" id="commandtab">
-        <div class="input-group" style="display:inline-flex;margin-top:5px;position:fixed;z-index:10;right:30px;">
+        <div class="input-group btn_add_command" style="display:inline-flex;margin-top:5px;position:fixed;z-index:10;right:35px;">
           <span class="input-group-btn">
-            <a class="btn btn-warning btn-sm rounded" id="bt_add_command_top"><i class="fas fa-plus-circle"></i> {{Ajouter une commande}} </a>
+            <a class="btn btn-warning btn-sm rounded" id="bt_add_command"><i class="fas fa-plus-circle"></i> {{Ajouter une commande}} </a>
           </span>
         </div>
-        <br/><br/>
         <div class="table-responsive">
           <table id="table_cmd" class="table table-bordered table-condensed">
             <thead>

@@ -23,25 +23,17 @@ if (!jeedom::apiAccess(init('apikey'), 'mymodbus')) {
 }
 if (init('test') != '') {
   log::add('mymodbus', 'debug', 'jeemymodbus.php: Premier message de test reçu');
+  mymodbus::sendNewConfig();
   echo 'OK';
   die();
 }
-$result = json_decode(file_get_contents("php://input"), true);
-log::add('mymodbus', 'debug', 'jeemymodbus.php: $result *' . json_encode($result) . '* type: ' . gettype($result));
-if (!is_array($result)) {
+$input = json_decode(file_get_contents("php://input"), true);
+log::add('mymodbus', 'debug', 'jeemymodbus.php: $input *' . json_encode($input) . '* type: ' . gettype($input));
+if (!is_array($input)) {
   die();
 }
 
-if (isset($result['heartbeat_request'])) {
-  $message = [];
-  $message['CMD'] = 'heartbeat_answer';
-  $message['answer'] = $result['heartbeat_request'];
-  mymodbus::sendToDaemon($message);
-  
-} elseif (isset($result['getConfig'])) {
-  mymodbus::sendNewConfig();
-  
-} elseif (isset($result['values'])) {
+if (isset($input['values'])) {
   $names = '';
   $sharedEqs = null;
   $conv = [
@@ -49,7 +41,7 @@ if (isset($result['heartbeat_request'])) {
     'cycle_ok'    => 'cycle ok',
     'polling'     => 'polling'
   ];
-  foreach ($result['values'] as $cmd_id => $new_value) {
+  foreach ($input['values'] as $cmd_id => $new_value) {
     #log::add('mymodbus', 'debug', 'jeemymodbus.php: Traitement cmd_id = ' . $cmd_id . ' -> new value: ' . sprintf("%d", $new_value));
     
     if (is_null($sharedEqs) && isset($new_value['eqId'])) { // Déterminé qu'une seule fois
@@ -78,13 +70,16 @@ if (isset($result['heartbeat_request'])) {
         //$old_value = $cmd->execCmd();
         
         $cmdOption = $cmd->getConfiguration('cmdOption');
+        //log::add('mymodbus', 'debug', 'jeemymodbus.php: ' . $cmd->getName() . ' ' . sprintf('cmdOption = +%s+', $cmdOption));
         // Only if the option is valid and cannot be malicious code
         if (strstr($cmdOption, '#value#') && !strstr($cmdOption, ';')) {
           try {
-            $eval = str_replace('#value#', '$new_value', $cmdOption);
+            $eval = str_replace('#value#', sprintf("%s", $new_value), $cmdOption);
+            //log::add('mymodbus', 'debug', 'jeemymodbus.php: ' . $cmd->getName() . ' ' . sprintf('eval = +%s+', $eval));
             $new_value = eval('return ' . $eval . ';');
+            //log::add('mymodbus', 'debug', 'jeemymodbus.php: ' . $cmd->getName() . ' ' . sprintf('new_value = +%s+', $new_value));
           } catch (Throwable $t) {
-            log::add('mymodbus', 'error', 'jeemymodbus.php: ' . $cmd->getName() . __('Calcul non effectué. Erreur lors du calcul : ' . $t, __FILE__));
+            log::add('mymodbus', 'error', 'jeemymodbus.php: ' . $cmd->getName() . ' ' . __('Calcul non effectué. Erreur lors du calcul : ' . $t, __FILE__));
           }
         }
       }
@@ -109,6 +104,27 @@ if (isset($result['heartbeat_request'])) {
     }
   }
   #log::add('mymodbus', 'debug', 'jeemymodbus.php: Mise à jour des commandes info :' . $names);
+
+} elseif (isset($input['RegTest'])) {
+  foreach ($input['RegTest'] as $eqLogic_id => $results) {
+//    log::add('mymodbus', 'debug', "jeemymodbus.php: ***DEBUG*** \$eqLogic_id '$eqLogic_id'...");
+    $eqLogic = mymodbus::byId($eqLogic_id);
+    if (is_object($eqLogic)) {
+      $eq_name = $eqLogic->getName();
+      log::add('mymodbus', 'debug', "jeemymodbus.php: Mise à jour équipement de test '$eq_name'...");
+      foreach ($results as $address => $new_value) {
+//        log::add('mymodbus', 'debug', "jeemymodbus.php: ***DEBUG*** \$address '$address'...");
+//        log::add('mymodbus', 'debug', "jeemymodbus.php: ***DEBUG*** \$new_value '$new_value'...");
+        $cmd = mymodbusCmd::byEqLogicIdAndLogicalId($eqLogic_id, 'RegTest_' . $address);
+        if (is_object($cmd)) {
+          $cmd_name =$cmd->getName();
+          log::add('mymodbus', 'debug', "jeemymodbus.php: Mise à jour cmd '$cmd_name' -> new value: '$new_value'");
+          $eqLogic->checkAndUpdateCmd($cmd, $new_value);
+        }
+      }
+    }
+  }
+
 } else {
   log::add('mymodbus', 'error', 'jeemymodbus.php: unknown message received from daemon');
 }

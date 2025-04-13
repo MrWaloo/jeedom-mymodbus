@@ -13,133 +13,30 @@ import re
 from array import array
 from statistics import fmean
 
-from pymodbus import FramerType
-from pymodbus.client import AsyncModbusSerialClient, AsyncModbusTcpClient, AsyncModbusUdpClient
 from pymodbus.exceptions import ModbusException
-from pymodbus.logging import pymodbus_apply_logging_config
-from pymodbus.pdu import ExceptionResponse, ModbusPDU
-from pymodbus.pdu.decoders import DecodePDU
-from pymodbus.utilities import (
-    pack_bitstring,
-    unpack_bitstring,
-)
+from pymodbus.pdu import DecodePDU, ExceptionResponse, ModbusPDU
+from pymodbus.utilities import pack_bitstring, unpack_bitstring
 
 from mymodbuslib import Lib
+from mymodbusbase import MyModbusBase
 
 
-class MyModbusClient(object):
-
-  _pmb_clients = {
-    "serial": AsyncModbusSerialClient,
-    "tcp": AsyncModbusTcpClient,
-    "udp": AsyncModbusUdpClient,
-    "rtuovertcp": AsyncModbusTcpClient,
-  }
-
-  def __init__(
-      self,
-      eqConfig: dict[str, any],
-      log: logging.Logger | None = None
-    ) -> None:
-
-    self.eqConfig = eqConfig
-    if log:
-      self.log = log
-    else:
-      logging_name = eqConfig['name'] if eqConfig['name'] else __name__
-      self.log = logging.getLogger(f"MyModbus_{logging_name}")
-    self.client: (
-      AsyncModbusSerialClient | AsyncModbusTcpClient | AsyncModbusUdpClient | None
-    ) = None
-    self._client_params: dict[str, any] = {}
-    self._requests: dict[str, ModbusPDU] = {}
-    self._payload: array = array("H")
-    self._blob_dest: dict[str, list] = {}
-    self._read_cycle: int = 0
-    self._cycle_times: list = []
-    self._changes: dict = {}
-
-    # tasks to be referenced so that the garbage collector won't delete them
-    self._async_tasks: list[asyncio.Task] = []
-    self.loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
-    self._lock = asyncio.Lock()
-    self._lock_w = asyncio.Lock()
-    self.read = asyncio.Event()
-    self.should_stop = asyncio.Event()
-    self.stopped = asyncio.Event()
-    self.stopped.set()
-    self.connected = asyncio.Event()
-    self.should_terminate = asyncio.Event()
-    self.downstream = asyncio.Queue() # Daemon -> MyModbusClient
-    self.upstream = asyncio.Queue() # MyModbusClient -> Daemon
-
-    self._async_tasks.append(self.loop.create_task(
-      self.read_downstream(),
-      name = f"read_downstream_{self.eqConfig['id']}"
-    ))
-
-#  def __del__(self):
-#    attr_list = [
-#      "eqConfig", "log", "client", "_client_params", "_requests", "_blob_dest",
-#      "_read_cycle", "_cycle_times", "_async_tasks", "loop", "_lock", "_lock_w",
-#      "read", "should_stop", "stopped", "should_terminate", "downstream", "upstream"
-#    ]
-#    for attr in attr_list:
-#      if hasattr(self, attr):
-#        value = getattr(self, attr)
-#        if value is not None:
-#          delattr(self, attr)
+class MyModbusClient(MyModbusBase):
 
   def read_eqConfig(self, eqConfig: dict[str, any] | None = None) -> None:
     """
     Creates the client and the requests according to the configuration
+
+    Sets:
+    - eventually self.eqConfig
+    - self._client_params
+    - self._requests (in the subclass)
+    - self._blob_dest (in the subclass)
     """
-    if self.client and self.client.connected or self.connected.is_set():
-      self.close()
-    if eqConfig is not None:
-      self.eqConfig = eqConfig
-    del self.client
-    self.client = None
-    self._client_params = {
-      "name": self.eqConfig["name"],
-      "timeout": float(self.eqConfig["eqTimeout"]),
-      "retries": float(self.eqConfig["eqRetries"]),
-      "on_connect_callback": self.on_connect_callback,
-    }
-    framer = None
+    super().read_eqConfig(eqConfig)
+    
     self._requests = {}
     self._blob_dest = {}
-
-    # Client pymodbus
-    if self.eqConfig["eqProtocol"] == "serial":
-      # Liaison série
-      if self.eqConfig["eqSerialMethod"] == "ascii":
-        framer = FramerType.ASCII
-      else:
-        framer = FramerType.RTU
-      self._client_params.update(
-        {
-          "port": self.eqConfig["eqPort"],
-          "baudrate": int(self.eqConfig["eqSerialBaudrate"]),
-          "stopbits": int(self.eqConfig["eqSerialStopbits"]),
-          "bytesize": int(self.eqConfig["eqSerialBytesize"]),
-          "parity": self.eqConfig["eqSerialParity"],
-        }
-      )
-    else:
-      # Liaison Ethernet
-      self._client_params.update(
-        {
-          "port": int(self.eqConfig["eqPort"]),
-        }
-      )
-      if self.eqConfig["eqProtocol"] == "rtuovertcp":
-        framer = FramerType.RTU
-      else:
-        framer = FramerType.SOCKET
-      self._client_params["host"] = self.eqConfig["eqAddr"]
-    self._client_params["framer"] = framer
-    self.log.debug(f"{self.eqConfig['name']}: 'read_eqConfig' client params for {self.eqConfig['name']}: {self._client_params}")
     
     # Création de la liste des requêtes pymodbus
     decoder = DecodePDU(True)
@@ -158,94 +55,9 @@ class MyModbusClient(object):
           self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
           continue
         address, count = Lib.get_request_addr_count(cmd)
-        slave = int(cmd["cmdSlave"])
-        self._requests[cmd["id"]] = request_func(address, count, slave)
+        dev_id = int(cmd["cmdSlave"])
+        self._requests[cmd["id"]] = request_func(address=address, count=count, dev_id=dev_id)
         self.log.debug(f"{self.eqConfig['name']}: 'read_eqConfig' Modbus request for cmd id {cmd['id']}: {self._requests[cmd['id']]}")
-
-  async def read_downstream(self):
-    self.log.debug(f"{self.eqConfig['name']}: 'read_downstream' launched")
-    try:
-      while not self.should_terminate.is_set():
-        message = await self.downstream.get()
-
-        self.log.debug(f"{self.eqConfig['name']}: 'read_downstream' Message received from daemon: {message}")
-        for action, payload in message.items():
-          if action == "quit":
-            self.should_terminate.set()
-            self.should_stop.set()
-            await self.wait_for_stopped()
-            
-          elif action == "write":
-            self._async_tasks.append(self.loop.create_task(
-              self.command_write(payload),
-              name = payload["cmdId"]
-            ))
-
-          elif action == "read":
-            self.read.set()
-
-          elif action =="newDaemonConfig":
-            self.should_stop.set()
-            await self.wait_for_stopped()
-            self.read_eqConfig(payload)
-            self.should_stop.clear()
-            self.connect()
-
-        self.downstream.task_done()
-
-    except asyncio.CancelledError:
-      self.log.debug(f"{self.eqConfig['name']}: 'read_downstream' cancelled")
-
-    self.log.debug(f"{self.eqConfig['name']}: 'read_downstream' exit")
-
-  async def send_to_jeedom(self, payload):
-    self.log.debug(f"{self.eqConfig['name']}: 'send_to_jeedom' launched with payload = {payload}")
-    await self.upstream.put({"to_jeedom": payload})
-
-  async def add_change(self, payload):
-    self.log.debug(f"{self.eqConfig['name']}: 'add_change' launched with payload = {payload}")
-    repeat = {}
-    for cmd in self.eqConfig["cmds"]:
-      repeat[cmd['id']] = not cmd['repeat'] == '0'
-    re_values = re.compile(r'values::(\d*)')
-    changes_to_send: dict = {}
-    for k, v in payload.items():
-      match_repeat = re_values.fullmatch(k)
-      send_repeat = match_repeat and repeat.get(match_repeat.group(1), False)
-      if k not in self._changes.keys() or self._changes[k] != v or send_repeat:
-        changes_to_send[k] = self._changes[k] = v
-    if changes_to_send:
-      try:
-        await self.upstream.put({"add_change": changes_to_send})
-      except ValueError as e:
-        self.log.error(f"{self.eqConfig['name']}: 'add_change' Send not possible : {e!s}")
-    else:
-      self.log.debug(f"{self.eqConfig['name']}: 'add_change' No modification to send")
-
-  def connect(self) -> asyncio.Task:
-    self.client = self._pmb_clients[self.eqConfig["eqProtocol"]](**self._client_params)
-    self.log.debug(f"{self.eqConfig['name']}: 'connect' ModbusClient of {self.eqConfig['name']} = {self.client}")
-    return self.loop.create_task(self.async_connect(True))
-
-  async def async_connect(self, first_call: bool = False) -> None:
-    if not (self.eqConfig["eqRefreshMode"] == "on_event" and first_call):
-      self.stopped.clear()
-      if not self.client.connected or not self.connected.is_set():
-        try:
-          async with self._lock:
-            await self.client.connect()
-        except ModbusException as e:
-          self.log.error(f"{self.eqConfig['name']}: Connection could not be opened: {e!s}")
-          return
-        self.log.debug(f"{self.eqConfig['name']}: connection opened")
-    
-    if first_call:
-      self.log.info(f"{self.eqConfig['name']}: 'async_connect' first call")
-      await asyncio.sleep(float(self.eqConfig["eqFirstDelay"]))
-      self._async_tasks.append(self.loop.create_task(
-        self.run_loop(),
-        name = f"run_loop_{self.eqConfig['id']}"
-      ))
 
   async def run_loop(self) -> None:
     """
@@ -347,22 +159,22 @@ class MyModbusClient(object):
         try:
           async with self._lock:
             self.log.debug(f"{self.eqConfig['name']}: 'one_cycle_read'/{cmd['name']}: requesting read")
-            rr: ModbusPDU = await self.client.execute(no_response_expected=False, request=pmb_req)
+            rr: ModbusPDU = await self.client.execute(False, pmb_req)
         except ModbusException as exc:
           error_on_current_read = True
-          error = f"exception during read request on slave id {pmb_req.slave_id}, address {pmb_req.address} -> {exc!s}"
+          error = f"exception during read request on device id {pmb_req.dev_id}, address {pmb_req.address} -> {exc!s}"
         if not error_on_current_read:
           try:
             if rr.isError():
               error_on_current_read = True
-              error = f"error during read request on slave id {pmb_req.slave_id}, address {pmb_req.address} -> {rr}"
+              error = f"error during read request on device id {pmb_req.dev_id}, address {pmb_req.address} -> {rr}"
           except AttributeError:
             error_on_current_read = True
-            error = f"return error during read request on slave id {pmb_req.slave_id}, address {pmb_req.address} -> {rr}"
+            error = f"return error during read request on device id {pmb_req.dev_id}, address {pmb_req.address} -> {rr}"
         if not error_on_current_read:
           if isinstance(rr, ExceptionResponse):
             error_on_current_read = True
-            error = f"exception during read request on slave id {pmb_req.slave_id}, address {pmb_req.address} -> {rr}"
+            error = f"exception during read request on device id {pmb_req.dev_id}, address {pmb_req.address} -> {rr}"
         
         if error_on_current_read:
           self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
@@ -380,9 +192,9 @@ class MyModbusClient(object):
     except asyncio.CancelledError:
       self.log.debug(f"{self.eqConfig['name']}: 'one_cycle_read' cancelled")
   
-  async def process_read_response(self, cmd: dict, response: DecodePDU) -> None:
+  async def process_read_response(self, cmd: dict, response: ModbusPDU) -> None:
     """
-    Reads DecodePDU and returns the value(s) to Jeedom
+    Reads ModbusPDU and returns the value(s) to Jeedom
     """
     self.log.debug(f"{self.eqConfig['name']}: 'process_read_response' launched for command id = {cmd['id']}")
     change = {}
@@ -406,7 +218,7 @@ class MyModbusClient(object):
     
     await self.add_change(change)
 
-  def cmd_decode(self, response: DecodePDU, cmd: dict, blob: dict | None = None) -> any:
+  def cmd_decode(self, response: ModbusPDU, cmd: dict, blob: dict | None = None) -> any:
     self.log.debug(f"{self.eqConfig['name']}: 'cmd_decode' launched for command id = {cmd['id']}")
     address, count = Lib.get_request_addr_count(cmd)
     cmd_format: str = cmd["cmdFormat"]
@@ -461,8 +273,40 @@ class MyModbusClient(object):
       
     except Exception as e:
       raise e
+  
+  def get_cmd_conf(self, cmd_id: str) -> dict | None:
+    for cmd in self.eqConfig["cmds"]:
+      if cmd["id"] == cmd_id:
+        return cmd
+    return None
+
+  def get_payload(self, response: ModbusPDU, cmd: dict, blob: dict | None = None) -> array:
+    attr = Lib.get_request_attribute(response.function_code)
+    result = getattr(response, attr)
+    payload = b''
+    if attr == "bits":
+      payload = pack_bitstring(result)
+      if len(payload) % 2 == 1:
+        payload += b'\x00'
+    else:
+      payload = result
+    payload = array("H", payload)
+    return self.get_ordered_payload(payload, cmd, blob)
+  
+  def get_ordered_payload(self, payload: array, cmd: dict, blob: dict | None = None) -> array:
+    payload = array("H", payload)
+    if cmd["cmdInvertBytes"] != "0":
+      payload.byteswap()
+    if cmd["cmdInvertWords"] != "0":
+      payload = Lib.wordswap(payload, cmd, blob)
+    if cmd["cmdInvertDWords"] != "0":
+      payload = Lib.dwordswap(payload, cmd, blob)
+    return payload
 
   async def command_write(self, command: dict) -> None:
+    """
+    Execute the write request
+    """
     self.log.debug(f"{self.eqConfig['name']}: 'command_write' launched with command = '{command}'")
     try:
       if self.should_stop.is_set():
@@ -533,22 +377,23 @@ class MyModbusClient(object):
             self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' register creation for the write command not possible: {e!s}")
             return
 
+        self.log.debug(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' payload = {payload}")
+
         attr = Lib.get_request_attribute(int(cmd["cmdFctModbus"]))
         req_payload = None
-        if request_func.function_code in (1, 2, 5, 15):
-          req_payload = value
+        if request_func.function_code in (1, 2, 5, 15): # bit or bits
+          req_payload = [value]
         else:
           payload = self.get_ordered_payload(array('H', payload), cmd)
           req_payload = payload
-        if not attr.endswith("s") and hasattr(req_payload, "__iter__"):
-          req_payload = req_payload[0]
 
         write_req_params = {
           "address": address,
-          "slave": int(cmd["cmdSlave"]),
+          "dev_id": int(cmd["cmdSlave"]),
           attr: req_payload
         }
         self.log.debug(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' write_req_params = {write_req_params}")
+        self.log.debug(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' request_func = {request_func}")
 
         pmb_write_req = request_func(**write_req_params)
         self.log.debug(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' Fonction {pmb_write_req}")
@@ -559,19 +404,19 @@ class MyModbusClient(object):
         try:
           async with self._lock:
             self.log.debug(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' Request sent")
-            rr: DecodePDU = await self.client.execute(no_response_expected=False, request=pmb_write_req)
+            rr: ModbusPDU = await self.client.execute(False, pmb_write_req)
         except ModbusException as exc:
-          error = f"modbus exception during write request on slave id {pmb_write_req.slave_id}, address {pmb_write_req.address} -> {exc!s}"
+          error = f"modbus exception during write request on device id {pmb_write_req.dev_id}, address {pmb_write_req.address} -> {exc!s}"
           self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' {error}")
           err_handeled = True
         if not err_handeled:
           if rr.isError():
-            error = f"error during write request on slave id {pmb_write_req.slave_id}, address {pmb_write_req.address} -> {rr}"
+            error = f"error during write request on device id {pmb_write_req.dev_id}, address {pmb_write_req.address} -> {rr}"
             self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' {error}")
             err_handeled = True
         if not err_handeled:
           if isinstance(rr, ExceptionResponse):
-            error = f"exception response during write request on slave id {pmb_write_req.slave_id}, address {pmb_write_req.address} -> {rr}"
+            error = f"exception response during write request on device id {pmb_write_req.dev_id}, address {pmb_write_req.address} -> {rr}"
             self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' {error}")
       
         if pause is not None:
@@ -580,12 +425,6 @@ class MyModbusClient(object):
 
     except asyncio.CancelledError:
       self.log.debug(f"{self.eqConfig['name']}: 'command_write' cancelled")
-  
-  def get_cmd_conf(self, cmd_id: str) -> dict | None:
-    for cmd in self.eqConfig["cmds"]:
-      if cmd["id"] == cmd_id:
-        return cmd
-    return None
 
   async def set_error(self, cmd: dict) -> None:
     """
@@ -608,95 +447,3 @@ class MyModbusClient(object):
       }
     }
     self.loop.create_task(self.add_change(change))
-
-  def get_payload(self, response: DecodePDU, cmd: dict, blob: dict | None = None) -> array:
-    attr = Lib.get_request_attribute(response.function_code)
-    result = getattr(response, attr)
-    payload = b''
-    if attr == "bits":
-      payload = pack_bitstring(result)
-      if len(payload) % 2 == 1:
-        payload += b'\x00'
-    else:
-      payload = result
-    payload = array("H", payload)
-    return self.get_ordered_payload(payload, cmd, blob)
-  
-  def get_ordered_payload(self, payload: array, cmd: dict, blob: dict | None = None) -> array:
-    payload = array("H", payload)
-    if cmd["cmdInvertBytes"] != "0":
-      payload.byteswap()
-    if cmd["cmdInvertWords"] != "0":
-      payload = Lib.wordswap(payload, cmd, blob)
-    if cmd["cmdInvertDWords"] != "0":
-      payload = Lib.dwordswap(payload, cmd, blob)
-    return payload
-  
-  def on_connect_callback(self, connected: bool):
-    self.log.debug(f"{self.eqConfig['name']}: 'on_connect_callback' called with connected = {connected}")
-    if connected:
-      self.connected.set()
-    else:
-      self.connected.clear()
-
-  def close(self) -> asyncio.Task:
-    return self.loop.create_task(self.async_close())
-
-  async def async_close(self) -> None:
-    if self.client:
-      try:
-        async with self._lock:
-          self.client.close()
-      except ModbusException as e:
-        self.log.error(f"{self.eqConfig['name']}: the connection could not be closed: {e!s}")
-    self.log.info(f"{self.eqConfig['name']}: Modbus communication closed")
-
-    if self.should_terminate.is_set():
-      self.terminate()
-
-    self.stopped.set()
-    self.connected.clear()
-
-  async def wait_for_stopped(self):
-    while not self.stopped.is_set():
-      try:
-        await asyncio.wait_for(self.stopped.wait(), 2)
-      except TimeoutError:
-        self.cancel_run_loop()
-    if self.eqConfig["eqRefreshMode"] == "on_event":
-      self.cancel_run_loop()
-    self.remove_done_run_loop()
-
-  def cancel_run_loop(self) -> None:
-    if hasattr(self, "_async_tasks"):
-      for task in self._async_tasks:
-        if (
-          task.get_name() == f"run_loop_{self.eqConfig['id']}"
-          and not task.done()
-          and not task.cancelled()
-        ):
-          task.cancel()
-
-  def remove_done_run_loop(self) -> None:
-    if hasattr(self, "_async_tasks"):
-      for i in range(len(self._async_tasks) - 1, -1, -1):
-        task = self._async_tasks[i]
-        if task.get_name() == f"run_loop_{self.eqConfig['id']}" and task.done():
-          del self._async_tasks[i]
-
-  def terminate(self):
-    return self.loop.create_task(self.async_terminate())
-  
-  async def async_terminate(self):
-    if hasattr(self, "_async_tasks"):
-      for task in self._async_tasks:
-        task.cancel()
-    await self.wait_for_stopped()
-    try:
-      del self._async_tasks
-    except AttributeError:
-      pass
-    try:
-      del self.client
-    except AttributeError:
-      pass

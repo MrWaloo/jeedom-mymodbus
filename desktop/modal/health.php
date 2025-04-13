@@ -25,10 +25,9 @@ $eqLogics = mymodbus::byType('mymodbus');
 	<thead>
 		<tr>
 			<th>{{Nom}}</th>
-  			<th>{{Id}}</th>
-			<th>{{Protocol}}</th>
+  		<th>{{Id}}</th>
+			<th>{{Protocole}}</th>
 			<th>{{Activé}}</th>
-			<th>{{Démon}}</th>
 			<th>{{Dernière communication}}</th>
 			<th>{{Date de création}}</th>
 		</tr>
@@ -40,14 +39,9 @@ foreach ($eqLogics as $eqLogic) {
 	echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . $eqLogic->getId() . '</span></td>';
 	echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . $eqLogic->getConfiguration('eqProtocol') . '</span></td>';
 	if ($eqLogic->getIsEnable() == 0) {
-		echo '<td><span class="label label-danger" style="font-size : 1em; cursor : default;">{{NOK}}</span></td>';
+		echo '<td><span class="label label-danger" style="font-size : 1em; cursor : default;">{{Désactivé}}</span></td>';
 	} else {
-    echo '<td><span class="label label-success" style="font-size : 1em; cursor : default;">{{OK}}</span></td>';
-	}
-  if ($eqLogic->getDeamonState() != 'ok') {
-		echo '<td><span class="label label-danger" style="font-size : 1em; cursor : default;">{{NOK}}</span></td>';
-	} else {
-    echo '<td><span class="label label-success" style="font-size : 1em; cursor : default;">{{OK}}</span></td>';
+    echo '<td><span class="label label-success" style="font-size : 1em; cursor : default;">{{Activé}}</span></td>';
 	}
 	echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . $eqLogic->getStatus('lastCommunication') . '</span></td>';
 	echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . $eqLogic->getConfiguration('createtime') . '</span></td></tr>';

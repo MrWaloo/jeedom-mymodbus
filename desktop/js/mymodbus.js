@@ -19,9 +19,10 @@
 $('.eqLogicAction[data-action=bt_addMymodbusEq]').off('click').on('click', function() {
   let dialog_message = '<label class="control-label">{{Nom du nouvel équipement :}}</label>';
   dialog_message += '<input class="bootbox-input bootbox-input-text form-control" autocomplete="nope" type="text" id="addMymodbusEqName"><br><br>';
-  dialog_message += '<label class="control-label">{{Utiliser un template :}}</label>';
-  dialog_message += '<select class="bootbox-input bootbox-input-select form-control" id="addMymodbusTplSelector">';
-  dialog_message += '</select>';
+  dialog_message += '<label class="control-label">{{Utiliser un template :}}';
+  dialog_message += '  <select class="bootbox-input bootbox-input-select form-control" id="addMymodbusTplSelector">';
+  dialog_message += '  </select>';
+  dialog_message += '</label>';
   bootbox.confirm({
     title: "{{Ajouter un nouvel équipement MyModbus}}",
     message: dialog_message,
@@ -61,8 +62,8 @@ $('.eqLogicAction[data-action=bt_addMymodbusEq]').off('click').on('click', funct
                   jeedomUtils.loadPage(url);
                 }
               });
-            }
-            if (eqTemplate == '') {
+
+            } else {
               var vars = getUrlVars();
               var url = 'index.php?';
               for (var i in vars) {
@@ -109,11 +110,7 @@ $('#bt_move_cmd').on('click', function () {
   $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=move_cmd').dialog('open');
 });
 
-$('.eqLogicAction[data-action=bt_docSpecific]').on('click', function () {
-  window.open('https://mrwaloo.github.io/jeedom-plugins-doc/fr_FR/mymodbus_doc');
-});
-
-// *********** Evénements de la page de l'édition d'un équipement
+// *********** Evénements de la page d'édition d'un équipement
 
 $('.eqLogicAction[data-action=createTemplate]').off('click').on('click', function () {
   bootbox.prompt({
@@ -284,6 +281,22 @@ function printEqLogic(_eqLogic) {
     _eqLogic.configuration.eqErrorDelay = '1';
     modifyWithoutSave = true;
   }
+  if (!isset(_eqLogic.configuration.eqRegTest) || _eqLogic.configuration.eqRegTest == '') {
+    _eqLogic.configuration.eqRegTest = '0';
+    modifyWithoutSave = true;
+  }
+  if (!isset(_eqLogic.configuration.eqRegTestInvertBytes) || _eqLogic.configuration.eqRegTestInvertBytes == '') {
+    _eqLogic.configuration.eqRegTestInvertBytes = '0';
+    modifyWithoutSave = true;
+  }
+  if (!isset(_eqLogic.configuration.eqRegTestInvertWords) || _eqLogic.configuration.eqRegTestInvertWords == '') {
+    _eqLogic.configuration.eqRegTestInvertWords = '0';
+    modifyWithoutSave = true;
+  }
+  if (!isset(_eqLogic.configuration.eqRegTestInvertDWords) || _eqLogic.configuration.eqRegTestInvertDWords == '') {
+    _eqLogic.configuration.eqRegTestInvertDWords = '0';
+    modifyWithoutSave = true;
+  }
   
   // Afficher la partie variable de la configuration de l'équipement en fonction du protocole choisi
   $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqProtocol]').off().on('change', function () {
@@ -331,6 +344,33 @@ $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRefreshMode]').off().on('
     $('#eqPolling').show();
   } else {
     $('#eqPolling').hide();
+  }
+});
+
+$('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRegTest]').off().on('change', function () {
+  if ($(this).value() == '0') {
+    $('#div_RegTestParameters').hide();
+    $('.btn_add_command').show();
+    $('.noRegTest').show();
+  } else {
+    $('#div_RegTestParameters').show();
+    $('.btn_add_command').hide();
+    $('.noRegTest').hide();
+  }
+});
+
+$('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRegTestFunction]').off().on('change', function () {
+  if ($(this).val() != '' && !is_null($(this).val())) {
+    var show_num = ($(this).val() === '3' || $(this).val() === '4');
+    if (show_num) {
+      $('.formatTestBin').hide();
+      $('.formatTestNum').show();
+    } else {
+      $('.formatTestBin').show();
+      $('.formatTestNum').hide();
+    }
+    var eqRegTestFormat = $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRegTestFormat]');
+    selectFirstVisible(eqRegTestFormat);
   }
 });
 
@@ -588,7 +628,7 @@ function getTrfromCmd(_cmd, _template = false) {
   tr += '   </div>';
   tr += ' </td>';
   // Adresse esclave
-  tr += ' <td><input class="cmdAttr form-control input-sm withSlave" data-l1key="configuration" data-l2key="cmdSlave"' + formDisabled + '></td>';
+  tr += ' <td><input type="number" class="cmdAttr form-control input-sm withSlave" data-l1key="configuration" data-l2key="cmdSlave"' + formDisabled + '></td>';
   // Modbus function / Data format
   tr += ' <td>';
   tr += '   <div class="input-group" style="margin-bottom:5px;">';
@@ -667,7 +707,7 @@ function getTrfromCmd(_cmd, _template = false) {
   tr += '   </div>';
   tr += '   <div class="input-group notFctBlob">';
   tr += '     <label class="label">{{Lecture 1x sur :}}&nbsp;';
-  tr += '       <input class="cmdAttr form-inline input-sm" style="width:70px;" data-l1key="configuration" data-l2key="cmdFrequency" placeholder="{{1 par défaut}}"' + formDisabled + '/>';
+  tr += '       <input type="number" class="cmdAttr form-inline input-sm" style="width:70px;" data-l1key="configuration" data-l2key="cmdFrequency" placeholder="{{1 par défaut}}"' + formDisabled + '/>';
   tr += '     </label>';
   tr += '   </div>';
   tr += '   <div class="input-group" style="width:100%;">';
@@ -681,7 +721,7 @@ function getTrfromCmd(_cmd, _template = false) {
   tr += ' </td>';    
   // Options
   tr += ' <td>';
-  if (is_numeric(!_template && _cmd.id)) {
+  if (!_template && is_numeric(_cmd.id)) {
     tr += '   <a class="btn btn-default btn-xs cmdAction" data-action="configure" title="{{Configuration de la commande}}""><i class="fas fa-cogs"></i></a>';
     tr += '   <a class="btn btn-default btn-xs cmdAction" data-action="test" title="{{Tester}}"><i class="fas fa-rss"></i></a>';
     tr += '   <a class="btn btn-default btn-xs cmdAction" data-action="copy" title="{{Dupliquer}}"><i class="far fa-clone"></i></a>';
@@ -689,8 +729,8 @@ function getTrfromCmd(_cmd, _template = false) {
   tr += '   <label class="checkbox-inline"><input type="checkbox" class="cmdAttr checkbox-inline" data-l1key="isVisible" checked' + formDisabled + '/>{{Afficher}}</label>';
   tr += '   <label class="checkbox-inline"><input type="checkbox" class="cmdAttr" data-l1key="isHistorized" data-size="mini"' + formDisabled + '/>{{Historiser}}</label>';
   tr += '   <div class="input-group" style="margin-top:7px;">';
-  tr += '     <input class="tooltips cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="minValue" placeholder="{{Min}}" title="{{Min}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;"' + formDisabled + '/>';
-  tr += '     <input class="tooltips cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="maxValue" placeholder="{{Max}}" title="{{Max}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;"' + formDisabled + '/>';
+  tr += '     <input class="tooltips cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="minValue" placeholder="{{Min}}" title="{{Min}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;" type="number"' + formDisabled + '/>';
+  tr += '     <input class="tooltips cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="maxValue" placeholder="{{Max}}" title="{{Max}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;" type="number"' + formDisabled + '/>';
   tr += '     <input class="tooltips cmdAttr form-control input-sm" data-l1key="unite" placeholder="{{Unité}}" title="{{Unité}}" style="width:30%;max-width:100px;display:inline-block;margin-right:2px;"' + formDisabled + '/>';
   tr += '     <input class="tooltips cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="listValue" placeholder="{{Liste de \'valeur|texte\' séparés par \';\'}}" title="{{Liste}}" style="min-width:280px;width:290px;margin-right:2px;"' + formDisabled + '>';
   tr += '   </div>';
@@ -708,7 +748,7 @@ function getTrfromCmd(_cmd, _template = false) {
   return tr;
 }
 
-$("#bt_add_command_top").on('click', function (event) {
+$("#bt_add_command").on('click', function (event) {
   addCmdToTable({});
   modifyWithoutSave = true;
 });
