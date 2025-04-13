@@ -176,32 +176,6 @@ $("#table_cmd").sortable({
   tolerance: "intersect",
   forcePlaceholderSize: true
 });
-$("#table_mymodbusFilters").sortable({axis: "y", cursor: "move", items: ".filter", placeholder: "ui-state-highlight", tolerance: "intersect", forcePlaceholderSize: true});
-/*
- * Fonction pour l'ajout de commande, appellé automatiquement par plugin.template
- */
-$('.eqLogicAction[data-action=bt_docSpecific]').on('click', function () {
-  window.open('https://mrwaloo.github.io/jeedom-plugins-doc/fr_FR/mymodbus_doc');
-});
-$('.pluginAction[data-action=openLink]').on('click',function(){
-  window.open($(this).attr("data-location"), "_blank", null);
-});
-$('#bt_healthmymodbus').on('click', function () {
-  $('#md_modal').dialog({title: "{{Santé mymodbus}}"});
-  $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=health').dialog('open');
-});
-$('.bt_showExpressionTest').off('click').on('click', function () {
-  $('#md_modal').dialog({title: "{{Testeur d'expression}}"});
-  $("#md_modal").load('index.php?v=d&modal=expression.test').dialog('open');
-});
-$('.bt_showNoteManagement').off('click').on('click', function () {
-  $('#md_modal').dialog({title: "{{Notes}}"});
-  $("#md_modal").load('index.php?v=d&modal=note.manager').dialog('open');
-});
-$('#bt_templatesmymodbus').on('click', function () {
-  $('#md_modal').dialog({title: "{{Gestion des templates d'équipements mymobus}}"});
-  $('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=templates').dialog('open');
-});
 
 function printEqLogic(_eqLogic) {
   //console.log('eqLogic : ' + init(JSON.stringify(_eqLogic)));
