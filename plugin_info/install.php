@@ -90,14 +90,22 @@ function mymodbus_update() {
   $pluginId = basename(realpath(__DIR__ . '/..'));
   log::add($pluginId, 'info', 'mymodbus_update');
 
+  // Remove old cron jobs
   do {
-    $cron = cron::byClassAndFunction('mymodbus', 'cronDaily');
+    $cron = cron::byClassAndFunction($pluginId, 'cronDaily');
     if (is_object($cron)) {
       $cron->remove(true);
     } else {
       break;
     }
   } while (true);
+
+  // Save all eqLogics
+  // This is necessary to update the configuration of the plugin
+  $eqLogics = eqLogic::byType($pluginId);
+  foreach ($eqLogics as $eqLogic) {
+    $eqLogic->save();
+  }
 
   delete_unused_files();
 

@@ -908,18 +908,10 @@ class mymodbus extends eqLogic {
           return 'nok';
         }
         $serialIntf[] = $intf;
-      } 
-    }
-    
-    foreach (self::byType(__CLASS__) as $eqMymodbus) { // boucle sur les équipements
-      if ($eqMymodbus->getIsEnable()) {
-        foreach ($eqMymodbus->getCmd('info') as $cmd) {
-          // Au moins une commande enregistrée, donc la configuration est validée par preSave()
-          return 'ok';
-        }
       }
     }
-    return 'nok';
+    
+    return 'ok';
   }
   
   public static function getSocketPort() {
