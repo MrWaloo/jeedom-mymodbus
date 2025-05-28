@@ -13,15 +13,11 @@ import logging
 from abc import abstractmethod
 from array import array
 from math import isnan
-from statistics import fmean
 
 from pymodbus import FramerType
 from pymodbus.client import AsyncModbusSerialClient, AsyncModbusTcpClient, AsyncModbusUdpClient
 from pymodbus.exceptions import ModbusException
-from pymodbus.logging import pymodbus_apply_logging_config
 from pymodbus.pdu import ModbusPDU
-
-from mymodbuslib import Lib
 
 
 class MyModbusBase(object):

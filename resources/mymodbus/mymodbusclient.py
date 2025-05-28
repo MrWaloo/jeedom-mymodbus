@@ -7,7 +7,6 @@ The logic is the same than in the modbus implementation in Home Assistant as far
 """
 
 import asyncio
-import logging
 import math
 import re
 from array import array
