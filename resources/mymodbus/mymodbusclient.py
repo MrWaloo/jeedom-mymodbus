@@ -317,7 +317,7 @@ class MyModbusClient(MyModbusBase):
           return
         cmd = self.get_cmd_conf(command["cmdId"])
         if cmd is None:
-          self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' write command with unknown 'cmdId': {command}")
+          self.log.error(f"{self.eqConfig['name']}: 'command_write' write command with unknown 'cmdId': {command}")
           return
         cmd_format: str = cmd["cmdFormat"]
         #data_type = Lib.get_data_type(cmd_format) # not needed

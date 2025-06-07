@@ -154,9 +154,10 @@ class MyModbusBase(object):
             await self.wait_for_stopped()
             
           elif action == "write" and hasattr(self, "command_write"):
+            self.remove_done_write_commands()
             self._async_tasks.append(self.loop.create_task(
               self.command_write(payload),
-              name = payload["cmdId"]
+              name = f"write_{payload['cmdId']}"
             ))
 
           elif action == "read":
@@ -204,6 +205,13 @@ class MyModbusBase(object):
         self.log.error(f"{self.eqConfig['name']}: 'add_change' Send not possible : {e!s}")
     else:
       self.log.debug(f"{self.eqConfig['name']}: 'add_change' No modification to send")
+
+  def remove_done_write_commands(self) -> None:
+    if hasattr(self, "_async_tasks"):
+      for i in range(len(self._async_tasks) - 1, -1, -1):
+        task = self._async_tasks[i]
+        if task.get_name().startswith("write_") and task.done():
+          del self._async_tasks[i]
 
   def connect(self) -> asyncio.Task:
     self.client = self._pmb_clients[self.eqConfig["eqProtocol"]](**self._client_params)

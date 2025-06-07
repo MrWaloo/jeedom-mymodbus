@@ -91,6 +91,7 @@ class MyModbusd(BaseDaemon):
         else:
           self._logger.info(f"{self.__n}: 'manage_new_config' Stopping equipment id {eqId}")
         await self.terminate_client(eqId)
+        self.clean_client(eqId)
     
     # Step 2: actualize the config of running daemons
     for eqId in old_eqIds:
