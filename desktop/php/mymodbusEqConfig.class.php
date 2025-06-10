@@ -55,7 +55,7 @@ class mymodbusEqConfig {
       <div class="form-group">
         <label class="col-sm-6 control-label"><?= __("Options", __FILE__) ?></label>
         <div class="col-sm-6">
-          <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isEnable" checked<?= $disabled ?>/><?= __("Activer", __FILE__) ?></label>
+          <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isEnable" checked<?= $disabled ?>/><?= __("Activé", __FILE__) ?></label>
           <label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isVisible" checked<?= $disabled ?>/><?= __("Visible", __FILE__) ?></label>
         </div>
       </div>

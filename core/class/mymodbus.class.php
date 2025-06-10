@@ -761,24 +761,25 @@ class mymodbus extends eqLogic {
   }
 
   // Fonction exécutée automatiquement après la sauvegarde de l'équipement (création ou mise à jour)
-  // public function postSave() {}
-  
-  public function postAjax() {
+  public function postSave() {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     self::sendNewConfig();
   }
+  
+  // Fonction exécutée automatiquement après la sauvegarde de l'équipement (création ou mise à jour) mais uniquement via l'UI
+  //public function postAjax() {}
 
-   /*
+  /*
   * Non obligatoire mais permet de modifier l'affichage du widget si vous en avez besoin
   public function toHtml($_version = 'dashboard') {}
   */
 
-   /*
+  /*
   * Non obligatoire mais ca permet de déclencher une action après modification de variable de configuration
   public static function postConfig_<Variable>() {}
   */
 
-   /*
+  /*
   * Non obligatoire mais ca permet de déclencher une action avant modification de variable de configuration
   public static function preConfig_<Variable>() {}
   */
