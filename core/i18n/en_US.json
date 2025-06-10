@@ -221,7 +221,7 @@
         "4 registres": "4 registers",
         "ASCII": "ASCII",
         "ATTENTION : lors de la sauvegarde de l'équipement, si l'équipement est activé, toutes les commandes seront supprimées sans demande de confirmation": "ATTENTION: when saving equipment, if the equipment is activated, all commands will be deleted without requesting confirmation",
-        "Activer": "Activate",
+        "Activé": "On",
         "Adresse IP": "IP address",
         "Adresse de l'esclave": "Slave address",
         "Aucun": "No",
