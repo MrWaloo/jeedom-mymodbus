@@ -302,6 +302,8 @@ function printEqLogic(_eqLogic) {
   for (let i = 0; i < selectElement.options.length; i++) {
     if (selectElement.options[i].value === _eqLogic.id) {
       selectElement.options[i].classList.add('hidden');
+    } else {
+      selectElement.options[i].classList.remove('hidden');
     }
   }
 
