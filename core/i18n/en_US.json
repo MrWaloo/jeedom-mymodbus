@@ -18,6 +18,7 @@
         "uploaddir = '%s'": "uploaddir = '%s'"
     },
     "plugins\/mymodbus\/core\/class\/mymodbus.class.php": {
+        "Activation de l\\'équipement": "Equipment activation",
         "Adresse Modbus en dehors de la plage de registres.": "Modbus address outside register range.",
         "Check de la conf ": "Conf check",
         "Création de commande : Cycle OK": "Create command: Cycle OK",
@@ -26,6 +27,7 @@
         "Création de commande : Temps de rafraîchissement": "Command creation: Refresh time",
         "Cycle OK": "Cycle OK",
         "Démarrage du démon impossible, veuillez vérifier la configuration de MyModbus": "Cannot start daemon, please check MyModbus configuration",
+        "Désactivation de l\\'équipement": "Equipment deactivation",
         "Erreur lors de la lecture du Template '%s'": "Error reading Template '%s'",
         "Impossible de créer le répertoire de téléversement :": "Unable to create upload directory :",
         "Impossible de lancer le démon": "Unable to start daemon",
