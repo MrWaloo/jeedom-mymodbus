@@ -185,7 +185,7 @@ class mymodbus extends eqLogic {
     socket_close($socket);
   }
 
-  public static function sendNewConfig() {
+  public static function sendNewConfig($enabledId = null, $disabledId = null) {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     if (self::getDeamonState() != 'ok') {
       return True;
@@ -193,7 +193,7 @@ class mymodbus extends eqLogic {
     
     $message = [
       'CMD' => 'newDaemonConfig',
-      'config' => self::getCompleteConfiguration()
+      'config' => self::getCompleteConfiguration($enabledId, $disabledId)
     ];
     self::sendToDaemon($message);
   }
@@ -757,17 +757,29 @@ class mymodbus extends eqLogic {
       }
     }
 
-    //log::add(__CLASS__, 'debug', 'Validation de la configuration pour l\'équipement *' . $this->getHumanName() . '* : OK');
+    // $this est l'équipement en cours de sauvegarde
+    $old = eqLogic::byId($this->getId());
+    // $old est l'équipement avant la sauvegarde
+    if (is_object($old) && $old->getIsEnable() != $this->getIsEnable()) {
+      // L'équipement a été activé ou désactivé
+      if ($this->getIsEnable()) {
+        log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('Activation de l\'équipement', __FILE__));
+        self::sendNewConfig($this->getId(), null);
+      } else {
+        log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . ' * ' . $this->getHumanName() . ' ' . __('Désactivation de l\'équipement', __FILE__));
+        self::sendNewConfig(null, $this->getId());
+      }
+    }
   }
 
   // Fonction exécutée automatiquement après la sauvegarde de l'équipement (création ou mise à jour)
-  public function postSave() {
+  //public function postSave() {}
+  
+  // Fonction exécutée automatiquement après la sauvegarde de l'équipement (création ou mise à jour) mais uniquement via l'UI
+  public function postAjax() {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     self::sendNewConfig();
   }
-  
-  // Fonction exécutée automatiquement après la sauvegarde de l'équipement (création ou mise à jour) mais uniquement via l'UI
-  //public function postAjax() {}
 
   /*
   * Non obligatoire mais permet de modifier l'affichage du widget si vous en avez besoin
@@ -787,12 +799,13 @@ class mymodbus extends eqLogic {
   /*   * **********************Getteur Setteur*************************** */
   
   // Retourne la configuration des équipements et de leurs commandes
-  public static function getCompleteConfiguration() {
+  public static function getCompleteConfiguration($enabledId = null, $disabledId = null) {
     log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
     $completeConfig = [];
     foreach (self::byType(__CLASS__) as $eqMymodbus) { // boucle sur les équipements
       // ne pas exporter la configuration si l'équipement n'est pas activé
-      if (!$eqMymodbus->getIsEnable()) {
+      if ((!$eqMymodbus->getIsEnable() && $eqMymodbus->getId() != $enabledId)
+          || ($eqMymodbus->getIsEnable() && $eqMymodbus->getId() == $disabledId)) {
         continue;
       }
       
@@ -899,7 +912,6 @@ class mymodbus extends eqLogic {
       return 'nok';
     }
 
-    // Si 2 équipements utilisent la même connexion -> nok (workaround provisoire)
     $eqConfigs = self::getCompleteConfiguration();
     $serialIntf = [];
     foreach ($eqConfigs as $config) {
