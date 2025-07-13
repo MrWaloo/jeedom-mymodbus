@@ -18,6 +18,7 @@
         "uploaddir = '%s'": "uploaddir = '%s"
     },
     "plugins\/mymodbus\/core\/class\/mymodbus.class.php": {
+        "Activation de l\\'équipement": "Activación del equipo",
         "Adresse Modbus en dehors de la plage de registres.": "Dirección Modbus fuera del rango de registro.",
         "Check de la conf ": "Conf check",
         "Création de commande : Cycle OK": "Creación de pedidos: Ciclo OK",
@@ -26,6 +27,7 @@
         "Création de commande : Temps de rafraîchissement": "Crear comando: Actualizar hora",
         "Cycle OK": "Ciclo OK",
         "Démarrage du démon impossible, veuillez vérifier la configuration de MyModbus": "No se puede iniciar el demonio, por favor, compruebe la configuración MyModbus",
+        "Désactivation de l\\'équipement": "Desactivación del equipo",
         "Erreur lors de la lecture du Template '%s'": "Error al leer la plantilla '%s",
         "Impossible de créer le répertoire de téléversement :": "No se puede crear el directorio de carga :",
         "Impossible de lancer le démon": "No se puede iniciar el demonio",
