@@ -21,5 +21,5 @@ require_once __DIR__ . '/install.php';
 
 // Fonction exécutée automatiquement avant la mise à jour du plugin
 function mymodbus_pre_update() {
-    delete_unused_files();
+	delete_unused_files();
 }
