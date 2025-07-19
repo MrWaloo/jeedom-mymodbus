@@ -7,7 +7,7 @@
 		"es_ES": "Lectura y escritura Modbus",
 		"de_DE": "Lesen und Schreiben in Modbus"
 	},
-	"licence": "AGPL",
+	"licence": "GPL",
 	"author": "Michel_F",
 	"require": "4.4",
 	"os": {

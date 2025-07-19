@@ -14,7 +14,7 @@ from statistics import fmean
 
 from pymodbus.exceptions import ModbusException
 from pymodbus.pdu import DecodePDU, ExceptionResponse, ModbusPDU
-from pymodbus.utilities import pack_bitstring, unpack_bitstring
+from pymodbus.pdu.pdu import pack_bitstring, unpack_bitstring
 
 from mymodbuslib import Lib
 from mymodbusbase import MyModbusBase
@@ -240,8 +240,8 @@ class MyModbusClient(MyModbusBase):
 			if cmd_format == "bit":
 				mask = 1
 				if blob is not None:
-					offset = address - blob_addr
-					mask = 2 ** offset % 8
+					byte_offset = (address - blob_addr) % 8
+					mask = 2 ** byte_offset
 				return int(payload[0]) & mask != 0
 
 			# Type: Byte

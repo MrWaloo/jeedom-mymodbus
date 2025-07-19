@@ -15,7 +15,7 @@ from statistics import fmean
 
 from pymodbus.exceptions import ModbusException
 from pymodbus.pdu import DecodePDU, ExceptionResponse, ModbusPDU
-from pymodbus.utilities import pack_bitstring, unpack_bitstring
+from pymodbus.pdu.pdu import pack_bitstring, unpack_bitstring
 
 from mymodbuslib import Lib
 from mymodbusbase import MyModbusBase

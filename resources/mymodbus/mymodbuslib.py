@@ -181,7 +181,7 @@ class Lib():
 
 			elif cmd_format.endswith("_sf"):
 				addr_val, addr_sf = cls.get_val_sf(cmd)
-				data_type = cls.get_data_type(cmd_format)
+				data_type = cls.get_data_type(cmd_format[:-3])
 				offset = 1 if addr_sf > addr_val else data_type.value[1]
 				address = min(addr_val, addr_sf)
 				count = abs(addr_val - addr_sf) + offset
