@@ -643,7 +643,7 @@ class mymodbus extends eqLogic {
 					throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le premier registre doit être inférieur au dernier registre.', __FILE__));
 				}
 				if (!is_numeric($eqRegTestSlave) || intval($eqRegTestSlave) < 0	|| intval($eqRegTestSlave) > 247) {
-					throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'adresse de l\'esclave doit être un nombre positif compris entre 0 et 247.', __FILE__));
+					throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'ID du serveur doit être un nombre positif compris entre 0 et 247.', __FILE__));
 				}
 				if (!is_numeric($eqRegTestFunction) || $eqRegTestFunction < 1 || $eqRegTestFunction > 4) {
 					throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La fonction Modbus doit être un nombre entre 1 et 4.', __FILE__));
@@ -1065,7 +1065,7 @@ class mymodbusCmd extends cmd {
 			$this->setConfiguration('cmdSlave', $cmdSlave);
 		}
 		if (!is_numeric($cmdSlave)) {
-			throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'adresse esclave doit être un nombre.<br>\'1\' par défaut.', __FILE__));
+			throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'ID du serveur doit être un nombre.<br>\'1\' par défaut.', __FILE__));
 		}
 		if ($this->getType() === 'info') {
 			if ($cmdFrequency === '') {

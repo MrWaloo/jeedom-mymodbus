@@ -574,7 +574,7 @@ function selectFirstVisible(selectEl) {
 
 function getTrfromCmd(_cmd, _template = false) {
 	let formDisabled = (_template) ? ' disabled' : '';
-	// id
+	// id de la commande
 	let dataCmdId = (!_template) ? 'data-cmd_id="' + init(_cmd.id) : '';
 	let tr = '<tr class="cmd" ' + dataCmdId + '">';
 	if (!_template) {
@@ -603,7 +603,7 @@ function getTrfromCmd(_cmd, _template = false) {
 	tr += '		<span class="subType" subType="' + init(_cmd.subType) + '"></span>';
 	tr += '	</div>';
 	tr += ' </td>';
-	// Adresse esclave
+	// ID du serveur
 	tr += ' <td><input type="number" class="cmdAttr form-control input-sm withSlave" data-l1key="configuration" data-l2key="cmdSlave"' + formDisabled + '></td>';
 	// Modbus function / Data format
 	tr += ' <td>';

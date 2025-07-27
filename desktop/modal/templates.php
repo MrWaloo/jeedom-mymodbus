@@ -53,7 +53,7 @@ include_file('desktop', 'mymodbusEqConfig.class', 'php', 'mymodbus');
 				<tr>
 					<th style="min-width:60px;">{{Nom}}</th>
 					<th style="width:60px;">{{Type}}</th>
-					<th style="width:80px;">{{Adresse esclave}}</th>
+					<th style="width:80px;">{{ID du serveur}}</th>
 					<th style="min-width:230px;width:230px">{{Fonction Modbus}}</th>
 					<th style="min-width:200px;width:200px;">{{Adresse Modbus}}</th>
 					<th>{{Paramètres}}</th>
