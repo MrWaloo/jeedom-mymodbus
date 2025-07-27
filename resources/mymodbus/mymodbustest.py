@@ -49,7 +49,7 @@ class MyModbusTest(MyModbusBase):
 			return
 		eqRegTestFirst = int(self.eqConfig['eqRegTestFirst'])
 		eqRegTestLast = int(self.eqConfig['eqRegTestLast'])
-		dev_id = int(self.eqConfig['eqRegTestSlave'])
+		dev_id = int(self.eqConfig['eqRegTestDevID'])
 		count = self.get_count()
 		for address in range(eqRegTestFirst, eqRegTestLast + 1):
 			self._requests[address] = request_func(address=address, count=count, dev_id=dev_id)

@@ -476,12 +476,12 @@ function actualise_visible(me, source, _template = false) {
 	$(me).closest('tr').find('.writeFunction').hide();
 	$(me).closest('tr').find('.readBin').hide();
 	$(me).closest('tr').find('.readNum').hide();
-	$(me).closest('tr').find('.withSlave').hide();
+	$(me).closest('tr').find('.withDevID').hide();
 	$(me).closest('tr').find('.cmdAttr[data-l1key=configuration][data-l2key=listValue]').hide();
 	
 	if (_template || cmdLogicalId == '') { // without a logicalId
 		if (cmdFctModbus != 'fromBlob') {
-			$(me).closest('tr').find('.withSlave').show();
+			$(me).closest('tr').find('.withDevID').show();
 		}
 		
 		if (cmdType == 'info') {
@@ -604,7 +604,7 @@ function getTrfromCmd(_cmd, _template = false) {
 	tr += '	</div>';
 	tr += ' </td>';
 	// ID du serveur
-	tr += ' <td><input type="number" class="cmdAttr form-control input-sm withSlave" data-l1key="configuration" data-l2key="cmdSlave"' + formDisabled + '></td>';
+	tr += ' <td><input type="number" class="cmdAttr form-control input-sm withDevID" data-l1key="configuration" data-l2key="cmdDevID"' + formDisabled + '></td>';
 	// Modbus function / Data format
 	tr += ' <td>';
 	tr += '	<div class="input-group" style="margin-bottom:5px;">';
@@ -841,8 +841,8 @@ function addCmdToTable(_cmd) {
 		_cmd.configuration.cmdFctModbus = '3';
 		_cmd.configuration.cmdFormat = 'h';
 	}
-	if (!isset(_cmd.configuration.cmdSlave)) {
-		_cmd.configuration.cmdSlave = '1';
+	if (!isset(_cmd.configuration.cmdDevID)) {
+		_cmd.configuration.cmdDevID = '1';
 	}
 	if (!isset(_cmd.configuration.cmdFrequency)){
 		_cmd.configuration.cmdFrequency = '1';

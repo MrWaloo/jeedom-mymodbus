@@ -512,6 +512,17 @@ class mymodbus extends eqLogic {
 	// La levée d'une exception invalide la sauvegarde
 	public function preSave() {
 		log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
+		// Remplacement des noms de la configuration
+		$conv_array = [
+			'eqRegTestSlave' => 'eqRegTestDevID'
+		];
+		foreach ($conv_array as $oldKey => $newKey) {
+			if ($this->getConfiguration($oldKey, null) !== null && $this->getConfiguration($newKey, null) === null) {
+				$this->setConfiguration($newKey, $this->getConfiguration($oldKey));
+				$this->setConfiguration($oldKey, null);
+			}
+		}
+
 		$configKeys = array_keys($this->getConfiguration());
 		// Equipement non activé, pas de vérification
 		if ($this->getIsEnable()) {
@@ -631,7 +642,7 @@ class mymodbus extends eqLogic {
 				// Equipement de test de registres
 				$eqRegTestFirst = $this->getConfiguration('eqRegTestFirst');
 				$eqRegTestLast = $this->getConfiguration('eqRegTestLast');
-				$eqRegTestSlave = $this->getConfiguration('eqRegTestSlave');
+				$eqRegTestDevID = $this->getConfiguration('eqRegTestDevID');
 				$eqRegTestFunction = $this->getConfiguration('eqRegTestFunction');
 				if (!is_numeric($eqRegTestFirst) || intval($eqRegTestFirst) < 0	|| intval($eqRegTestFirst) > 65535) {
 					throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le premier registre doit être un nombre positif compris entre 0 et 65535.', __FILE__));
@@ -642,7 +653,7 @@ class mymodbus extends eqLogic {
 				if (intval($eqRegTestLast) < intval($eqRegTestFirst)) {
 					throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le premier registre doit être inférieur au dernier registre.', __FILE__));
 				}
-				if (!is_numeric($eqRegTestSlave) || intval($eqRegTestSlave) < 0	|| intval($eqRegTestSlave) > 247) {
+				if (!is_numeric($eqRegTestDevID) || intval($eqRegTestDevID) < 0	|| intval($eqRegTestDevID) > 247) {
 					throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'ID du serveur doit être un nombre positif compris entre 0 et 247.', __FILE__));
 				}
 				if (!is_numeric($eqRegTestFunction) || $eqRegTestFunction < 1 || $eqRegTestFunction > 4) {
@@ -707,7 +718,7 @@ class mymodbus extends eqLogic {
 				}
 				$eqRegTestFirst = $this->getConfiguration('eqRegTestFirst');
 				$eqRegTestLast = $this->getConfiguration('eqRegTestLast');
-				$eqRegTestSlave = $this->getConfiguration('eqRegTestSlave');
+				$eqRegTestDevID = $this->getConfiguration('eqRegTestDevID');
 				$eqRegTestFunction = $this->getConfiguration('eqRegTestFunction');
 				$order = 1;
 				$refreshCmd = $this->getCmd('action', 'refresh');
@@ -855,7 +866,7 @@ class mymodbus extends eqLogic {
 		if ($eqConfig['eqRegTest'] != '0') {
 			$eqConfig['eqRegTestFirst'] = trim($this->getConfiguration('eqRegTestFirst'));
 			$eqConfig['eqRegTestLast'] = trim($this->getConfiguration('eqRegTestLast'));
-			$eqConfig['eqRegTestSlave'] = trim($this->getConfiguration('eqRegTestSlave'));
+			$eqConfig['eqRegTestDevID'] = trim($this->getConfiguration('eqRegTestDevID'));
 			$eqConfig['eqRegTestFunction'] = $this->getConfiguration('eqRegTestFunction');
 			$eqConfig['eqRegTestFormat'] = $this->getConfiguration('eqRegTestFormat');
 			$eqConfig['eqRegTestInvertBytes'] = $this->getConfiguration('eqRegTestInvertBytes');
@@ -1041,6 +1052,16 @@ class mymodbusCmd extends cmd {
 				$this->_changed = true;
 			}
 		}
+		// Remplacement des noms de la configuration
+		$conv_array = [
+			'cmdSlave' => 'cmdDevID'
+		];
+		foreach ($conv_array as $oldKey => $newKey) {
+			if ($this->getConfiguration($oldKey, null) !== null && $this->getConfiguration($newKey, null) === null) {
+				$this->setConfiguration($newKey, $this->getConfiguration($oldKey));
+				$this->setConfiguration($oldKey, null);
+			}
+		}
 		
 		if (is_null($this->getLogicalId())) {
 			$this->setLogicalId('');
@@ -1054,17 +1075,17 @@ class mymodbusCmd extends cmd {
 		if ($this->getLogicalId() != '') {
 			return true;
 		}
-		$cmdSlave = $this->getConfiguration('cmdSlave');
+		$cmdDevID = $this->getConfiguration('cmdDevID');
 		$cmdAddress = $this->getConfiguration('cmdAddress');
 		$cmdFrequency = $this->getConfiguration('cmdFrequency');
 		$cmdFormat = $this->getConfiguration('cmdFormat');
 		$cmdFctModbus = $this->getConfiguration('cmdFctModbus');
 		$cmdOption = $this->getConfiguration('cmdOption');
-		if ($cmdSlave === '') {
-			$cmdSlave = '1';
-			$this->setConfiguration('cmdSlave', $cmdSlave);
+		if ($cmdDevID === '') {
+			$cmdDevID = '1';
+			$this->setConfiguration('cmdDevID', $cmdDevID);
 		}
-		if (!is_numeric($cmdSlave)) {
+		if (!is_numeric($cmdDevID)) {
 			throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'ID du serveur doit être un nombre.<br>\'1\' par défaut.', __FILE__));
 		}
 		if ($this->getType() === 'info') {
@@ -1209,7 +1230,7 @@ class mymodbusCmd extends cmd {
 		$return['id'] = $this->getId();
 		$return['name'] = trim($this->getName());
 		$return['type'] = $this->getType();
-		$return['cmdSlave'] = trim($this->getConfiguration('cmdSlave'));
+		$return['cmdDevID'] = trim($this->getConfiguration('cmdDevID'));
 		$return['cmdFctModbus'] = $this->getConfiguration('cmdFctModbus');
 		if ($return['cmdFctModbus'] === 'fromBlob') {
 			if ($this->getSubType() === 'binary') {

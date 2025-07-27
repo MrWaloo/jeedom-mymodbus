@@ -169,7 +169,7 @@ class mymodbusEqConfig {
 					<div class="form-group nonShared">
 						<label class="col-sm-6 control-label"><?= __("ID du serveur", __FILE__) ?></label>
 						<div class="col-sm-6">
-							<input type="number" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRegTestSlave"<?= $disabled ?>/>
+							<input type="number" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqRegTestDevID"<?= $disabled ?>/>
 						</div>
 					</div>
 					<div class="form-group nonShared">
