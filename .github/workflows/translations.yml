@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - beta
+      - beta-dev-terminologies-id
 #      - stable
 
 jobs:
