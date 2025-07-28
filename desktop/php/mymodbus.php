@@ -128,7 +128,7 @@ include_file('desktop', 'mymodbusEqConfig.class', 'php', 'mymodbus');
 								<th style="min-width:100px;width:280px;">{{Nom}}</th>
 								<th style="min-width:80px;">{{Valeur}}</th>
 								<th style="width:100px;">{{Type}}</th>
-								<th style="min-width:80px;width:80px;">{{ID du serveur}}
+								<th class="colDevID" style="min-width:80px;width:80px;">{{ID du serveur}}
 									<sup><i class="fas fa-question-circle tooltips" title="{{'1' si pas de bus série}}"></i></sup>
 								</th>
 								<th style="width:230px;">{{Fonction Modbus}}</th>

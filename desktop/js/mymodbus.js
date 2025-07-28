@@ -255,6 +255,10 @@ function printEqLogic(_eqLogic) {
 		_eqLogic.configuration.eqErrorDelay = '1';
 		modifyWithoutSave = true;
 	}
+	if (!isset(_eqLogic.configuration.eqOneDevID) || _eqLogic.configuration.eqOneDevID == '') {
+		_eqLogic.configuration.eqOneDevID = '0';
+		modifyWithoutSave = true;
+	}
 	if (!isset(_eqLogic.configuration.eqRegTest) || _eqLogic.configuration.eqRegTest == '') {
 		_eqLogic.configuration.eqRegTest = '0';
 		modifyWithoutSave = true;
@@ -334,6 +338,18 @@ $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRegTest]').off().on('chan
 		$('.noRegTest').hide();
 	}
 });
+
+$('.eqLogicAttr[data-l1key=configuration][data-l2key=eqOneDevID]').off().on('change', function () {
+	if ($(this).value() == '1') {
+		$('.colDevID').hide();
+		$('.eqLogicAttr[data-l1key=configuration][data-l2key=eqDevID]').prop('disabled', false);
+	} else {
+		$('.colDevID').show();
+		$('.eqLogicAttr[data-l1key=configuration][data-l2key=eqDevID]').prop('disabled', true);
+		$('.eqLogicAttr[data-l1key=configuration][data-l2key=eqDevID]').prop('value', '');
+	}
+});
+
 
 $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRegTestFunction]').off().on('change', function () {
 	if ($(this).val() != '' && !is_null($(this).val())) {
@@ -576,6 +592,7 @@ function getTrfromCmd(_cmd, _template = false) {
 	let formDisabled = (_template) ? ' disabled' : '';
 	// id de la commande
 	let dataCmdId = (!_template) ? 'data-cmd_id="' + init(_cmd.id) : '';
+	let $colDevIDStyle = $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqOneDevID]').value() == '0' ? '' : ' style="display:none;"';
 	let tr = '<tr class="cmd" ' + dataCmdId + '">';
 	if (!_template) {
 		tr += ' <td class="hidden-xs">'
@@ -604,7 +621,7 @@ function getTrfromCmd(_cmd, _template = false) {
 	tr += '	</div>';
 	tr += ' </td>';
 	// ID du serveur
-	tr += ' <td><input type="number" class="cmdAttr form-control input-sm withDevID" data-l1key="configuration" data-l2key="cmdDevID"' + formDisabled + '></td>';
+	tr += ' <td class="colDevID"' + $colDevIDStyle + '><input type="number" class="cmdAttr form-control input-sm withDevID" data-l1key="configuration" data-l2key="cmdDevID"' + formDisabled + '></td>';
 	// Modbus function / Data format
 	tr += ' <td>';
 	tr += '	<div class="input-group" style="margin-bottom:5px;">';

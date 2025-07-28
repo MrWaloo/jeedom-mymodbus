@@ -140,6 +140,15 @@ class mymodbusEqConfig {
 				self::show_network_config();
 				self::show_serial_config();
 				?>
+				<div class="form-group noRegTest">
+					<label class="col-sm-6 control-label"><?= __("ID du serveur identique à toutes les commandes", __FILE__) ?></label>
+					<div class="col-sm-6">
+						<label class="checkbox-inline">
+							<input type="checkbox" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqOneDevID"<?= $disabled ?>/>
+							<input type="number" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="eqDevID" placeholder="ID" disabled/>
+						</label>
+					</div>
+				</div>
 				<div class="form-group nonShared">
 					<label class="col-sm-6 control-label"><?= __("Equipement destiné à tester l'existence des registres", __FILE__) ?></label>
 					<div class="col-sm-6">

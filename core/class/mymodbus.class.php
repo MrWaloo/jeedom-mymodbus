@@ -550,6 +550,8 @@ class mymodbus extends eqLogic {
 				$eqRetries = $this->getConfiguration('eqRetries');
 				$eqFirstDelay = $this->getConfiguration('eqFirstDelay');
 				$eqErrorDelay = $this->getConfiguration('eqErrorDelay');
+				$eqOneDevID = $this->getConfiguration('eqOneDevID', '0');
+				$eqDevID = $this->getConfiguration('eqDevID');
 				if (!in_array($eqRefreshMode, ['polling', 'cyclic', 'on_event'])) {
 					throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le mode de rafraîchissement n\'est pas défini correctement.', __FILE__));
 				}
@@ -588,6 +590,11 @@ class mymodbus extends eqLogic {
 				}
 				if ($eqErrorDelay < 1) {
 					throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Temps d\'attente après une erreur de lecture" doit être au moins à 1 seconde.', __FILE__));
+				}
+				if ($eqOneDevID == '1') {
+					if (intval($eqDevID) != floatval($eqDevID) || intval($eqDevID) < 0 || intval($eqDevID) > 247) {
+						throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "ID" doit être un nombre entier compris entre 0 et 247.', __FILE__));
+					}
 				}
 			}
 			
@@ -757,7 +764,7 @@ class mymodbus extends eqLogic {
 			}
 		}
 		// Suppression des éléments de configuration inutiles
-		$confOK = $this->getEqConfiguration();
+		$confOK = array_merge($this->getEqConfiguration(), ['eqOneDevID' => null, 'eqDevID' => null]);
 		$conf = $this->getConfiguration();
 		$shared_from = $conf['eqProtocol'] === 'shared_from';
 		$serial_com = $conf['eqProtocol'] === 'serial';
@@ -1063,6 +1070,8 @@ class mymodbusCmd extends cmd {
 			}
 		}
 		
+		$eqMymodbus = $this->getEqLogic();
+		
 		if (is_null($this->getLogicalId())) {
 			$this->setLogicalId('');
 			$this->_changed = true;
@@ -1081,11 +1090,11 @@ class mymodbusCmd extends cmd {
 		$cmdFormat = $this->getConfiguration('cmdFormat');
 		$cmdFctModbus = $this->getConfiguration('cmdFctModbus');
 		$cmdOption = $this->getConfiguration('cmdOption');
-		if ($cmdDevID === '') {
+		if ($cmdDevID === '' && $eqMymodbus->getConfiguration('eqOneDevID') != '1') {
 			$cmdDevID = '1';
 			$this->setConfiguration('cmdDevID', $cmdDevID);
 		}
-		if (!is_numeric($cmdDevID)) {
+		if (!is_numeric($cmdDevID) && $eqMymodbus->getConfiguration('eqOneDevID') != '1') {
 			throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'ID du serveur doit être un nombre.<br>\'1\' par défaut.', __FILE__));
 		}
 		if ($this->getType() === 'info') {
@@ -1162,7 +1171,6 @@ class mymodbusCmd extends cmd {
 			}
 			
 			if (!is_numeric($cmdSourceBlob) && preg_match('/#\[.*\]#/', $cmdSourceBlob)) {
-				$eqMymodbus = $this->getEqLogic();
 				foreach ($eqMymodbus->getCmd() as $cmd) {
 					if ($cmdSourceBlob === '#[' . $cmd->getName() . ']#') {
 						$cmdSourceBlob = $cmd->getId();
@@ -1226,11 +1234,17 @@ class mymodbusCmd extends cmd {
 
 	public function getCmdConfiguration() {
 		//log::add('mymodbus', 'debug', __CLASS__ . '::' . __FUNCTION__);
+		$eqMymodbus = $this->getEqLogic();
 		$return = [];
 		$return['id'] = $this->getId();
 		$return['name'] = trim($this->getName());
 		$return['type'] = $this->getType();
-		$return['cmdDevID'] = trim($this->getConfiguration('cmdDevID'));
+		if ($eqMymodbus->getConfiguration('eqOneDevID') === '1') {
+			$return['cmdDevID'] = trim($eqMymodbus->getConfiguration('eqDevID'));
+			$this->setConfiguration('cmdDevID', null);
+		} else {
+			$return['cmdDevID'] = trim($this->getConfiguration('cmdDevID'));
+		}
 		$return['cmdFctModbus'] = $this->getConfiguration('cmdFctModbus');
 		if ($return['cmdFctModbus'] === 'fromBlob') {
 			if ($this->getSubType() === 'binary') {
