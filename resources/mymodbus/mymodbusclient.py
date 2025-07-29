@@ -54,7 +54,7 @@ class MyModbusClient(MyModbusBase):
 					self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
 					continue
 				address, count = Lib.get_request_addr_count(cmd)
-				dev_id = int(cmd["cmdSlave"])
+				dev_id = int(cmd["cmdDevID"])
 				self._requests[cmd["id"]] = request_func(address=address, count=count, dev_id=dev_id)
 				self.log.debug(f"{self.eqConfig['name']}: 'read_eqConfig' Modbus request for cmd id {cmd['id']}: {self._requests[cmd['id']]}")
 
@@ -388,7 +388,7 @@ class MyModbusClient(MyModbusBase):
 
 				write_req_params = {
 					"address": address,
-					"dev_id": int(cmd["cmdSlave"]),
+					"dev_id": int(cmd["cmdDevID"]),
 					attr: req_payload
 				}
 				self.log.debug(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' write_req_params = {write_req_params}")

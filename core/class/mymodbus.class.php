@@ -512,6 +512,17 @@ class mymodbus extends eqLogic {
 	// La levée d'une exception invalide la sauvegarde
 	public function preSave() {
 		log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
+		// Remplacement des noms de la configuration
+		$conv_array = [
+			'eqRegTestSlave' => 'eqRegTestDevID'
+		];
+		foreach ($conv_array as $oldKey => $newKey) {
+			if ($this->getConfiguration($oldKey, null) !== null && $this->getConfiguration($newKey, null) === null) {
+				$this->setConfiguration($newKey, $this->getConfiguration($oldKey));
+				$this->setConfiguration($oldKey, null);
+			}
+		}
+
 		$configKeys = array_keys($this->getConfiguration());
 		// Equipement non activé, pas de vérification
 		if ($this->getIsEnable()) {
@@ -539,6 +550,8 @@ class mymodbus extends eqLogic {
 				$eqRetries = $this->getConfiguration('eqRetries');
 				$eqFirstDelay = $this->getConfiguration('eqFirstDelay');
 				$eqErrorDelay = $this->getConfiguration('eqErrorDelay');
+				$eqOneDevID = $this->getConfiguration('eqOneDevID', '0');
+				$eqDevID = $this->getConfiguration('eqDevID');
 				if (!in_array($eqRefreshMode, ['polling', 'cyclic', 'on_event'])) {
 					throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le mode de rafraîchissement n\'est pas défini correctement.', __FILE__));
 				}
@@ -577,6 +590,11 @@ class mymodbus extends eqLogic {
 				}
 				if ($eqErrorDelay < 1) {
 					throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "Temps d\'attente après une erreur de lecture" doit être au moins à 1 seconde.', __FILE__));
+				}
+				if ($eqOneDevID == '1') {
+					if (intval($eqDevID) != floatval($eqDevID) || intval($eqDevID) < 0 || intval($eqDevID) > 247) {
+						throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le paramètre "ID" doit être un nombre entier compris entre 0 et 247.', __FILE__));
+					}
 				}
 			}
 			
@@ -631,7 +649,7 @@ class mymodbus extends eqLogic {
 				// Equipement de test de registres
 				$eqRegTestFirst = $this->getConfiguration('eqRegTestFirst');
 				$eqRegTestLast = $this->getConfiguration('eqRegTestLast');
-				$eqRegTestSlave = $this->getConfiguration('eqRegTestSlave');
+				$eqRegTestDevID = $this->getConfiguration('eqRegTestDevID');
 				$eqRegTestFunction = $this->getConfiguration('eqRegTestFunction');
 				if (!is_numeric($eqRegTestFirst) || intval($eqRegTestFirst) < 0	|| intval($eqRegTestFirst) > 65535) {
 					throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le premier registre doit être un nombre positif compris entre 0 et 65535.', __FILE__));
@@ -642,8 +660,8 @@ class mymodbus extends eqLogic {
 				if (intval($eqRegTestLast) < intval($eqRegTestFirst)) {
 					throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le premier registre doit être inférieur au dernier registre.', __FILE__));
 				}
-				if (!is_numeric($eqRegTestSlave) || intval($eqRegTestSlave) < 0	|| intval($eqRegTestSlave) > 247) {
-					throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'adresse de l\'esclave doit être un nombre positif compris entre 0 et 247.', __FILE__));
+				if (!is_numeric($eqRegTestDevID) || intval($eqRegTestDevID) < 0	|| intval($eqRegTestDevID) > 247) {
+					throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'ID du serveur doit être un nombre positif compris entre 0 et 247.', __FILE__));
 				}
 				if (!is_numeric($eqRegTestFunction) || $eqRegTestFunction < 1 || $eqRegTestFunction > 4) {
 					throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La fonction Modbus doit être un nombre entre 1 et 4.', __FILE__));
@@ -707,7 +725,7 @@ class mymodbus extends eqLogic {
 				}
 				$eqRegTestFirst = $this->getConfiguration('eqRegTestFirst');
 				$eqRegTestLast = $this->getConfiguration('eqRegTestLast');
-				$eqRegTestSlave = $this->getConfiguration('eqRegTestSlave');
+				$eqRegTestDevID = $this->getConfiguration('eqRegTestDevID');
 				$eqRegTestFunction = $this->getConfiguration('eqRegTestFunction');
 				$order = 1;
 				$refreshCmd = $this->getCmd('action', 'refresh');
@@ -746,7 +764,7 @@ class mymodbus extends eqLogic {
 			}
 		}
 		// Suppression des éléments de configuration inutiles
-		$confOK = $this->getEqConfiguration();
+		$confOK = array_merge($this->getEqConfiguration(), ['eqOneDevID' => null, 'eqDevID' => null]);
 		$conf = $this->getConfiguration();
 		$shared_from = $conf['eqProtocol'] === 'shared_from';
 		$serial_com = $conf['eqProtocol'] === 'serial';
@@ -855,7 +873,7 @@ class mymodbus extends eqLogic {
 		if ($eqConfig['eqRegTest'] != '0') {
 			$eqConfig['eqRegTestFirst'] = trim($this->getConfiguration('eqRegTestFirst'));
 			$eqConfig['eqRegTestLast'] = trim($this->getConfiguration('eqRegTestLast'));
-			$eqConfig['eqRegTestSlave'] = trim($this->getConfiguration('eqRegTestSlave'));
+			$eqConfig['eqRegTestDevID'] = trim($this->getConfiguration('eqRegTestDevID'));
 			$eqConfig['eqRegTestFunction'] = $this->getConfiguration('eqRegTestFunction');
 			$eqConfig['eqRegTestFormat'] = $this->getConfiguration('eqRegTestFormat');
 			$eqConfig['eqRegTestInvertBytes'] = $this->getConfiguration('eqRegTestInvertBytes');
@@ -1041,6 +1059,18 @@ class mymodbusCmd extends cmd {
 				$this->_changed = true;
 			}
 		}
+		// Remplacement des noms de la configuration
+		$conv_array = [
+			'cmdSlave' => 'cmdDevID'
+		];
+		foreach ($conv_array as $oldKey => $newKey) {
+			if ($this->getConfiguration($oldKey, null) !== null && $this->getConfiguration($newKey, null) === null) {
+				$this->setConfiguration($newKey, $this->getConfiguration($oldKey));
+				$this->setConfiguration($oldKey, null);
+			}
+		}
+		
+		$eqMymodbus = $this->getEqLogic();
 		
 		if (is_null($this->getLogicalId())) {
 			$this->setLogicalId('');
@@ -1054,18 +1084,18 @@ class mymodbusCmd extends cmd {
 		if ($this->getLogicalId() != '') {
 			return true;
 		}
-		$cmdSlave = $this->getConfiguration('cmdSlave');
+		$cmdDevID = $this->getConfiguration('cmdDevID');
 		$cmdAddress = $this->getConfiguration('cmdAddress');
 		$cmdFrequency = $this->getConfiguration('cmdFrequency');
 		$cmdFormat = $this->getConfiguration('cmdFormat');
 		$cmdFctModbus = $this->getConfiguration('cmdFctModbus');
 		$cmdOption = $this->getConfiguration('cmdOption');
-		if ($cmdSlave === '') {
-			$cmdSlave = '1';
-			$this->setConfiguration('cmdSlave', $cmdSlave);
+		if ($cmdDevID === '' && $eqMymodbus->getConfiguration('eqOneDevID') != '1') {
+			$cmdDevID = '1';
+			$this->setConfiguration('cmdDevID', $cmdDevID);
 		}
-		if (!is_numeric($cmdSlave)) {
-			throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'adresse esclave doit être un nombre.<br>\'1\' par défaut.', __FILE__));
+		if (!is_numeric($cmdDevID) && $eqMymodbus->getConfiguration('eqOneDevID') != '1') {
+			throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'ID du serveur doit être un nombre.<br>\'1\' par défaut.', __FILE__));
 		}
 		if ($this->getType() === 'info') {
 			if ($cmdFrequency === '') {
@@ -1141,7 +1171,6 @@ class mymodbusCmd extends cmd {
 			}
 			
 			if (!is_numeric($cmdSourceBlob) && preg_match('/#\[.*\]#/', $cmdSourceBlob)) {
-				$eqMymodbus = $this->getEqLogic();
 				foreach ($eqMymodbus->getCmd() as $cmd) {
 					if ($cmdSourceBlob === '#[' . $cmd->getName() . ']#') {
 						$cmdSourceBlob = $cmd->getId();
@@ -1205,11 +1234,17 @@ class mymodbusCmd extends cmd {
 
 	public function getCmdConfiguration() {
 		//log::add('mymodbus', 'debug', __CLASS__ . '::' . __FUNCTION__);
+		$eqMymodbus = $this->getEqLogic();
 		$return = [];
 		$return['id'] = $this->getId();
 		$return['name'] = trim($this->getName());
 		$return['type'] = $this->getType();
-		$return['cmdSlave'] = trim($this->getConfiguration('cmdSlave'));
+		if ($eqMymodbus->getConfiguration('eqOneDevID') === '1') {
+			$return['cmdDevID'] = trim($eqMymodbus->getConfiguration('eqDevID'));
+			$this->setConfiguration('cmdDevID', null);
+		} else {
+			$return['cmdDevID'] = trim($this->getConfiguration('cmdDevID'));
+		}
 		$return['cmdFctModbus'] = $this->getConfiguration('cmdFctModbus');
 		if ($return['cmdFctModbus'] === 'fromBlob') {
 			if ($this->getSubType() === 'binary') {
