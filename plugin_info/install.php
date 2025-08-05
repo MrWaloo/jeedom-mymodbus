@@ -100,11 +100,16 @@ function mymodbus_update() {
 		}
 	} while (true);
 
-	// Save all eqLogics
+	// Save all eqLogics and their commands
 	// This is necessary to update the configuration of the plugin
 	$eqLogics = eqLogic::byType($pluginId);
 	foreach ($eqLogics as $eqLogic) {
-		$eqLogic->save();
+		if ($eqLogic->getIsEnable()) {
+			$eqLogic->save();
+			foreach ($eqLogic->getCmd() as $cmdMymodbus) { // loop over the commands of the eqLogic
+				$cmdMymodbus->save();
+			}
+		}
 	}
 
 	delete_unused_files();
