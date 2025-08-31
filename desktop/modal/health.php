@@ -25,7 +25,7 @@ $eqLogics = mymodbus::byType('mymodbus');
 	<thead>
 		<tr>
 			<th>{{Nom}}</th>
-  		<th>{{Id}}</th>
+			<th>{{Id}}</th>
 			<th>{{Protocole}}</th>
 			<th>{{Activé}}</th>
 			<th>{{Dernière communication}}</th>
@@ -41,7 +41,7 @@ foreach ($eqLogics as $eqLogic) {
 	if ($eqLogic->getIsEnable() == 0) {
 		echo '<td><span class="label label-danger" style="font-size : 1em; cursor : default;">{{Désactivé}}</span></td>';
 	} else {
-    echo '<td><span class="label label-success" style="font-size : 1em; cursor : default;">{{Activé}}</span></td>';
+		echo '<td><span class="label label-success" style="font-size : 1em; cursor : default;">{{Activé}}</span></td>';
 	}
 	echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . $eqLogic->getStatus('lastCommunication') . '</span></td>';
 	echo '<td><span class="label label-info" style="font-size : 1em; cursor : default;">' . $eqLogic->getConfiguration('createtime') . '</span></td></tr>';

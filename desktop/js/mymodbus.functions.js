@@ -19,29 +19,29 @@ mymodbus = {}
 
 // Send ajax request to MyModbus plugin
 mymodbus.callPluginAjax = function(_params) {
-  $.ajax({
-    async: _params.async == undefined ? true : _params.async,
-    global: false,
-    type: "POST",
-    url: "plugins/mymodbus/core/ajax/mymodbus.ajax.php",
-    data: _params.data,
-    dataType: 'json',
-    error: function (request, status, error) {
-      handleAjaxError(request, status, error);
-    },
-    success: function (data) {
-      if (data.state != 'ok') {
-        $.fn.showAlert({message: data.result, level: 'danger'});
-      }
-      else {
-        if (typeof _params.success === 'function') {
-          _params.success(data.result);
-        }
-      }
-    }
-  });
+	$.ajax({
+		async: _params.async == undefined ? true : _params.async,
+		global: false,
+		type: "POST",
+		url: "plugins/mymodbus/core/ajax/mymodbus.ajax.php",
+		data: _params.data,
+		dataType: 'json',
+		error: function (request, status, error) {
+			handleAjaxError(request, status, error);
+		},
+		success: function (data) {
+			if (data.state != 'ok') {
+				$.fn.showAlert({message: data.result, level: 'danger'});
+			}
+			else {
+				if (typeof _params.success === 'function') {
+					_params.success(data.result);
+				}
+			}
+		}
+	});
 }
 
 mymodbus.getEqId = function() {
-  return $('.eqLogicAttr[data-l1key=id]').value();
+	return $('.eqLogicAttr[data-l1key=id]').value();
 }
