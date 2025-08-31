@@ -1,2 +1,2 @@
 jeedomdaemon >= 1.2.9
-pymodbus [serial] == 3.10.0
+pymodbus [serial] == 3.11.1
