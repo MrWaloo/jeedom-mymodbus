@@ -104,12 +104,12 @@ function mymodbus_update() {
 	// This is necessary to update the configuration of the plugin
 	$eqLogics = eqLogic::byType($pluginId);
 	foreach ($eqLogics as $eqLogic) {
-		if ($eqLogic->getIsEnable()) {
+		//if ($eqLogic->getIsEnable()) {
 			$eqLogic->save();
 			foreach ($eqLogic->getCmd() as $cmdMymodbus) { // loop over the commands of the eqLogic
 				$cmdMymodbus->save();
 			}
-		}
+		//}
 	}
 
 	delete_unused_files();
