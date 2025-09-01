@@ -532,17 +532,17 @@ class mymodbus extends eqLogic {
 			&& !in_array('eqErrorDelay', $configKeys)) {
 				return True;
 			}
-			if (!in_array('eqProtocol', $configKeys) || !in_array('eqRefreshMode', $configKeys) || !in_array('eqPolling', $configKeys)
-			|| !in_array('eqWriteCmdCheckTimeout', $configKeys) || !in_array('eqRetries', $configKeys) || !in_array('eqFirstDelay', $configKeys)
-			|| !in_array('eqErrorDelay', $configKeys)) {
-				throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Veuillez définir la configuration de base de l\'équipement', __FILE__));
-			}
 			
 			$eqProtocol = $this->getConfiguration('eqProtocol');
 			if (!in_array($eqProtocol, self::supportedProtocols())) {
 				throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le protocole n\'est pas défini correctement.', __FILE__));
 			}
 			if ($eqProtocol != 'shared_from') {
+				if (!in_array('eqProtocol', $configKeys) || !in_array('eqRefreshMode', $configKeys) || !in_array('eqPolling', $configKeys)
+				|| !in_array('eqWriteCmdCheckTimeout', $configKeys) || !in_array('eqRetries', $configKeys) || !in_array('eqFirstDelay', $configKeys)
+				|| !in_array('eqErrorDelay', $configKeys)) {
+					throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Veuillez définir la configuration de base de l\'équipement', __FILE__));
+				}
 				$eqRefreshMode = $this->getConfiguration('eqRefreshMode');
 				$eqPolling = $this->getConfiguration('eqPolling');
 				$eqTimeout = $this->getConfiguration('eqTimeout');
