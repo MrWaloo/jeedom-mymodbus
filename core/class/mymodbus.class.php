@@ -537,7 +537,7 @@ class mymodbus extends eqLogic {
 			if (!in_array($eqProtocol, self::supportedProtocols())) {
 				throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le protocole n\'est pas défini correctement.', __FILE__));
 			}
-			if ($eqProtocol != 'shared_from') {
+			if ($eqProtocol !== 'shared_from') {
 				if (!in_array('eqProtocol', $configKeys) || !in_array('eqRefreshMode', $configKeys) || !in_array('eqPolling', $configKeys)
 				|| !in_array('eqWriteCmdCheckTimeout', $configKeys) || !in_array('eqRetries', $configKeys) || !in_array('eqFirstDelay', $configKeys)
 				|| !in_array('eqErrorDelay', $configKeys)) {
@@ -630,7 +630,7 @@ class mymodbus extends eqLogic {
 					throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Le nombre de bits de stop n\'est pas défini correctement.', __FILE__));
 				}
 
-			} elseif ($eqProtocol != 'shared_from') {
+			} elseif ($eqProtocol !== 'shared_from') {
 				// Vérification du paramétrage d'une connexion TCP
 				if (!in_array('eqAddr', $configKeys) || !in_array('eqPortNetwork', $configKeys)) {
 					throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Veuillez définir la configuration réseau de l\'équipement', __FILE__));
