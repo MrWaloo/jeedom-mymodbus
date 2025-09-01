@@ -1063,9 +1063,10 @@ class mymodbusCmd extends cmd {
 		$conv_array = [
 			'cmdSlave' => 'cmdDevID'
 		];
+		$old = cmd::byId($this->getId());
 		foreach ($conv_array as $oldKey => $newKey) {
 			if ($this->getConfiguration($oldKey, null) !== null) { // && $this->getConfiguration($newKey, null) === null
-				$this->setConfiguration($newKey, $this->getConfiguration($oldKey));
+				$this->setConfiguration($newKey, $old->getConfiguration($oldKey));
 				$this->setConfiguration($oldKey, null);
 				$this->_changed = true;
 			}
