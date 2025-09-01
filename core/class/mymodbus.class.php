@@ -1069,7 +1069,6 @@ class mymodbusCmd extends cmd {
 				if ($old->getConfiguration($oldKey, '') !== '') {
 					$this->setConfiguration($newKey, $old->getConfiguration($oldKey));
 					$this->setConfiguration($oldKey, null);
-					$this->_changed = true;
 				}
 			}
 		}
@@ -1094,11 +1093,11 @@ class mymodbusCmd extends cmd {
 		$cmdFormat = $this->getConfiguration('cmdFormat');
 		$cmdFctModbus = $this->getConfiguration('cmdFctModbus');
 		$cmdOption = $this->getConfiguration('cmdOption');
-		if ($cmdDevID === '' && $eqMymodbus->getConfiguration('eqOneDevID') != '1') {
+		if ($cmdDevID === '' && !is_numeric($eqMymodbus->getConfiguration('eqOneDevID'))) {
 			$cmdDevID = '1';
 			$this->setConfiguration('cmdDevID', $cmdDevID);
 		}
-		if (!is_numeric($cmdDevID) && $eqMymodbus->getConfiguration('eqOneDevID') != '1') {
+		if (!is_numeric($cmdDevID) && !is_numeric($eqMymodbus->getConfiguration('eqOneDevID'))) {
 			throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('L\'ID du serveur doit être un nombre.<br>\'1\' par défaut.', __FILE__));
 		}
 		if ($this->getType() === 'info') {
