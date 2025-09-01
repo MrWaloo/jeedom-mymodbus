@@ -1069,6 +1069,7 @@ class mymodbusCmd extends cmd {
 				if ($old->getConfiguration($oldKey, '') !== '') {
 					$this->setConfiguration($newKey, $old->getConfiguration($oldKey));
 					$this->setConfiguration($oldKey, null);
+					$this->_changed = true;
 				}
 			}
 		}
