@@ -320,15 +320,29 @@ function printEqLogic(_eqLogic) {
 }
 
 $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRefreshMode]').off().on('change', function () {
-	if ($(this).val() == 'polling') {
-		$('#eqPolling').show();
-	} else {
-		$('#eqPolling').hide();
-	}
+	eqConfig_visibility();
 });
 
 $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRegTest]').off().on('change', function () {
-	if ($(this).value() == '0') {
+	eqConfig_visibility();
+});
+
+$('.eqLogicAttr[data-l1key=configuration][data-l2key=eqOneDevID]').off().on('change', function () {
+	eqConfig_visibility();
+});
+
+$('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRegTestFunction]').off().on('change', function () {
+	eqConfig_visibility();
+});
+
+function eqConfig_visibility() {
+	// Met à jour la visibilité des éléments en fonction des sélections
+	let $eqRefreshMode = $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRefreshMode]').value();
+	let $eqRegTest = $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRegTest]').value();
+	let $eqOneDevID = $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqOneDevID]').value();
+	let $eqRegTestFunction = $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRegTestFunction]').value();
+
+	if ($eqRegTest == '0') {
 		$('#div_RegTestParameters').hide();
 		$('.btn_add_command').show();
 		$('.noRegTest').show();
@@ -337,10 +351,8 @@ $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRegTest]').off().on('chan
 		$('.btn_add_command').hide();
 		$('.noRegTest').hide();
 	}
-});
 
-$('.eqLogicAttr[data-l1key=configuration][data-l2key=eqOneDevID]').off().on('change', function () {
-	if ($(this).value() == '1') {
+	if ($eqOneDevID == '1') {
 		$('.colDevID').hide();
 		$('.eqLogicAttr[data-l1key=configuration][data-l2key=eqDevID]').prop('disabled', false);
 	} else {
@@ -348,12 +360,9 @@ $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqOneDevID]').off().on('cha
 		$('.eqLogicAttr[data-l1key=configuration][data-l2key=eqDevID]').prop('disabled', true);
 		$('.eqLogicAttr[data-l1key=configuration][data-l2key=eqDevID]').prop('value', '');
 	}
-});
 
-
-$('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRegTestFunction]').off().on('change', function () {
-	if ($(this).val() != '' && !is_null($(this).val())) {
-		var show_num = ($(this).val() === '3' || $(this).val() === '4');
+	if ($eqRegTestFunction != '' && !is_null($eqRegTestFunction)) {
+		var show_num = ($eqRegTestFunction === '3' || $eqRegTestFunction === '4');
 		if (show_num) {
 			$('.formatTestBin').hide();
 			$('.formatTestNum').show();
@@ -364,7 +373,13 @@ $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRegTestFunction]').off().
 		var eqRegTestFormat = $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRegTestFormat]');
 		selectFirstVisible(eqRegTestFormat);
 	}
-});
+
+	if ($eqRefreshMode == 'polling') {
+		$('#eqPolling').show();
+	} else {
+		$('#eqPolling').hide();
+	}
+}
 
 // Génère la liste déroulante de choix du bit dans deux octets
 var bitSelect = 
@@ -831,17 +846,17 @@ function addCmdToTable(_cmd) {
 	}
 	if (isset(_cmd.configuration.cmdFormat)) {
 		format_replace = {
-			'uint8-lsb':	'uint8',
-			'int16':			'h',
-			'uint16':			'H',
-			'int32':			'i',
-			'uint32':			'I',
-			'float32':		'f',
-			'int64':			'q',
-			'uint64':			'Q',
-			'float64':		'd',
-			'string':			's',
-			'int16sp-sf':	'h_sf',
+			'uint8-lsb':   'uint8',
+			'int16':       'h',
+			'uint16':      'H',
+			'int32':       'i',
+			'uint32':      'I',
+			'float32':     'f',
+			'int64':       'q',
+			'uint64':      'Q',
+			'float64':     'd',
+			'string':      's',
+			'int16sp-sf':  'h_sf',
 			'uint16sp-sf': 'H_sf',
 			'uint32sp-sf': 'I_sf'
 		};
@@ -857,12 +872,12 @@ function addCmdToTable(_cmd) {
 	if (!isset(_cmd.id)) {
 		_cmd.configuration.cmdFctModbus = '3';
 		_cmd.configuration.cmdFormat = 'h';
-	}
-	if (!isset(_cmd.configuration.cmdDevID)) {
-		_cmd.configuration.cmdDevID = '1';
-	}
-	if (!isset(_cmd.configuration.cmdFrequency)){
 		_cmd.configuration.cmdFrequency = '1';
+		if ($('.eqLogicAttr[data-l1key=configuration][data-l2key=eqOneDevID]').value() === '0') {
+			_cmd.configuration.cmdDevID = '1';
+		} else {
+			_cmd.configuration.cmdDevID = $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqDevID]').value();
+		}
 	}
 	
 	//console.log('CMD - ' + init(JSON.stringify(_cmd)));
