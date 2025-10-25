@@ -13,6 +13,7 @@ import logging
 from abc import abstractmethod
 from array import array
 from math import isnan
+from typing import Any
 
 from pymodbus import FramerType
 from pymodbus.client import AsyncModbusSerialClient, AsyncModbusTcpClient, AsyncModbusUdpClient
@@ -31,7 +32,7 @@ class MyModbusBase(object):
 
 	def __init__(
 		self,
-		eqConfig: dict[str, any],
+		eqConfig: dict[str, Any],
 		log: logging.Logger | None = None
 	) -> None:
 
@@ -44,10 +45,10 @@ class MyModbusBase(object):
 		self.client: (
 			AsyncModbusSerialClient | AsyncModbusTcpClient | AsyncModbusUdpClient | None
 		) = None
-		self._client_params: dict[str, any] = {}
-		self._requests: dict[str, ModbusPDU] = {}
+		self._client_params: dict[str, Any] = {}
+		self._requests: dict[str | int, ModbusPDU] = {}
 		self._payload: array = array("H")
-		self._blob_dest: dict[str, list] = {}
+		self._blob_dest: dict[str | int, list] = {}
 		self._read_cycle: int = 0
 		self._cycle_times: list = []
 		self._changes: dict = {}
@@ -85,7 +86,7 @@ class MyModbusBase(object):
 		"""
 		pass
 
-	def read_eqConfig(self, eqConfig: dict[str, any] | None = None) -> None:
+	def read_eqConfig(self, eqConfig: dict[str, Any] | None = None) -> None:
 		"""
 		Creates the client and the requests according to the configuration
 
@@ -221,10 +222,11 @@ class MyModbusBase(object):
 	async def async_connect(self, first_call: bool = False) -> None:
 		if not (self.eqConfig["eqRefreshMode"] == "on_event" and first_call):
 			self.stopped.clear()
-			if not self.client.connected or not self.connected.is_set():
+			if self.client is not None and not self.client.connected or not self.connected.is_set():
 				try:
 					async with self._lock:
-						await self.client.connect()
+						if self.client is not None:
+							await self.client.connect()
 				except ModbusException as e:
 					self.log.error(f"{self.eqConfig['name']}: Connection could not be opened: {e!s}")
 					return

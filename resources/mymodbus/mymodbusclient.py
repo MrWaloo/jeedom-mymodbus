@@ -11,10 +11,11 @@ import math
 import re
 from array import array
 from statistics import fmean
+from typing import Any
 
 from pymodbus.exceptions import ModbusException
 from pymodbus.pdu import DecodePDU, ExceptionResponse, ModbusPDU
-from pymodbus.pdu.pdu import pack_bitstring, unpack_bitstring
+from pymodbus.pdu.pdu import pack_bitstring
 
 from mymodbuslib import Lib
 from mymodbusbase import MyModbusBase
@@ -22,7 +23,7 @@ from mymodbusbase import MyModbusBase
 
 class MyModbusClient(MyModbusBase):
 
-	def read_eqConfig(self, eqConfig: dict[str, any] | None = None) -> None:
+	def read_eqConfig(self, eqConfig: dict[str, Any] | None = None) -> None:
 		"""
 		Creates the client and the requests according to the configuration
 
@@ -38,7 +39,6 @@ class MyModbusClient(MyModbusBase):
 		self._blob_dest = {}
 		
 		# Création de la liste des requêtes pymodbus
-		decoder = DecodePDU(True)
 		for cmd in self.eqConfig["cmds"]:
 			if cmd["type"] != "info":
 				continue
@@ -48,7 +48,7 @@ class MyModbusClient(MyModbusBase):
 				self._blob_dest[int(cmd["cmdSourceBlob"])].append(cmd["id"])
 				
 			else: # not fromBlob
-				request_func = decoder.lookup.get(int(cmd["cmdFctModbus"]), None)
+				request_func = DecodePDU.pdu_table.get(int(cmd["cmdFctModbus"]), (None, None))[0]
 				if request_func is None:
 					error = f"le code de fonction Modbus n'est pas disponible: {cmd['cmdFctModbus']}"
 					self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
@@ -87,12 +87,12 @@ class MyModbusClient(MyModbusBase):
 				
 				duration = self.loop.time() - begin
 				if refresh_mode == "polling":
-					if duration > polling and not cycle_with_error:
-						polling = (duration // polling_config + 1) * polling_config
+					if duration > polling and not cycle_with_error: # pyright: ignore[reportPossiblyUnboundVariable]
+						polling = (duration // polling_config + 1) * polling_config # pyright: ignore[reportPossiblyUnboundVariable]
 						asyncio.create_task(self.send_polling(polling))
 						warning = f"the polling time is too short! Setting it to {polling}"
 						self.log.warning(f"{self.eqConfig['name']}: {warning}")
-					wait_time = max(0, math.floor((polling - duration) * 10) / 10) # Arrondi à 0.1s en dessous
+					wait_time = max(0, math.floor((polling - duration) * 10) / 10) # pyright: ignore[reportPossiblyUnboundVariable] # Arrondi à 0.1s en dessous
 					await asyncio.sleep(wait_time)
 				
 				changes = {}
@@ -144,7 +144,7 @@ class MyModbusClient(MyModbusBase):
 				
 				cmd = self.get_cmd_conf(cmd_id)
 				if cmd is None:
-					self.log.debug(f"{self.eqConfig['name']}: 'one_cycle_read' {cmd['id']} cmd is None")
+					self.log.debug(f"{self.eqConfig['name']}: 'one_cycle_read' {cmd_id} cmd is None")
 					continue
 				if cmd["type"] != "info":
 					self.log.debug(f"{self.eqConfig['name']}: 'one_cycle_read'/{cmd['name']}: command action")
@@ -158,31 +158,31 @@ class MyModbusClient(MyModbusBase):
 				try:
 					async with self._lock:
 						self.log.debug(f"{self.eqConfig['name']}: 'one_cycle_read'/{cmd['name']}: requesting read")
-						rr: ModbusPDU = await self.client.execute(False, pmb_req)
+						rr: ModbusPDU = await self.client.execute(False, pmb_req) # pyright: ignore[reportOptionalMemberAccess]
 				except ModbusException as exc:
 					error_on_current_read = True
 					error = f"exception during read request on device id {pmb_req.dev_id}, address {pmb_req.address} -> {exc!s}"
 				if not error_on_current_read:
 					try:
-						if rr.isError():
+						if rr.isError(): # pyright: ignore[reportPossiblyUnboundVariable]
 							error_on_current_read = True
-							error = f"error during read request on device id {pmb_req.dev_id}, address {pmb_req.address} -> {rr}"
+							error = f"error during read request on device id {pmb_req.dev_id}, address {pmb_req.address} -> {rr}" # pyright: ignore[reportPossiblyUnboundVariable]
 					except AttributeError:
 						error_on_current_read = True
-						error = f"return error during read request on device id {pmb_req.dev_id}, address {pmb_req.address} -> {rr}"
+						error = f"return error during read request on device id {pmb_req.dev_id}, address {pmb_req.address} -> {rr}" # pyright: ignore[reportPossiblyUnboundVariable]
 				if not error_on_current_read:
-					if isinstance(rr, ExceptionResponse):
+					if isinstance(rr, ExceptionResponse): # pyright: ignore[reportPossiblyUnboundVariable]
 						error_on_current_read = True
 						error = f"exception during read request on device id {pmb_req.dev_id}, address {pmb_req.address} -> {rr}"
 				
 				if error_on_current_read:
-					self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}")
+					self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: {error}") # pyright: ignore[reportPossiblyUnboundVariable]
 					error_or_exception = True
 					self.loop.create_task(self.set_error(cmd))
 					await asyncio.sleep(eqErrorDelay) # Laisse le temps pour revenir à la normale
 					
 				else:
-					self.loop.create_task(self.process_read_response(cmd, rr))
+					self.loop.create_task(self.process_read_response(cmd, rr)) # pyright: ignore[reportPossiblyUnboundVariable]
 					await asyncio.sleep(eqWriteCmdCheckTimeout) # Cède le contrôle aux autres tâches
 
 			self.log.debug(f"{self.eqConfig['name']}: 'one_cycle_read' exit with error_or_exception = {error_or_exception}")
@@ -190,6 +190,7 @@ class MyModbusClient(MyModbusBase):
 				
 		except asyncio.CancelledError:
 			self.log.debug(f"{self.eqConfig['name']}: 'one_cycle_read' cancelled")
+			return False
 	
 	async def process_read_response(self, cmd: dict, response: ModbusPDU) -> None:
 		"""
@@ -217,12 +218,13 @@ class MyModbusClient(MyModbusBase):
 		
 		await self.add_change(change)
 
-	def cmd_decode(self, response: ModbusPDU, cmd: dict, blob: dict | None = None) -> any:
+	def cmd_decode(self, response: ModbusPDU, cmd: dict, blob: dict | None = None) -> Any:
 		self.log.debug(f"{self.eqConfig['name']}: 'cmd_decode' launched for command id = {cmd['id']}")
 		address, count = Lib.get_request_addr_count(cmd)
 		cmd_format: str = cmd["cmdFormat"]
 		#data_type = Lib.get_data_type(cmd_format) # not needed
 		payload = self.get_payload(response, cmd, blob)
+		blob_addr = 0
 		if blob is not None:
 			blob_addr, blob_count = Lib.get_request_addr_count(blob)
 			if address < blob_addr or address + count > blob_addr + blob_count:
@@ -253,7 +255,7 @@ class MyModbusClient(MyModbusBase):
 			# Type: Word (16bit) || Dword (32bit) || Double Dword (64bit) || String
 			elif Lib.is_normal_number(cmd) or cmd_format == "s":
 				payload = payload[:count]
-				return Lib.convert_from_registers(payload, cmd_format)
+				return Lib.convert_from_registers(payload, cmd_format) # pyright: ignore[reportArgumentType]
 
 			# Type: ScaleFactor
 			elif cmd_format.endswith("_sf"):
@@ -261,21 +263,21 @@ class MyModbusClient(MyModbusBase):
 				val_addr, sf_addr = Lib.get_val_sf(cmd)
 
 				val_payload = payload[val_addr - address:val_addr - address + val_data_type.value[1]]
-				val = Lib.convert_from_registers(val_payload, cmd_format[0])
+				val = float(Lib.convert_from_registers(val_payload, cmd_format[0])) # pyright: ignore[reportArgumentType]
 
 				if val_data_type.value[1] >= 2 and cmd["cmdInvertWords"] != "0":
-					payload = Lib.wordswap(payload, cmd)
+					payload = Lib.wordswap(payload, cmd) # pyright: ignore[reportArgumentType]
 				sf_payload = payload[sf_addr - address:sf_addr - address + 1]
-				sf = Lib.convert_from_registers(sf_payload, "h")
+				sf = int(Lib.convert_from_registers(sf_payload, "h")) # pyright: ignore[reportArgumentType]
 
 				return val * 10 ** sf
 			
 		except Exception as e:
 			raise e
 	
-	def get_cmd_conf(self, cmd_id: str) -> dict | None:
+	def get_cmd_conf(self, cmd_id: str | int) -> dict | None:
 		for cmd in self.eqConfig["cmds"]:
-			if cmd["id"] == cmd_id:
+			if cmd["id"] == str(cmd_id):
 				return cmd
 		return None
 
@@ -343,13 +345,13 @@ class MyModbusClient(MyModbusBase):
 				self.log.debug(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' 'value_to_write' = '{value_to_write}' ({cmd_format}){pause_log}")
 				self.log.debug(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' 'address' (count) = '{address}' ({count})")
 
-				decoder = DecodePDU(True)
-				request_func = decoder.lookup.get(int(cmd["cmdFctModbus"]), None)
+				request_func = DecodePDU.pdu_table.get(int(cmd["cmdFctModbus"]), (None, None))[0]
 				if request_func is None:
 					self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' the function code is not available: {cmd['cmdFctModbus']}")
 					return
 
 				payload:list = []
+				value = None
 				if cmd_format == "bit":
 					value = str(value_to_write).lower() not in ("0", "false") # anything else than '0' or 'false' will be True
 					payload = [value]
@@ -383,7 +385,7 @@ class MyModbusClient(MyModbusBase):
 				if request_func.function_code in (1, 2, 5, 15): # bit or bits
 					req_payload = [value]
 				else:
-					payload = self.get_ordered_payload(array('H', payload), cmd)
+					payload = self.get_ordered_payload(array('H', payload), cmd) # pyright: ignore[reportAssignmentType]
 					req_payload = payload
 
 				write_req_params = {
@@ -403,18 +405,18 @@ class MyModbusClient(MyModbusBase):
 				try:
 					async with self._lock:
 						self.log.debug(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' Request sent")
-						rr: ModbusPDU = await self.client.execute(False, pmb_write_req)
+						rr: ModbusPDU = await self.client.execute(False, pmb_write_req) # pyright: ignore[reportOptionalMemberAccess]
 				except ModbusException as exc:
 					error = f"modbus exception during write request on device id {pmb_write_req.dev_id}, address {pmb_write_req.address} -> {exc!s}"
 					self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' {error}")
 					err_handeled = True
 				if not err_handeled:
-					if rr.isError():
-						error = f"error during write request on device id {pmb_write_req.dev_id}, address {pmb_write_req.address} -> {rr}"
+					if rr.isError(): # pyright: ignore[reportPossiblyUnboundVariable]
+						error = f"error during write request on device id {pmb_write_req.dev_id}, address {pmb_write_req.address} -> {rr}" # pyright: ignore[reportPossiblyUnboundVariable]
 						self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' {error}")
 						err_handeled = True
 				if not err_handeled:
-					if isinstance(rr, ExceptionResponse):
+					if isinstance(rr, ExceptionResponse): # pyright: ignore[reportPossiblyUnboundVariable]
 						error = f"exception response during write request on device id {pmb_write_req.dev_id}, address {pmb_write_req.address} -> {rr}"
 						self.log.error(f"{self.eqConfig['name']}/{cmd['name']}: 'command_write' {error}")
 			

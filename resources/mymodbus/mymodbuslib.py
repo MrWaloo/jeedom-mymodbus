@@ -124,6 +124,8 @@ class Lib():
 	def get_val_sf(cls, cmd: dict) -> tuple:
 		sf_pattern = r"(\d+)\s*?sf\s*?(\d+)"
 		result = re.search(sf_pattern, cmd["cmdAddress"], re.IGNORECASE)
+		if result is None:
+			raise ValueError(f"Invalid Scale Factor address format: {cmd['cmdAddress']}")
 		addr_val = int(result.group(1))
 		addr_sf = int(result.group(2))
 		return (addr_val, addr_sf)
@@ -136,6 +138,7 @@ class Lib():
 			for data_type in ModbusClientMixin.DATATYPE:
 					if data_type.value[0] == format:
 							return data_type
+			raise ValueError(f"Invalid data type format: {format}")
 
 	@classmethod
 	def get_request_addr_count(cls, cmd: dict) -> tuple:
@@ -168,6 +171,8 @@ class Lib():
 
 			elif cmd_format == "s":
 				result = re.search(array_pattern, cmd_address)
+				if result is None:
+					raise ValueError(f"Invalid string address format: {cmd_address}")
 				address = int(result.group(1))
 				strlen = int(result.group(2))
 				if strlen % 2 == 1:
@@ -176,6 +181,8 @@ class Lib():
 
 			elif cmd_format == "blob":
 				result = re.search(array_pattern, cmd_address)
+				if result is None:
+					raise ValueError(f"Invalid blob address format: {cmd_address}")
 				address = int(result.group(1))
 				count = int(result.group(2))
 
@@ -245,11 +252,11 @@ class Lib():
 		return payload
 
 	@classmethod
-	def get_request_attribute(cls, func_code) -> str | None:
+	def get_request_attribute(cls, func_code) -> str:
 		for entry in PMB_REQUESTS:
 			if entry.func_code == func_code:
 				return entry.attr
-		return None
+		return ""
 
 	class Uint8(Enum):
 		UINT8 = ("uint8", 1)

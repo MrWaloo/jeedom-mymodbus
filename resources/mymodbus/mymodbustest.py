@@ -7,15 +7,12 @@ The logic is the same than in the modbus implementation in Home Assistant as far
 """
 
 import asyncio
-import logging
-import math
-import re
 from array import array
-from statistics import fmean
+from typing import Any
 
 from pymodbus.exceptions import ModbusException
 from pymodbus.pdu import DecodePDU, ExceptionResponse, ModbusPDU
-from pymodbus.pdu.pdu import pack_bitstring, unpack_bitstring
+from pymodbus.pdu.pdu import pack_bitstring
 
 from mymodbuslib import Lib
 from mymodbusbase import MyModbusBase
@@ -23,7 +20,7 @@ from mymodbusbase import MyModbusBase
 
 class MyModbusTest(MyModbusBase):
 
-	def read_eqConfig(self, eqConfig: dict[str, any] | None = None) -> None:
+	def read_eqConfig(self, eqConfig: dict[str, Any] | None = None) -> None:
 		"""
 		Creates the client and the requests according to the configuration
 
@@ -40,11 +37,13 @@ class MyModbusTest(MyModbusBase):
 		self._changes = {}
 		
 		# Création de la liste des requêtes pymodbus
-		decoder = DecodePDU(True)
-		request_func = decoder.lookup.get(int(self.eqConfig["eqRegTestFunction"]), None)
+		request_func = DecodePDU.pdu_table.get(int(self.eqConfig["eqRegTestFunction"]), (None, None))[0]
 		
 		if request_func is None:
-			error = f"le code de fonction Modbus n'est pas disponible: {eqConfig['eqRegTestFunction']}"
+			if eqConfig is not None:
+				error = f"le code de fonction Modbus n'est pas disponible: {eqConfig['eqRegTestFunction']}"
+			else:
+				error = f"le code de fonction Modbus n'est pas disponible: la configuration de l'équipement est vide"
 			self.log.error(f"{self.eqConfig['name']}: {error}")
 			return
 		eqRegTestFirst = int(self.eqConfig['eqRegTestFirst'])
@@ -60,6 +59,9 @@ class MyModbusTest(MyModbusBase):
 		The daemon main loop
 		"""
 		self.log.debug(f"{self.eqConfig['name']}: 'run_loop' launched in test mode")
+		if self.client is None:
+			self.log.error(f"{self.eqConfig['name']}: 'run_loop' client is None, exiting")
+			return
 		eqWriteCmdCheckTimeout = float(self.eqConfig['eqWriteCmdCheckTimeout'])
 		eqErrorDelay = float(self.eqConfig['eqErrorDelay'])
 		try:
@@ -87,25 +89,25 @@ class MyModbusTest(MyModbusBase):
 							error = f"exception during read request on device id {pmb_req.dev_id}, address {pmb_req.address} -> {exc!s}"
 						if not error_on_current_read:
 							try:
-								if rr.isError():
+								if rr.isError(): # pyright: ignore[reportPossiblyUnboundVariable]
 									error_on_current_read = True
-									error = f"error during read request on device id {pmb_req.dev_id}, address {pmb_req.address} -> {rr}"
+									error = f"error during read request on device id {pmb_req.dev_id}, address {pmb_req.address} -> {rr}" # type: ignore[reportPossiblyUnboundVariable]
 							except AttributeError:
 								error_on_current_read = True
-								error = f"return error during read request on device id {pmb_req.dev_id}, address {pmb_req.address} -> {rr}"
+								error = f"return error during read request on device id {pmb_req.dev_id}, address {pmb_req.address} -> {rr}" # type: ignore[reportPossiblyUnboundVariable]
 						if not error_on_current_read:
-							if isinstance(rr, ExceptionResponse):
+							if isinstance(rr, ExceptionResponse): # pyright: ignore[reportPossiblyUnboundVariable]
 								error_on_current_read = True
 								error = f"exception during read request on device id {pmb_req.dev_id}, address {pmb_req.address} -> {rr}"
 						
 						if error_on_current_read:
-							self.log.error(f"{self.eqConfig['name']}: {error}")
+							self.log.error(f"{self.eqConfig['name']}: {error}") # pyright: ignore[reportPossiblyUnboundVariable]
 							await asyncio.sleep(eqErrorDelay) # Laisse le temps pour revenir à la normale
 							
 						else:
 							await asyncio.sleep(eqWriteCmdCheckTimeout) # Cède le contrôle aux autres tâches
 						
-						self.loop.create_task(self.send_test_result(reg_add, rr, error_on_current_read))
+						self.loop.create_task(self.send_test_result(reg_add, rr, error_on_current_read)) # pyright: ignore[reportPossiblyUnboundVariable]
 
 				self.read.clear()
 				self.close()
@@ -118,7 +120,7 @@ class MyModbusTest(MyModbusBase):
 		self.close()
 		self.log.debug(f"{self.eqConfig['name']}: 'run_loop' exit")
 
-	async def send_test_result(self, reg_add: int, response: ModbusPDU, error: bool) -> None:
+	async def send_test_result(self, reg_add: str | int, response: ModbusPDU, error: bool) -> None:
 		"""
 		Reads ModbusPDU and returns the value(s) to Jeedom
 		"""
@@ -133,7 +135,7 @@ class MyModbusTest(MyModbusBase):
 			if cmd_format == 'bits':
 				value = int(payload[0])
 			else:
-				value = Lib.convert_from_registers(payload, cmd_format)
+				value = Lib.convert_from_registers(payload, cmd_format) # pyright: ignore[reportArgumentType]
 		change[f"RegTest::{self.eqConfig['id']}::{reg_add}"] = value
 		await self.add_change(change)
 
