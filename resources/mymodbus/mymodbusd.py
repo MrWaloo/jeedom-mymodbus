@@ -1,7 +1,6 @@
 import asyncio
 
-from jeedomdaemon.base_daemon import BaseDaemon
-from jeedomdaemon.base_config import BaseConfig
+from jeedomdaemon import BaseDaemon, BaseConfig
 
 from mymodbusclient import MyModbusClient
 from mymodbustest import MyModbusTest
@@ -13,7 +12,7 @@ class MyModbusd(BaseDaemon):
 		super().__init__(
 			config = self._config,
 			on_start_cb = self.on_start,
-			on_message_cb = self.on_message,
+			on_message_cb = self.on_message, # pyright: ignore[reportArgumentType]
 			on_stop_cb = self.on_stop
 		)
 		self.set_logger_log_level("MyModbus")
@@ -155,6 +154,7 @@ class MyModbusd(BaseDaemon):
 		for eqConfig in config:
 			if eqConfig["id"] == eqId:
 				return eqConfig
+		return {}
 
 	async def send_downstream(self, eqId, payload) -> None:
 		"""

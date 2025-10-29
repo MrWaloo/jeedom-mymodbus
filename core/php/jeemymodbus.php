@@ -48,9 +48,12 @@ if (isset($input['values'])) {
 			$sharedEqs = [];
 			foreach (mymodbus::byType('mymodbus') as $eqMymodbus) { // boucle sur les équipements
 				if ($eqMymodbus->getIsEnable()
-				&& $eqMymodbus->getConfiguration('eqProtocol') === 'shared_from'
-				&& $eqMymodbus->getConfiguration('eqInterfaceFromEqId') === $new_value['eqId']) {
-					$sharedEqs[] = $eqMymodbus->getId();
+				&& $eqMymodbus->getConfiguration('eqProtocol') === 'shared_from') {
+					$fromEqId = $eqMymodbus->getConfiguration('eqInterfaceFromEqId');
+					if (!array_key_exists($fromEqId, $sharedEqs)) {
+						$sharedEqs[$fromEqId] = [];
+					}
+					$sharedEqs[$fromEqId][] = $eqMymodbus->getId();
 				}
 			}
 		}
@@ -58,9 +61,9 @@ if (isset($input['values'])) {
 		if (in_array($cmd_id, array_keys($conv))) {
 			$eqlogic = mymodbus::byId($new_value['eqId']);
 			$cmd = mymodbusCmd::byEqLogicIdAndLogicalId($new_value['eqId'], $conv[$cmd_id]);
-			$new_value = $new_value['value'];
-			if (is_float($new_value)) {
-				$new_value = number_format($new_value, 3);
+			$new_cmd_value = $new_value['value'];
+			if (is_float($new_cmd_value)) {
+				$new_cmd_value = number_format($new_cmd_value, 3);
 			}
 			
 		} elseif (is_numeric($cmd_id)) {
@@ -76,7 +79,7 @@ if (isset($input['values'])) {
 					try {
 						$eval = str_replace('#value#', sprintf("%s", $new_value), $cmdOption);
 						//log::add('mymodbus', 'debug', 'jeemymodbus.php: ' . $cmd->getName() . ' ' . sprintf('eval = +%s+', $eval));
-						$new_value = eval('return ' . $eval . ';');
+						$new_cmd_value = eval('return ' . $eval . ';');
 						//log::add('mymodbus', 'debug', 'jeemymodbus.php: ' . $cmd->getName() . ' ' . sprintf('new_value = +%s+', $new_value));
 					} catch (Throwable $t) {
 						log::add('mymodbus', 'error', 'jeemymodbus.php: ' . $cmd->getName() . ' ' . __('Calcul non effectué. Erreur lors du calcul : ' . $t, __FILE__));
@@ -87,20 +90,21 @@ if (isset($input['values'])) {
 
 		if (is_object($cmd)) {
 			$cmd_name =$cmd->getName();
-			log::add('mymodbus', 'debug', "jeemymodbus.php: Mise à jour cmd '$cmd_name' -> new value: '$new_value'");
-			$eqlogic->checkAndUpdateCmd($cmd, $new_value);
-			if (in_array($cmd_id, array_keys($conv)) && !is_null($sharedEqs) && $sharedEqs != []) {
-				foreach ($sharedEqs as $sharedEqId) {
+			log::add('mymodbus', 'debug', "jeemymodbus.php: Mise à jour cmd '$cmd_name' -> new value: '$new_cmd_value'");
+			$eqlogic->checkAndUpdateCmd($cmd, $new_cmd_value);
+
+			if (in_array($cmd_id, array_keys($conv)) && !is_null($sharedEqs) && array_key_exists($new_value['eqId'], $sharedEqs)) {
+				foreach ($sharedEqs[$new_value['eqId']] as $sharedEqId) {
 					$shared_cmd = mymodbusCmd::byEqLogicIdAndLogicalId($sharedEqId, $conv[$cmd_id]);
 					if (is_object($shared_cmd)) {
 						$shared_eqlogic = mymodbus::byId($sharedEqId);
-						$shared_eqlogic->checkAndUpdateCmd($shared_cmd, $new_value);
+						$shared_eqlogic->checkAndUpdateCmd($shared_cmd, $new_cmd_value);
 					}
 				}
 			}
 			#$names .= ' \'' . $cmd->getName() . '\'';
 		} else {
-			log::add('mymodbus', 'debug', "'jeemymodbus.php: Mise à jour cmd_id '$cmd_id' impossible -> new value: '$new_value'");
+			log::add('mymodbus', 'debug', "'jeemymodbus.php: Mise à jour cmd_id '$cmd_id' impossible -> new value: '$new_cmd_value'");
 		}
 	}
 	#log::add('mymodbus', 'debug', 'jeemymodbus.php: Mise à jour des commandes info :' . $names);
