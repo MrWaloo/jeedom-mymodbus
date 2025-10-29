@@ -1027,7 +1027,7 @@ class mymodbusCmd extends cmd {
 			$message['CMD'] = 'write';
 			$message['write_cmd'] = $command;
 		}
-		mymodbus::sendToDaemon($message);
+		self::sendToDaemon($message);
 	}
 
 //	public function postInsert() {}
