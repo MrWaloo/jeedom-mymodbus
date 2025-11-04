@@ -277,7 +277,7 @@ class MyModbusClient(MyModbusBase):
 	
 	def get_cmd_conf(self, cmd_id: str | int) -> dict | None:
 		for cmd in self.eqConfig["cmds"]:
-			if cmd["id"] == str(cmd_id):
+			if str(cmd["id"]) == str(cmd_id):
 				return cmd
 		return None
 
