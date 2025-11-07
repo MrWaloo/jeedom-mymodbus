@@ -190,7 +190,7 @@ class MyModbusBase(object):
 		repeat = {}
 		if self.eqConfig.get("cmds", None) is not None:
 			for cmd in self.eqConfig["cmds"]:
-				repeat[cmd['id']] = not cmd['repeat'] == '0'
+				repeat[str(cmd['id'])] = not cmd['repeat'] == '0'
 		re_values = re.compile(r'values::(\d*)')
 		changes_to_send: dict = {}
 		for k, v in payload.items():

@@ -1108,7 +1108,10 @@ class mymodbusCmd extends cmd {
 			if (!is_numeric($cmdFrequency)) {
 				throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La configuration \'Lecture 1x sur\' doit être un nombre.', __FILE__));
 			}
-			if ($this->getSubType() === 'binary' && in_array($cmdFctModbus, ['3', '4']) && !preg_match('/(#value# & \d+|#value# [=!]=)/', $cmdOption)) {
+			if ($this->getSubType() === 'binary'
+			&& $cmdFormat != 'bit'
+			&& in_array($cmdFctModbus, ['3', '4', 'fromBlob'])
+			&& !preg_match('/(#value# & \d+|#value#.*?[=!><]=?|[=!><]=?.*?#value#)/', $cmdOption)) {
 				throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Pour pouvoir utiliser une fonction de lecture de registre numérique, une commande de type binaire doit avoir un filtre en option', __FILE__));
 			}
 		}
