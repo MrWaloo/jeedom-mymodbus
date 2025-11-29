@@ -295,8 +295,7 @@ class mymodbus extends eqLogic {
 
 	/*
 	* =-=-=-=-=-=-=-=-=-=-=-=-= Templates =-=-=-=-=-=-=-=-=-=-=-=-=
-	* Les fonctions sont copiées ou inspirées du plugin jMQTT pour
-	* la gestion des templates.
+	* Les fonctions sont copiées ou inspirées du plugin jMQTT pour la gestion des templates.
 	*/
 	
 	// Fonction copiée du plugin jMQTT
@@ -968,7 +967,7 @@ class mymodbusCmd extends cmd {
 	/*	 * *********************Methode d'instance************************* */
 
 	/*
-	 * Non obligatoire permet de demander de ne pas supprimer les commandes même si elles ne sont pas dans la nouvelle configuration de l'équipement envoyé en JS
+	 * Non obligatoire, mais permet de demander de ne pas supprimer les commandes même si elles ne sont pas dans la nouvelle configuration de l'équipement envoyée en JS
 		public function dontRemoveCmd() {
 		return true;
 		}
