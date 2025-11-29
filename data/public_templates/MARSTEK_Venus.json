@@ -1099,7 +1099,7 @@
                     "timeline::enable": "0",
                     "influx::enable": "0",
                     "interact::auto::disable": "0",
-                    "calculValueOffset": "(#value#=0)?\"Sommeil\":(#value#=1)?\"Veille\":(#value#=2)?\"Charge\":(#value#=3)?\"Decharge\":(#value#=0)?\"Sauvgarde\":\"Upgrade\"",
+                    "calculValueOffset": "(#value#=0)?\"Sommeil\":(#value#=1)?\"Veille\":(#value#=2)?\"Charge\":(#value#=3)?\"Décharge\":(#value#=4)?\"Sauvegarde\":(#value#=5)?\"Upgrade\":\"inconnu\"",
                     "jeedomCheckCmdOperator": "==",
                     "repeatEventManagement": "never",
                     "alert::messageReturnBack": "0",
