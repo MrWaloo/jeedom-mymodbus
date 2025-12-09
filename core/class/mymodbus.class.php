@@ -599,9 +599,9 @@ class mymodbus extends eqLogic {
 			
 			if ($eqProtocol === 'serial') {
 				// Vérification du paramétrage d'une connexion série
-				if (!in_array('eqPortSerial', $configKeys) || !in_array('eqSerialMethod', $configKeys) ||
-						!in_array('eqSerialBaudrate', $configKeys) || !in_array('eqSerialBytesize', $configKeys) ||
-						!in_array('eqSerialParity', $configKeys) || !in_array('eqSerialStopbits', $configKeys)) {
+				if (!in_array('eqPortSerial', $configKeys) || !in_array('eqSerialMethod', $configKeys)
+				|| !in_array('eqSerialBaudrate', $configKeys) || !in_array('eqSerialBytesize', $configKeys)
+				|| !in_array('eqSerialParity', $configKeys) || !in_array('eqSerialStopbits', $configKeys)) {
 					throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('Veuillez définir la configuration série de l\'équipement', __FILE__));
 				}
 				$eqPortSerial = $this->getConfiguration('eqPortSerial');
@@ -679,6 +679,7 @@ class mymodbus extends eqLogic {
 					->setType('info')
 					->setSubType('numeric')
 					->setUnite('s')
+					->setConfiguration('repeatEventManagement', 'always')
 					->save();
 			}
 			$refreshCmdTest = $this->getCmd('action', 'refresh');
@@ -701,6 +702,7 @@ class mymodbus extends eqLogic {
 					->setName(__('Cycle OK', __FILE__))
 					->setType('info')
 					->setSubType('binary')
+					->setConfiguration('repeatEventManagement', 'always')
 					->save();
 			}
 			$pollingCmdTest = $this->getCmd('info', 'polling');
@@ -713,6 +715,7 @@ class mymodbus extends eqLogic {
 					->setType('info')
 					->setSubType('numeric')
 					->setUnite('s')
+					->setConfiguration('repeatEventManagement', 'always')
 					->save();
 			}
 			// Création des commandes info
@@ -895,7 +898,7 @@ class mymodbus extends eqLogic {
 		foreach (self::byType(__CLASS__) as $eqMymodbus) { // boucle sur les équipements
 			if ($eqMymodbus->getIsEnable()
 			&& $eqMymodbus->getConfiguration('eqProtocol') === 'shared_from'
-			&& $eqMymodbus->getConfiguration('eqInterfaceFromEqId') === $this->getId()) {
+			&& intval($eqMymodbus->getConfiguration('eqInterfaceFromEqId')) === intval($this->getId())) {
 				foreach ($eqMymodbus->getCmd() as $cmdMymodbus) { // boucle sur les commandes
 					if (in_array($cmdMymodbus->getLogicalId(), ['refresh', 'refresh time', 'cycle ok', 'polling'])) {
 						continue;
@@ -1039,9 +1042,8 @@ class mymodbusCmd extends cmd {
 		log::add('mymodbus', 'debug', __CLASS__ . '::' . __FUNCTION__ . sprintf(' * %s * %s *', $this->getId(), $this->getHumanName()));
 		// Suppression de l'ancienne configuration
 		foreach (array('type', 'datatype', 'location', 'request', 'parameters') as $attribut) {
-			if (isset($this->configuration[$attribut])) {
-				unset($this->configuration[$attribut]);
-				$this->_changed = true;
+			if (!is_null($this->getConfiguration($attribut, null))) {
+				$this->setConfiguration($attribut, null);
 			}
 		}
 		
@@ -1049,13 +1051,12 @@ class mymodbusCmd extends cmd {
 		$confOK = $this->getCmdConfiguration();
 		$conf = $this->getConfiguration();
 		foreach ($conf as $key => $value) {
-			if (substr($key, 0, 3) === 'cmd' && !in_array($key, array_keys($confOK)) && substr($key, 0, 13) !== 'cmdSourceBlob' && $key !== 'cmdOption' && $key !== 'cmdWriteValue' ||
-					substr($key, 0, 13) === 'cmdSourceBlob' && $conf['cmdFctModbus'] != 'fromBlob' ||
-					$conf['cmdFctModbus'] === 'fromBlob' && $this->getSubType() === 'binary' && $key === 'cmdSourceBlobNum' ||
-					$conf['cmdFctModbus'] === 'fromBlob' && $this->getSubType() !== 'binary' && $key === 'cmdSourceBlobBin' ||
-					$key === 'cmdSourceBlob') {
-				unset($this->configuration[$key]);
-				$this->_changed = true;
+			if (substr($key, 0, 3) === 'cmd' && !in_array($key, array_keys($confOK)) && substr($key, 0, 13) !== 'cmdSourceBlob' && $key !== 'cmdOption' && $key !== 'cmdWriteValue'
+			|| substr($key, 0, 13) === 'cmdSourceBlob' && $conf['cmdFctModbus'] != 'fromBlob'
+			|| $conf['cmdFctModbus'] === 'fromBlob' && $this->getSubType() === 'binary' && $key === 'cmdSourceBlobNum'
+			|| $conf['cmdFctModbus'] === 'fromBlob' && $this->getSubType() !== 'binary' && $key === 'cmdSourceBlobBin'
+			|| $key === 'cmdSourceBlob') {
+				$this->setConfiguration($key, null);
 			}
 		}
 		// Remplacement des noms de la configuration
@@ -1072,8 +1073,6 @@ class mymodbusCmd extends cmd {
 			}
 		}
 		
-		$eqMymodbus = $this->getEqLogic();
-		
 		if (is_null($this->getLogicalId())) {
 			$this->setLogicalId('');
 			$this->_changed = true;
@@ -1084,8 +1083,13 @@ class mymodbusCmd extends cmd {
 		}
 
 		if ($this->getLogicalId() != '') {
+			if ($this->getType() === 'info') {
+				$this->setConfiguration('repeatEventManagement', 'always');
+			}
 			return true;
 		}
+		
+		$eqMymodbus = $this->getEqLogic();
 		$cmdDevID = $this->getConfiguration('cmdDevID');
 		$cmdAddress = $this->getConfiguration('cmdAddress');
 		$cmdFrequency = $this->getConfiguration('cmdFrequency');
@@ -1139,15 +1143,12 @@ class mymodbusCmd extends cmd {
 			if ($this->getConfiguration('cmdWriteValue') === '') {
 				if ($this->getSubType() === 'slider') {
 						$this->setConfiguration('cmdWriteValue', '#slider#');
-						$this->_changed = true;
 				}
 				if ($this->getSubType() === 'select') {
 						$this->setConfiguration('cmdWriteValue', '#select#');
-						$this->_changed = true;
 				}
 				if ($this->getSubType() === 'color') {
 						$this->setConfiguration('cmdWriteValue', '#color#');
-						$this->_changed = true;
 				}
 				if ($this->getConfiguration('cmdWriteValue') === '') {
 					throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La valeur à écrire est vide.', __FILE__));
