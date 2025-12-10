@@ -11,7 +11,6 @@ class MyModbusd(BaseDaemon):
 		self._config = BaseConfig()
 		super().__init__(
 			config = self._config,
-			on_start_cb = self.on_start,
 			on_message_cb = self.on_message, # pyright: ignore[reportArgumentType]
 			on_stop_cb = self.on_stop
 		)
@@ -21,10 +20,6 @@ class MyModbusd(BaseDaemon):
 		self._mymodbus_clients: dict[str, MyModbusClient | MyModbusTest] = {}
 		self._async_tasks: list[asyncio.Task] = []
 		self.__n = self.__class__.__name__
-
-	async def on_start(self) -> None:
-		for eqConfig in self._json_config:
-			asyncio.create_task(self.start_client(eqConfig))
 
 	async def on_message(self, message: dict) -> None:
 		"""
@@ -75,9 +70,10 @@ class MyModbusd(BaseDaemon):
 		self._logger.info(f"{self.__n}: Command 'newDaemonConfig' received from jeedom: sending the new config to all MyModbusClients")
 		old_json = self._json_config
 		self._json_config = new_config
-		old_eqIds, eqIds = [], []
+		old_eqIds, old_names, eqIds = [], {}, []
 		for cfg in old_json:
 			old_eqIds.append(cfg['id'])
+			old_names[cfg['id']] = cfg['name']
 		for cfg in self._json_config:
 			eqIds.append(cfg['id'])
 
@@ -85,10 +81,7 @@ class MyModbusd(BaseDaemon):
 		for eqId in old_eqIds:
 			if eqId not in eqIds:
 				eqConfig = self.get_config(eqId)
-				if eqConfig is not None:
-					self._logger.info(f"{self.__n}: 'manage_new_config' Stopping equipment {eqConfig['name']} (id {eqId})")
-				else:
-					self._logger.info(f"{self.__n}: 'manage_new_config' Stopping equipment id {eqId}")
+				self._logger.info(f"{self.__n}: 'manage_new_config' Stopping equipment '{old_names[eqId]}' (id {eqId}) (deactivated or deleted)")
 				await self.terminate_client(eqId)
 				self.clean_client(eqId)
 		
@@ -100,14 +93,14 @@ class MyModbusd(BaseDaemon):
 					self.clean_client(eqId)
 					continue
 				if (eqConfig := self.get_config(eqId)) is not None:
-					self._logger.info(f"{self.__n}: 'manage_new_config' Actualising the configuration of equipment {eqConfig['name']} (id {eqId})")
+					self._logger.info(f"{self.__n}: 'manage_new_config' Actualising the configuration of equipment '{eqConfig['name']}' (id {eqId})")
 					await self.send_downstream(eqId, {"newDaemonConfig": eqConfig})
 				
 		# Step 3: run new daemons
 		for eqId in eqIds:
 			if eqId not in old_eqIds:
 				if (eqConfig := self.get_config(eqId)) is not None:
-					self._logger.info(f"{self.__n}: 'manage_new_config' Starting equipment {eqConfig['name']} (id {eqId})")
+					self._logger.info(f"{self.__n}: 'manage_new_config' Starting equipment '{eqConfig['name']}' (id {eqId})")
 					asyncio.create_task(self.start_client(eqConfig))
 	
 	async def start_client(self, eqConfig: dict) -> None:
@@ -123,9 +116,9 @@ class MyModbusd(BaseDaemon):
 		new_client.read_eqConfig()
 		new_client.connect()
 		if eqConfig["eqRegTest"] == "1":
-			self._logger.info(f"{self.__n}: Starting the task to test the equipement {eqConfig['name']}")
+			self._logger.info(f"{self.__n}: Starting the task to test the equipment' {eqConfig['name']}'")
 		else:
-			self._logger.info(f"{self.__n}: Starting the task for the equipement {eqConfig['name']}")
+			self._logger.info(f"{self.__n}: Starting the task for the equipment '{eqConfig['name']}'")
 		self._mymodbus_clients[eqConfig["id"]] = new_client
 
 	async def terminate_client(self, eqId: str) -> None:
