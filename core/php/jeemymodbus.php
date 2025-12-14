@@ -74,12 +74,12 @@ if (isset($input['values'])) {
 				$cmdOption = $cmd->getConfiguration('cmdOption');
 				//log::add('mymodbus', 'debug', 'jeemymodbus.php: ' . $cmd->getName() . ' ' . sprintf('cmdOption = +%s+', $cmdOption));
 				// Only if the option is valid and cannot be malicious code
-				if (strstr($cmdOption, '#value#') && !strstr($cmdOption, ';' && !strstr($cmdOption, 'include') && !strstr($cmdOption, 'require'))) {
+				if (strstr($cmdOption, '#value#') && !strstr($cmdOption, ';') && !strstr($cmdOption, 'include') && !strstr($cmdOption, 'require')) {
 					try {
 						$eval = str_replace('#value#', sprintf("%s", $new_value), $cmdOption);
 						//log::add('mymodbus', 'debug', 'jeemymodbus.php: ' . $cmd->getName() . ' ' . sprintf('eval = +%s+', $eval));
 						$new_cmd_value = eval('return ' . $eval . ';');
-						//log::add('mymodbus', 'debug', 'jeemymodbus.php: ' . $cmd->getName() . ' ' . sprintf('new_value = +%s+', $new_value));
+						//log::add('mymodbus', 'debug', 'jeemymodbus.php: ' . $cmd->getName() . ' ' . sprintf('new_value = +%s+', $new_value_value));
 					} catch (Throwable $t) {
 						log::add('mymodbus', 'error', 'jeemymodbus.php: ' . $cmd->getName() . ' ' . __('Calcul non effectué. Erreur lors du calcul : ' . $t, __FILE__));
 					}
