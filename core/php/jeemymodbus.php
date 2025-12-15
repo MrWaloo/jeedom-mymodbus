@@ -76,10 +76,10 @@ if (isset($input['values'])) {
 				// Only if the option is valid and cannot be malicious code
 				if (strstr($cmdOption, '#value#') && !strstr($cmdOption, ';') && !strstr($cmdOption, 'include') && !strstr($cmdOption, 'require')) {
 					try {
-						$eval = str_replace('#value#', sprintf("%s", $new_value), $cmdOption);
-						//log::add('mymodbus', 'debug', 'jeemymodbus.php: ' . $cmd->getName() . ' ' . sprintf('eval = +%s+', $eval));
-						$new_cmd_value = eval('return ' . $eval . ';');
-						//log::add('mymodbus', 'debug', 'jeemymodbus.php: ' . $cmd->getName() . ' ' . sprintf('new_value = +%s+', $new_value_value));
+						$exp = str_replace('#value#', sprintf("%s", $new_value), $cmdOption);
+						// log::add('mymodbus', 'debug', 'jeemymodbus.php: ' . $cmd->getName() . ' ' . sprintf('exp = +%s+', $exp));
+						$new_cmd_value = jeedom::evaluateExpression($exp);
+						// log::add('mymodbus', 'debug', 'jeemymodbus.php: ' . $cmd->getName() . ' ' . sprintf('new_value = +%s+', $new_value_value));
 					} catch (Throwable $t) {
 						log::add('mymodbus', 'error', 'jeemymodbus.php: ' . $cmd->getName() . ' ' . __('Calcul non effectué. Erreur lors du calcul : ' . $t, __FILE__));
 					}
