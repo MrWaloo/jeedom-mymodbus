@@ -86,9 +86,6 @@ if (isset($input['values'])) {
 				}
 			}
 		}
-		if (is_float($new_cmd_value)) {
-			$new_cmd_value = number_format($new_cmd_value, 5, '.', '');
-		}
 
 		if (is_object($cmd) && !is_null($new_cmd_value)) {
 			$cmd_name = $cmd->getName();

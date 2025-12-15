@@ -175,8 +175,7 @@ class mymodbus extends eqLogic {
 		$params['dt'] = date(DATE_ATOM);
 		$payLoad = json_encode($params);
 		$socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
-		$socket_port = is_numeric(config::byKey('socketport', __CLASS__, mymodbusConst::DEFAULT_SOCKET_PORT, True)) ? config::byKey('socketport', __CLASS__, mymodbusConst::DEFAULT_SOCKET_PORT) : mymodbusConst::DEFAULT_SOCKET_PORT;
-		socket_connect($socket, '127.0.0.1', config::byKey('socketport', __CLASS__, $socket_port));
+		socket_connect($socket, '127.0.0.1', config::byKey('socketport', __CLASS__, self::getSocketPort()));
 		$socket_ok = socket_write($socket, $payLoad, strlen($payLoad));
 		if (!$socket_ok) {
 			$err = socket_last_error($socket);
