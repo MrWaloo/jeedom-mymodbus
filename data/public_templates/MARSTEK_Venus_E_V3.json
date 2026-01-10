@@ -1,0 +1,1685 @@
+{
+    "MARSTEK Venus E V3": {
+        "name": "MARSTEK Venus E V3",
+        "eqType_name": "mymodbus",
+        "configuration": {
+            "createtime": "2025-07-13 11:25:56",
+            "eqProtocol": "tcp",
+            "eqRefreshMode": "polling",
+            "eqPolling": "60",
+            "eqTimeout": "5",
+            "eqRetries": "3",
+            "eqWriteCmdCheckTimeout": "0.01",
+            "eqFirstDelay": "0",
+            "eqErrorDelay": "1",
+            "eqPortNetwork": "502",
+            "eqRegTest": "0",
+            "updatetime": "2026-01-10 15:58:50",
+            "eqOneDevID": "1",
+            "eqDevID": "1",
+            "eqAddr": ""
+        },
+        "category": {
+            "heating": "0",
+            "security": "0",
+            "energy": "1",
+            "light": "0",
+            "opening": "0",
+            "automatism": "0",
+            "multimedia": "0",
+            "default": "0"
+        },
+        "status": {
+            "lastCommunication": "2026-01-02 16:00:18",
+            "enableDatime": "2026-01-02 16:00:18"
+        },
+        "cache": [],
+        "commands": [
+            {
+                "logicalId": "refresh",
+                "eqType": "mymodbus",
+                "name": "Rafraîchir",
+                "type": "action",
+                "subType": "other",
+                "isHistorized": "0",
+                "configuration": {
+                    "cmdFctModbus": "1",
+                    "cmdFormat": "bit",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "logicalId": "refresh"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "0",
+                    "forceReturnLineAfter": "0",
+                    "parameters": []
+                },
+                "isVisible": "1",
+                "alert": []
+            },
+            {
+                "logicalId": "cycle ok",
+                "eqType": "mymodbus",
+                "name": "Cycle OK",
+                "type": "info",
+                "subType": "binary",
+                "isHistorized": "0",
+                "configuration": {
+                    "cmdFctModbus": "1",
+                    "cmdFormat": "bit",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "logicalId": "cycle ok"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "0",
+                    "forceReturnLineAfter": "0",
+                    "parameters": []
+                },
+                "isVisible": "0",
+                "alert": []
+            },
+            {
+                "logicalId": "polling",
+                "eqType": "mymodbus",
+                "name": "Polling",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "unite": "s",
+                "configuration": {
+                    "cmdFctModbus": "1",
+                    "cmdFormat": "bit",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "logicalId": "polling"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "0",
+                    "forceReturnLineAfter": "0",
+                    "parameters": []
+                },
+                "isVisible": "0",
+                "alert": []
+            },
+            {
+                "logicalId": "refresh time",
+                "eqType": "mymodbus",
+                "name": "Temps de rafraîchissement",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "unite": "s",
+                "configuration": {
+                    "cmdFctModbus": "1",
+                    "cmdFormat": "bit",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "logicalId": "refresh time"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "0",
+                    "forceReturnLineAfter": "0",
+                    "parameters": []
+                },
+                "isVisible": "0",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "plage 30001 - 30006",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "configuration": {
+                    "cmdFctModbus": "3",
+                    "cmdFormat": "blob",
+                    "cmdAddress": "30001 [6]",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "isVisible": "0",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "DC Power",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "1",
+                "unite": "W",
+                "configuration": {
+                    "cmdFctModbus": "fromBlob",
+                    "cmdFormat": "h",
+                    "cmdAddress": "30001",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "cmdSourceBlobNum": "#[plage 30001 - 30006]#"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "showStatsOndashboard": "1",
+                    "showStatsOnmobile": "1",
+                    "forceReturnLineBefore": "0",
+                    "forceReturnLineAfter": "0",
+                    "parameters": []
+                },
+                "isVisible": "1",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "AC Voltage",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "unite": "V",
+                "configuration": {
+                    "cmdFctModbus": "fromBlob",
+                    "cmdFormat": "H",
+                    "cmdAddress": "30004",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "timeline::enable": "0",
+                    "influx::enable": "0",
+                    "interact::auto::disable": "0",
+                    "calculValueOffset": "#value# * 0.1",
+                    "historizeRound": "1",
+                    "jeedomCheckCmdOperator": "==",
+                    "historizeMode": "avg",
+                    "repeatEventManagement": "never",
+                    "alert::messageReturnBack": "0",
+                    "actionCheckCmd": [],
+                    "jeedomPreExecCmd": [],
+                    "jeedomPostExecCmd": [],
+                    "cmdSourceBlobNum": "#[plage 30001 - 30006]#"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "0",
+                    "forceReturnLineAfter": "0",
+                    "parameters": []
+                },
+                "isVisible": "1",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "AC Power",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "1",
+                "unite": "W",
+                "configuration": {
+                    "cmdFctModbus": "fromBlob",
+                    "cmdFormat": "h",
+                    "cmdAddress": "30006",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "timeline::enable": "0",
+                    "influx::enable": "0",
+                    "interact::auto::disable": "0",
+                    "calculValueOffset": "(#value#=1)?0:(#value#=2)?0:(#value#=3)?0:#value#",
+                    "jeedomCheckCmdOperator": "==",
+                    "historizeMode": "avg",
+                    "repeatEventManagement": "never",
+                    "alert::messageReturnBack": "0",
+                    "actionCheckCmd": [],
+                    "jeedomPreExecCmd": [],
+                    "jeedomPostExecCmd": [],
+                    "cmdSourceBlobNum": "#[plage 30001 - 30006]#"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showStatsOnmobile": "0",
+                    "showStatsOndashboard": "0",
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "0",
+                    "forceReturnLineAfter": "0",
+                    "parameters": [],
+                    "graphDerive": "0",
+                    "graphStep": "0"
+                },
+                "isVisible": "1",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "plage 30100 - 30101",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "configuration": {
+                    "cmdFctModbus": "3",
+                    "cmdFormat": "blob",
+                    "cmdAddress": "30100 [2]",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "isVisible": "0",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "DC Voltage",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "unite": "V",
+                "configuration": {
+                    "cmdFctModbus": "fromBlob",
+                    "cmdFormat": "H",
+                    "cmdAddress": "30100",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "timeline::enable": "0",
+                    "influx::enable": "0",
+                    "interact::auto::disable": "0",
+                    "calculValueOffset": "#value# * 0.01",
+                    "historizeRound": "2",
+                    "jeedomCheckCmdOperator": "==",
+                    "historizeMode": "avg",
+                    "repeatEventManagement": "never",
+                    "alert::messageReturnBack": "0",
+                    "actionCheckCmd": [],
+                    "jeedomPreExecCmd": [],
+                    "jeedomPostExecCmd": [],
+                    "cmdSourceBlobNum": "#[plage 30100 - 30101]#"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "graphDerive": "0",
+                    "graphStep": "0",
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "0",
+                    "forceReturnLineAfter": "0",
+                    "parameters": []
+                },
+                "isVisible": "1",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "DC Current",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "unite": "A",
+                "configuration": {
+                    "cmdFctModbus": "fromBlob",
+                    "cmdFormat": "h",
+                    "cmdAddress": "30101",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "timeline::enable": "0",
+                    "influx::enable": "0",
+                    "interact::auto::disable": "0",
+                    "calculValueOffset": "#value# * 0.1",
+                    "historizeRound": "2",
+                    "jeedomCheckCmdOperator": "==",
+                    "historizeMode": "avg",
+                    "repeatEventManagement": "never",
+                    "alert::messageReturnBack": "0",
+                    "actionCheckCmd": [],
+                    "jeedomPreExecCmd": [],
+                    "jeedomPostExecCmd": [],
+                    "cmdSourceBlobNum": "#[plage 30100 - 30101]#"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "graphDerive": "0",
+                    "graphStep": "0",
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "0",
+                    "forceReturnLineAfter": "0",
+                    "parameters": []
+                },
+                "isVisible": "1",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "plage 33000 - 33011",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "configuration": {
+                    "cmdFctModbus": "3",
+                    "cmdFormat": "blob",
+                    "cmdAddress": "33000 [12]",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "5"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "isVisible": "0",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "tot charging energy",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "unite": "kWh",
+                "configuration": {
+                    "cmdFctModbus": "fromBlob",
+                    "cmdFormat": "I",
+                    "cmdSourceBlobNum": "#[plage 33000 - 33011]#",
+                    "cmdAddress": "33000",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "1",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "timeline::enable": "0",
+                    "influx::enable": "0",
+                    "interact::auto::disable": "0",
+                    "calculValueOffset": "#value# * 0.01",
+                    "historizeRound": "0",
+                    "jeedomCheckCmdOperator": "==",
+                    "historizeMode": "avg",
+                    "repeatEventManagement": "never",
+                    "alert::messageReturnBack": "0",
+                    "actionCheckCmd": [],
+                    "jeedomPreExecCmd": [],
+                    "jeedomPostExecCmd": []
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "0",
+                    "forceReturnLineAfter": "0",
+                    "parameters": []
+                },
+                "isVisible": "1",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "tot discharging energy",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "unite": "kWh",
+                "configuration": {
+                    "cmdFctModbus": "fromBlob",
+                    "cmdFormat": "I",
+                    "cmdAddress": "33002",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "1",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "timeline::enable": "0",
+                    "influx::enable": "0",
+                    "interact::auto::disable": "0",
+                    "calculValueOffset": "#value# * 0.01",
+                    "historizeRound": "0",
+                    "jeedomCheckCmdOperator": "==",
+                    "historizeMode": "avg",
+                    "repeatEventManagement": "never",
+                    "alert::messageReturnBack": "0",
+                    "actionCheckCmd": [],
+                    "jeedomPreExecCmd": [],
+                    "jeedomPostExecCmd": [],
+                    "cmdSourceBlobNum": "#[plage 33000 - 33011]#"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "0",
+                    "forceReturnLineAfter": "0",
+                    "parameters": []
+                },
+                "isVisible": "1",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "daily charging energy",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "unite": "kWh",
+                "configuration": {
+                    "cmdFctModbus": "fromBlob",
+                    "cmdFormat": "I",
+                    "cmdAddress": "33004",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "1",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "timeline::enable": "0",
+                    "influx::enable": "0",
+                    "interact::auto::disable": "0",
+                    "calculValueOffset": "#value# * 0.01",
+                    "historizeRound": "2",
+                    "jeedomCheckCmdOperator": "==",
+                    "historizeMode": "avg",
+                    "repeatEventManagement": "never",
+                    "alert::messageReturnBack": "0",
+                    "actionCheckCmd": [],
+                    "jeedomPreExecCmd": [],
+                    "jeedomPostExecCmd": [],
+                    "cmdSourceBlobNum": "#[plage 33000 - 33011]#"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "0",
+                    "forceReturnLineAfter": "0",
+                    "parameters": []
+                },
+                "isVisible": "1",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "daily discharging dnergy",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "unite": "kWh",
+                "configuration": {
+                    "cmdFctModbus": "fromBlob",
+                    "cmdFormat": "I",
+                    "cmdAddress": "33006",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "1",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "timeline::enable": "0",
+                    "influx::enable": "0",
+                    "interact::auto::disable": "0",
+                    "calculValueOffset": "#value# * 0.01",
+                    "historizeRound": "2",
+                    "jeedomCheckCmdOperator": "==",
+                    "historizeMode": "avg",
+                    "repeatEventManagement": "never",
+                    "alert::messageReturnBack": "0",
+                    "actionCheckCmd": [],
+                    "jeedomPreExecCmd": [],
+                    "jeedomPostExecCmd": [],
+                    "cmdSourceBlobNum": "#[plage 33000 - 33011]#"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "0",
+                    "forceReturnLineAfter": "0",
+                    "parameters": []
+                },
+                "isVisible": "1",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "monthly charging energy",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "unite": "kWh",
+                "configuration": {
+                    "cmdFctModbus": "fromBlob",
+                    "cmdFormat": "I",
+                    "cmdAddress": "33008",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "1",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "timeline::enable": "0",
+                    "influx::enable": "0",
+                    "interact::auto::disable": "0",
+                    "calculValueOffset": "#value# * 0.01",
+                    "historizeRound": "2",
+                    "jeedomCheckCmdOperator": "==",
+                    "historizeMode": "avg",
+                    "repeatEventManagement": "never",
+                    "alert::messageReturnBack": "0",
+                    "actionCheckCmd": [],
+                    "jeedomPreExecCmd": [],
+                    "jeedomPostExecCmd": [],
+                    "cmdSourceBlobNum": "#[plage 33000 - 33011]#"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "0",
+                    "forceReturnLineAfter": "0",
+                    "parameters": []
+                },
+                "isVisible": "1",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "monthly discharging energy",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "unite": "kWh",
+                "configuration": {
+                    "cmdFctModbus": "fromBlob",
+                    "cmdFormat": "I",
+                    "cmdAddress": "33010",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "1",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "timeline::enable": "0",
+                    "influx::enable": "0",
+                    "interact::auto::disable": "0",
+                    "calculValueOffset": "#value# * 0.01",
+                    "historizeRound": "2",
+                    "jeedomCheckCmdOperator": "==",
+                    "historizeMode": "avg",
+                    "repeatEventManagement": "never",
+                    "alert::messageReturnBack": "0",
+                    "actionCheckCmd": [],
+                    "jeedomPreExecCmd": [],
+                    "jeedomPostExecCmd": [],
+                    "cmdSourceBlobNum": "#[plage 33000 - 33011]#"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "0",
+                    "forceReturnLineAfter": "0",
+                    "parameters": []
+                },
+                "isVisible": "1",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "plage 35000 - 35002",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "configuration": {
+                    "cmdFctModbus": "3",
+                    "cmdFormat": "blob",
+                    "cmdAddress": "35000 [3]",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "10"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "isVisible": "0",
+                "alert": []
+            },
+            {
+                "generic_type": "TEMPERATURE",
+                "eqType": "mymodbus",
+                "name": "temp.",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "unite": "°C",
+                "configuration": {
+                    "cmdFctModbus": "fromBlob",
+                    "cmdFormat": "h",
+                    "cmdAddress": "35000",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "timeline::enable": "0",
+                    "influx::enable": "0",
+                    "interact::auto::disable": "0",
+                    "calculValueOffset": "#value# * 0.1",
+                    "historizeRound": "2",
+                    "jeedomCheckCmdOperator": "==",
+                    "historizeMode": "avg",
+                    "repeatEventManagement": "never",
+                    "alert::messageReturnBack": "0",
+                    "actionCheckCmd": [],
+                    "jeedomPreExecCmd": [],
+                    "jeedomPostExecCmd": [],
+                    "cmdSourceBlobNum": "#[plage 35000 - 35002]#"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "0",
+                    "forceReturnLineAfter": "0",
+                    "parameters": []
+                },
+                "isVisible": "1",
+                "alert": []
+            },
+            {
+                "generic_type": "TEMPERATURE",
+                "eqType": "mymodbus",
+                "name": "temp. MOS1",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "unite": "°C",
+                "configuration": {
+                    "cmdFctModbus": "fromBlob",
+                    "cmdFormat": "h",
+                    "cmdAddress": "35001",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "timeline::enable": "0",
+                    "influx::enable": "0",
+                    "interact::auto::disable": "0",
+                    "calculValueOffset": "#value# * 0.1",
+                    "historizeRound": "2",
+                    "jeedomCheckCmdOperator": "==",
+                    "historizeMode": "avg",
+                    "repeatEventManagement": "never",
+                    "alert::messageReturnBack": "0",
+                    "actionCheckCmd": [],
+                    "jeedomPreExecCmd": [],
+                    "jeedomPostExecCmd": [],
+                    "cmdSourceBlobNum": "#[plage 35000 - 35002]#"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "0",
+                    "forceReturnLineAfter": "0",
+                    "parameters": []
+                },
+                "isVisible": "1",
+                "alert": []
+            },
+            {
+                "generic_type": "TEMPERATURE",
+                "eqType": "mymodbus",
+                "name": "temp. MOS2",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "unite": "°C",
+                "configuration": {
+                    "cmdFctModbus": "fromBlob",
+                    "cmdFormat": "h",
+                    "cmdAddress": "35002",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "timeline::enable": "0",
+                    "influx::enable": "0",
+                    "interact::auto::disable": "0",
+                    "calculValueOffset": "#value# * 0.1",
+                    "historizeRound": "2",
+                    "jeedomCheckCmdOperator": "==",
+                    "historizeMode": "avg",
+                    "repeatEventManagement": "never",
+                    "alert::messageReturnBack": "0",
+                    "actionCheckCmd": [],
+                    "jeedomPreExecCmd": [],
+                    "jeedomPostExecCmd": [],
+                    "cmdSourceBlobNum": "#[plage 35000 - 35002]#"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "0",
+                    "forceReturnLineAfter": "0",
+                    "parameters": []
+                },
+                "isVisible": "1",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "plage 35010-35011",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "configuration": {
+                    "cmdFctModbus": "3",
+                    "cmdFormat": "blob",
+                    "cmdAddress": "35010 [2]",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "isVisible": "0",
+                "alert": []
+            },
+            {
+                "generic_type": "TEMPERATURE",
+                "eqType": "mymodbus",
+                "name": "temp. max cell",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "unite": "°C",
+                "configuration": {
+                    "cmdFctModbus": "fromBlob",
+                    "cmdFormat": "h",
+                    "cmdAddress": "35010",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "timeline::enable": "0",
+                    "influx::enable": "0",
+                    "interact::auto::disable": "0",
+                    "jeedomCheckCmdOperator": "==",
+                    "historizeMode": "avg",
+                    "repeatEventManagement": "never",
+                    "alert::messageReturnBack": "0",
+                    "actionCheckCmd": [],
+                    "jeedomPreExecCmd": [],
+                    "jeedomPostExecCmd": [],
+                    "cmdSourceBlobNum": "#[plage 35010-35011]#"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "0",
+                    "forceReturnLineAfter": "0",
+                    "parameters": []
+                },
+                "isVisible": "1",
+                "alert": []
+            },
+            {
+                "generic_type": "TEMPERATURE",
+                "eqType": "mymodbus",
+                "name": "temp min cell",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "unite": "°C",
+                "configuration": {
+                    "cmdFctModbus": "fromBlob",
+                    "cmdFormat": "h",
+                    "cmdAddress": "35011",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "timeline::enable": "0",
+                    "influx::enable": "0",
+                    "interact::auto::disable": "0",
+                    "jeedomCheckCmdOperator": "==",
+                    "historizeMode": "avg",
+                    "repeatEventManagement": "never",
+                    "alert::messageReturnBack": "0",
+                    "actionCheckCmd": [],
+                    "jeedomPreExecCmd": [],
+                    "jeedomPostExecCmd": [],
+                    "cmdSourceBlobNum": "#[plage 35010-35011]#"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "0",
+                    "forceReturnLineAfter": "0",
+                    "parameters": []
+                },
+                "isVisible": "1",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "Inverter State",
+                "type": "info",
+                "subType": "string",
+                "isHistorized": "0",
+                "configuration": {
+                    "cmdFctModbus": "3",
+                    "cmdFormat": "H",
+                    "cmdAddress": "35100",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "timeline::enable": "0",
+                    "influx::enable": "0",
+                    "interact::auto::disable": "0",
+                    "calculValueOffset": "(#value#=0)?\"Sleep\":(#value#=1)?\"Standby\":(#value#=2)?\"Charge\":(#value#=3)?\"Discharge\":(#value#=4)?\"Backup\":(#value#=5)?\"Upgrade\":(#value#=6)?\"Bypass\":\"inconnu\"",
+                    "jeedomCheckCmdOperator": "==",
+                    "repeatEventManagement": "never",
+                    "alert::messageReturnBack": "0",
+                    "actionCheckCmd": [],
+                    "jeedomPreExecCmd": [],
+                    "jeedomPostExecCmd": []
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "0",
+                    "forceReturnLineAfter": "0",
+                    "parameters": []
+                },
+                "isVisible": "1",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "plage 37005 - 37008",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "configuration": {
+                    "cmdFctModbus": "3",
+                    "cmdFormat": "blob",
+                    "cmdAddress": "37005 [4]",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "isVisible": "0",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "batt SoC",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "1",
+                "unite": "%",
+                "configuration": {
+                    "cmdFctModbus": "fromBlob",
+                    "cmdFormat": "H",
+                    "cmdAddress": "37005",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "cmdSourceBlobNum": "#[plage 37005 - 37008]#"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "0",
+                    "forceReturnLineAfter": "0",
+                    "parameters": []
+                },
+                "isVisible": "1",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "max cell voltage",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "unite": "V",
+                "configuration": {
+                    "cmdFctModbus": "fromBlob",
+                    "cmdFormat": "H",
+                    "cmdSourceBlobNum": "#[plage 37005 - 37008]#",
+                    "cmdAddress": "37007",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "timeline::enable": "0",
+                    "influx::enable": "0",
+                    "interact::auto::disable": "0",
+                    "calculValueOffset": "#value# * 0.001",
+                    "historizeRound": "3",
+                    "jeedomCheckCmdOperator": "==",
+                    "historizeMode": "avg",
+                    "repeatEventManagement": "never",
+                    "alert::messageReturnBack": "0",
+                    "actionCheckCmd": [],
+                    "jeedomPreExecCmd": [],
+                    "jeedomPostExecCmd": []
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "0",
+                    "forceReturnLineAfter": "0",
+                    "parameters": []
+                },
+                "isVisible": "1",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "min cell voltage",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "configuration": {
+                    "cmdFctModbus": "fromBlob",
+                    "cmdFormat": "H",
+                    "cmdSourceBlobNum": "#[plage 37005 - 37008]#",
+                    "cmdAddress": "37008",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "timeline::enable": "0",
+                    "influx::enable": "0",
+                    "interact::auto::disable": "0",
+                    "calculValueOffset": "#value# * 0.001",
+                    "historizeRound": "3",
+                    "jeedomCheckCmdOperator": "==",
+                    "historizeMode": "avg",
+                    "repeatEventManagement": "never",
+                    "alert::messageReturnBack": "0",
+                    "actionCheckCmd": [],
+                    "jeedomPreExecCmd": [],
+                    "jeedomPostExecCmd": []
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "0",
+                    "forceReturnLineAfter": "0",
+                    "parameters": []
+                },
+                "isVisible": "1",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "mode control RS485 Lu",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "configuration": {
+                    "cmdFctModbus": "3",
+                    "cmdFormat": "H",
+                    "cmdAddress": "42000",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "timeline::enable": "0",
+                    "influx::enable": "0",
+                    "interact::auto::disable": "0",
+                    "jeedomCheckCmdOperator": "==",
+                    "historizeMode": "avg",
+                    "repeatEventManagement": "never",
+                    "alert::messageReturnBack": "0",
+                    "actionCheckCmd": [],
+                    "jeedomPreExecCmd": [],
+                    "jeedomPostExecCmd": []
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "0",
+                    "forceReturnLineAfter": "0",
+                    "parameters": []
+                },
+                "isVisible": "0",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "mode control RS485",
+                "type": "action",
+                "subType": "select",
+                "isHistorized": "0",
+                "configuration": {
+                    "cmdFctModbus": "16",
+                    "cmdFormat": "H",
+                    "cmdAddress": "42000",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "cmdWriteValue": "#select#",
+                    "listValue": "21930|On;21947|Off"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "0",
+                    "forceReturnLineAfter": "0",
+                    "parameters": []
+                },
+                "value": "mode control RS485 Lu",
+                "isVisible": "1",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "mode Forcée lu",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "configuration": {
+                    "cmdFctModbus": "3",
+                    "cmdFormat": "H",
+                    "cmdAddress": "42010",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "timeline::enable": "0",
+                    "influx::enable": "0",
+                    "interact::auto::disable": "0",
+                    "jeedomCheckCmdOperator": "==",
+                    "historizeMode": "avg",
+                    "repeatEventManagement": "never",
+                    "alert::messageReturnBack": "0",
+                    "actionCheckCmd": [],
+                    "jeedomPreExecCmd": [],
+                    "jeedomPostExecCmd": []
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "1",
+                    "forceReturnLineAfter": "1",
+                    "parameters": []
+                },
+                "isVisible": "0",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "mode Forcé",
+                "type": "action",
+                "subType": "select",
+                "isHistorized": "0",
+                "configuration": {
+                    "cmdFctModbus": "16",
+                    "cmdFormat": "H",
+                    "cmdAddress": "42010",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "cmdWriteValue": "#select#",
+                    "listValue": "0|None;1|Charge;2|Discharge"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "0",
+                    "forceReturnLineAfter": "1",
+                    "parameters": []
+                },
+                "value": "mode Forcée lu",
+                "isVisible": "1",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "plage 42020 - 42021",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "configuration": {
+                    "cmdFctModbus": "3",
+                    "cmdFormat": "blob",
+                    "cmdAddress": "42020 [2]",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "isVisible": "0",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "puissance de charge forcée lue",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "unite": "W",
+                "configuration": {
+                    "cmdFctModbus": "fromBlob",
+                    "cmdFormat": "H",
+                    "cmdAddress": "42020",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "timeline::enable": "0",
+                    "influx::enable": "0",
+                    "interact::auto::disable": "0",
+                    "jeedomCheckCmdOperator": "==",
+                    "historizeMode": "avg",
+                    "repeatEventManagement": "never",
+                    "alert::messageReturnBack": "0",
+                    "actionCheckCmd": [],
+                    "jeedomPreExecCmd": [],
+                    "jeedomPostExecCmd": [],
+                    "cmdSourceBlobNum": "#[plage 42020 - 42021]#"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "1",
+                    "forceReturnLineAfter": "0",
+                    "parameters": []
+                },
+                "isVisible": "0",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "puissance de charge forcée",
+                "type": "action",
+                "subType": "slider",
+                "isHistorized": "0",
+                "configuration": {
+                    "cmdFctModbus": "16",
+                    "cmdFormat": "H",
+                    "cmdAddress": "42020",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "cmdWriteValue": "#slider#",
+                    "minValue": "0",
+                    "maxValue": "2500"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "value": "puissance de charge forcée lue",
+                "isVisible": "1",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "puissance de décharge forcée lue",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "unite": "W",
+                "configuration": {
+                    "cmdFctModbus": "fromBlob",
+                    "cmdFormat": "H",
+                    "cmdAddress": "42021",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "cmdSourceBlobNum": "#[plage 42020 - 42021]#"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "0",
+                    "forceReturnLineAfter": "0",
+                    "parameters": []
+                },
+                "isVisible": "0",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "puissance de décharge forcée",
+                "type": "action",
+                "subType": "slider",
+                "isHistorized": "0",
+                "configuration": {
+                    "cmdFctModbus": "16",
+                    "cmdFormat": "H",
+                    "cmdAddress": "42021",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "cmdWriteValue": "#slider#",
+                    "minValue": "0",
+                    "maxValue": "2500",
+                    "lastCmdValue": "465"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "value": "puissance de décharge forcée lue",
+                "isVisible": "1",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "mode d utilisation lue",
+                "type": "info",
+                "subType": "string",
+                "isHistorized": "0",
+                "configuration": {
+                    "cmdFctModbus": "3",
+                    "cmdFormat": "H",
+                    "cmdAddress": "43000",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "timeline::enable": "0",
+                    "influx::enable": "0",
+                    "interact::auto::disable": "0",
+                    "jeedomCheckCmdOperator": "==",
+                    "repeatEventManagement": "always",
+                    "alert::messageReturnBack": "0",
+                    "actionCheckCmd": [],
+                    "jeedomPreExecCmd": [],
+                    "jeedomPostExecCmd": []
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "1",
+                    "forceReturnLineAfter": "0",
+                    "parameters": []
+                },
+                "isVisible": "0",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "mode d utilisation",
+                "type": "action",
+                "subType": "select",
+                "isHistorized": "0",
+                "configuration": {
+                    "cmdFctModbus": "16",
+                    "cmdFormat": "H",
+                    "cmdAddress": "43000",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "cmdWriteValue": "#select#",
+                    "listValue": "0|Manuel;1|Autoconsommation;2|AI",
+                    "timeline::enable": "0",
+                    "interact::auto::disable": "0",
+                    "actionConfirm": "0",
+                    "actionCheckCmd": [],
+                    "jeedomPreExecCmd": [],
+                    "jeedomPostExecCmd": []
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "display": {
+                    "showNameOndashboard": "1",
+                    "showNameOnmobile": "1",
+                    "showIconAndNamedashboard": "0",
+                    "showIconAndNamemobile": "0",
+                    "forceReturnLineBefore": "1",
+                    "forceReturnLineAfter": "1",
+                    "parameters": []
+                },
+                "value": "mode d utilisation lue",
+                "isVisible": "1",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "plage 44002 - 44003",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "configuration": {
+                    "cmdFctModbus": "3",
+                    "cmdFormat": "blob",
+                    "cmdAddress": "44002 [2]",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "isVisible": "0",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "max charge power lue",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "unite": "W",
+                "configuration": {
+                    "cmdFctModbus": "fromBlob",
+                    "cmdFormat": "H",
+                    "cmdSourceBlobNum": "#[plage 44002 - 44003]#",
+                    "cmdAddress": "44002",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "isVisible": "0",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "max charge power",
+                "type": "action",
+                "subType": "slider",
+                "isHistorized": "0",
+                "configuration": {
+                    "cmdFctModbus": "16",
+                    "cmdFormat": "H",
+                    "cmdAddress": "44002",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "cmdWriteValue": "#slider#",
+                    "minValue": "0",
+                    "maxValue": "2500"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "value": "max charge power lue",
+                "isVisible": "1",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "max discharge power lue",
+                "type": "info",
+                "subType": "numeric",
+                "isHistorized": "0",
+                "unite": "W",
+                "configuration": {
+                    "cmdFctModbus": "3",
+                    "cmdFormat": "H",
+                    "cmdAddress": "44003",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "isVisible": "0",
+                "alert": []
+            },
+            {
+                "eqType": "mymodbus",
+                "name": "max discharge power",
+                "type": "action",
+                "subType": "slider",
+                "isHistorized": "0",
+                "configuration": {
+                    "cmdFctModbus": "16",
+                    "cmdFormat": "H",
+                    "cmdAddress": "44003",
+                    "cmdInvertBytes": "0",
+                    "cmdInvertWords": "0",
+                    "cmdInvertDWords": "0",
+                    "cmdFrequency": "1",
+                    "cmdWriteValue": "#slider#",
+                    "minValue": "0",
+                    "maxValue": "2500"
+                },
+                "template": {
+                    "dashboard": "core::default",
+                    "mobile": "core::default"
+                },
+                "value": "max discharge power lue",
+                "isVisible": "1",
+                "alert": []
+            }
+        ]
+    }
+}

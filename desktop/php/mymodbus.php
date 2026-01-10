@@ -65,7 +65,7 @@ include_file('desktop', 'mymodbusEqConfig.class', 'php', 'mymodbus');
 				if (file_exists(__DIR__ . '/../../desktop/images/' . $alternateImg .'_icon.png')) {
 					echo '<img class="lazy" src="plugins/mymodbus/desktop/images/' . $alternateImg .'_icon.png"/>';
 				} else {	
-					echo '<img src="' . $plugin->getPathImgIcon() . '"/>';
+					echo '<img src="' . $eqLogic->getImage() . '"/>';
 				}
 				echo '<br>';
 				echo '<span class="name">' . $eqLogic->getHumanName(true, true) . '</span>';
