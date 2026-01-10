@@ -1639,8 +1639,9 @@
                 "isHistorized": "0",
                 "unite": "W",
                 "configuration": {
-                    "cmdFctModbus": "3",
+                    "cmdFctModbus": "fromBlob",
                     "cmdFormat": "H",
+                    "cmdSourceBlobNum": "#[plage 44002 - 44003]#",
                     "cmdAddress": "44003",
                     "cmdInvertBytes": "0",
                     "cmdInvertWords": "0",
