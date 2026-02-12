@@ -463,6 +463,7 @@ class mymodbus extends eqLogic {
 	
 	public function copy($_name) {
 		log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . sprintf(" * name = '%s'", $_name));
+		$test_log[$error] = '';
 		$eqLogicCopy = clone $this;
 		$eqLogicCopy->setName($_name);
 		$eqLogicCopy->setId('');
@@ -494,6 +495,7 @@ class mymodbus extends eqLogic {
 				$cmd_link[$cmd->getId()]->save();
 			}
 		}
+		log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__ . sprintf(" * name = '%s' ******* copie terminée", $_name));
 		return $eqLogicCopy;
 	}
 	
@@ -997,9 +999,10 @@ class mymodbusCmd extends cmd {
 			
 		} else {
 			$cmdFormat = $this->getConfiguration('cmdFormat');
+			$cmdFctModbus = $this->getConfiguration('cmdFctModbus');
 			
-			if (strstr($cmdFormat, 'uint8') || $cmdFormat === 'blob') {
-				return;
+			if (strstr($cmdFormat, 'uint8') || $cmdFormat === 'blob' || $cmdFctModbus === 'fromBlob') {
+				throw new Exception($this->getHumanName() . ' : ' . __('Le format de la commande n\'est pas compatible avec l\'écriture. L\'écriture est ignorée.', __FILE__));
 			}
 			
 			$value = $this->getConfiguration('cmdWriteValue');
@@ -1020,7 +1023,7 @@ class mymodbusCmd extends cmd {
 			}
 			$command['cmdWriteValue'] = jeedom::evaluateExpression($value);
 			if ($command['cmdWriteValue'] === '') {
-				throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La valeur à écrire est vide. L\'écriture est ignorée.', __FILE__));
+				throw new Exception($this->getHumanName() . ' : ' . __('La valeur à écrire est vide. L\'écriture est ignorée.', __FILE__));
 			}
 
 			$command['cmdId'] = $this->getId();
@@ -1137,7 +1140,7 @@ class mymodbusCmd extends cmd {
 				throw new Exception($this->getHumanName() . '&nbsp;:<br>' . __('La fonction "[0x06] Write register" ne permet pas d\'écrire une variable de cette longueur.', __FILE__));
 			}
 			if (strstr($cmdFormat, 'uint8') || $cmdFormat === 'blob' || $cmdFctModbus === 'fromBlob') {
-				log::add('mymodbus', 'warning', $this->getHumanName() . '&nbsp;:<br>' . __('L\'écriture sera ignorée.', __FILE__));
+				log::add('mymodbus', 'error', $this->getHumanName() . '&nbsp;:<br>' . __('L\'écriture sera ignorée.', __FILE__));
 			}
 			if ($this->getConfiguration('cmdWriteValue') === '') {
 				if ($this->getSubType() === 'slider') {
