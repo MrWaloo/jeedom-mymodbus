@@ -52,6 +52,7 @@
         "Le champ valeur ne contient pas \\'#select#\\'.": "Das Feld \"Wert\" enthält nicht \"#select#\".",
         "Le champ valeur ne contient pas \\'#slider#\\'.": "Das Feld \"Wert\" enthält nicht \"#slider#\".",
         "Le dernier registre doit être un nombre positif compris entre 0 et 65535.": "Das letzte Register muss eine positive Zahl zwischen 0 und 65535 sein.",
+        "Le format de la commande n\\'est pas compatible avec l\\'écriture. L\\'écriture est ignorée.": "Das Format des Befehls ist nicht mit dem Schreibvorgang kompatibel. Der Schreibvorgang wird ignoriert.",
         "Le mode de rafraîchissement n\\'est pas défini correctement.": "Der Kühlungsmodus ist nicht richtig eingestellt.",
         "Le nombre de bits de stop n\\'est pas défini correctement.": "Die Anzahl der Stopp-Bits ist nicht richtig eingestellt.",
         "Le nombre de bits par octet n\\'est pas défini correctement.": "Die Anzahl der Bits pro Byte ist nicht richtig eingestellt.",
