@@ -148,14 +148,30 @@ function sel_source_change(event) {
 			scr_eqLogic = _eqLogic;
 		}
 	});
+	//console.log('scr_eqLogic', scr_eqLogic); // DEBUG
 
 	// Génération de la liste des destinations possibles
 	jeedom.eqLogic.byType({
 		type: 'mymodbus',
 		async: false,
 		success: function(eqLogics) {
+			//console.log('eqLogics', eqLogics); // DEBUG
+			valid_eqLogics = [];
+			if (eqLogics.length > 0) {
+				for (var eqLogic of eqLogics) {
+					if (eqLogic.id != scr_eqLogic.id && (
+							('eqInterfaceFromEqId' in eqLogic.configuration && eqLogic.configuration['eqInterfaceFromEqId'] == scr_eqLogic.id)
+							|| ('eqInterfaceFromEqId' in scr_eqLogic.configuration && scr_eqLogic.configuration['eqInterfaceFromEqId'] == eqLogic.id)
+							|| ('eqInterfaceFromEqId' in eqLogic.configuration && 'eqInterfaceFromEqId' in scr_eqLogic.configuration && eqLogic.configuration['eqInterfaceFromEqId'] == scr_eqLogic.configuration['eqInterfaceFromEqId'])
+						)
+					) {
+						valid_eqLogics.push(eqLogic);
+					}
+				}
+			}
+			//console.log('valid_eqLogics', valid_eqLogics); // DEBUG
 			let html = '';
-			if (eqLogics.length == 0) {
+			if (valid_eqLogics.length == 0) {
 				html += '<legend><i class="fa fa-list-alt"></i> {{Destination :}}</legend>';
 				html += '{{Aucune destination possible}}';
 			} else {
@@ -166,16 +182,8 @@ function sel_source_change(event) {
 				html += '		<div class="col-sm-8">';
 				html += '			<select id="sel_destination" class="form-control">';
 				html += '				<option disabled selected value>-- {{Selectionnez un équipement destination}} --</option>';
-				for (var eqLogic of eqLogics) {
-					if (scr_eqLogic.id != eqLogic.id) {
-						if (
-							('eqInterfaceFromEqId' in eqLogic.configuration && eqLogic.configuration['eqInterfaceFromEqId'] === scr_eqLogic.id)
-							|| ('eqInterfaceFromEqId' in scr_eqLogic.configuration && scr_eqLogic.configuration['eqInterfaceFromEqId'] === eqLogic.id)
-							|| ('eqInterfaceFromEqId' in eqLogic.configuration && 'eqInterfaceFromEqId' in scr_eqLogic.configuration && eqLogic.configuration['eqInterfaceFromEqId'] === scr_eqLogic.configuration['eqInterfaceFromEqId'])
-						) {
-							html += '				<option value="' + eqLogic.id + '">' + eqLogic.name + '</option>';
-						}
-					}
+				for (var eqLogic of valid_eqLogics) {
+					html += '				<option value="' + eqLogic.id + '">' + eqLogic.name + '</option>';
 				}
 				html += '			</select>';
 				html += '		</div>';
@@ -188,7 +196,9 @@ function sel_source_change(event) {
 			div_move_button.innerHTML = '';
 
 			const sel_destination = document.getElementById('sel_destination');
-			sel_destination.addEventListener('change', sel_destination_change);
+			if (sel_destination) {
+				sel_destination.addEventListener('change', sel_destination_change);
+			}
 		}
 	});
 }
