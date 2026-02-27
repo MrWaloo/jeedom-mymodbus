@@ -337,6 +337,7 @@ $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRegTestFunction]').off().
 
 function eqConfig_visibility() {
 	// Met à jour la visibilité des éléments en fonction des sélections
+	let $eqLogicId = $('.eqLogicAttr[data-l1key=id]').value();
 	let $eqRefreshMode = $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRefreshMode]').value();
 	let $eqRegTest = $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRegTest]').value();
 	let $eqOneDevID = $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqOneDevID]').value();
@@ -352,11 +353,37 @@ function eqConfig_visibility() {
 		$('.noRegTest').hide();
 	}
 
+	if ($eqLogicId != '') {
+		jeedom.eqLogic.byId({
+			id: $eqLogicId,
+			async: false,
+			success: function(eqLogic) {
+				if (eqLogic.configuration.eqProtocol === 'shared_from') {
+					jeedom.eqLogic.byId({
+						id: eqLogic.configuration.eqInterfaceFromEqId,
+						async: false,
+						success: function(eqLogic2) {
+							if (eqLogic2.configuration.eqOneDevID == '1') {
+								$('.colDevID').hide();
+							} else {
+								$('.colDevID').show();
+							}
+						}
+					});
+				}
+			}
+		});
+	}
+
 	if ($eqOneDevID == '1') {
-		$('.colDevID').hide();
+		if ($eqLogicId != '') {
+			$('.colDevID').hide();
+		}
 		$('.eqLogicAttr[data-l1key=configuration][data-l2key=eqDevID]').prop('disabled', false);
 	} else {
-		$('.colDevID').show();
+		if ($eqLogicId != '') {
+			$('.colDevID').show();
+		}
 		$('.eqLogicAttr[data-l1key=configuration][data-l2key=eqDevID]').prop('disabled', true);
 		$('.eqLogicAttr[data-l1key=configuration][data-l2key=eqDevID]').prop('value', '');
 	}
@@ -607,7 +634,30 @@ function getTrfromCmd(_cmd, _template = false) {
 	let formDisabled = (_template) ? ' disabled' : '';
 	// id de la commande
 	let dataCmdId = (!_template) ? 'data-cmd_id="' + init(_cmd.id) : '';
-	let $colDevIDStyle = $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqOneDevID]').value() == '0' ? '' : ' style="display:none;"';
+	let colDevIDStyle = '';
+	if (typeof _cmd.eqLogic_id !== 'undefined' && _cmd.eqLogic_id !== null) {
+		jeedom.eqLogic.byId({
+			id: _cmd.eqLogic_id,
+			async: false,
+			success: function(eqLogic) {
+				if (eqLogic.configuration.eqProtocol === 'shared_from') {
+					jeedom.eqLogic.byId({
+						id: eqLogic.configuration.eqInterfaceFromEqId,
+						async: false,
+						success: function(eqLogic2) {
+							if (eqLogic2.configuration.eqOneDevID == '1') {
+								colDevIDStyle = ' style="display:none;"';
+							}
+						}
+					});
+				} else if (eqLogic.configuration.eqOneDevID == '1') {
+					colDevIDStyle = ' style="display:none;"';
+				}
+			}
+		});
+	} else {
+		colDevIDStyle = $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqOneDevID]').value() == '0' ? '' : ' style="display:none;"';
+	}
 	let tr = '<tr class="cmd" ' + dataCmdId + '">';
 	if (!_template) {
 		tr += ' <td class="hidden-xs">'
@@ -636,7 +686,7 @@ function getTrfromCmd(_cmd, _template = false) {
 	tr += '	</div>';
 	tr += ' </td>';
 	// ID du serveur
-	tr += ' <td class="colDevID"' + $colDevIDStyle + '><input type="number" class="cmdAttr form-control input-sm withDevID" data-l1key="configuration" data-l2key="cmdDevID"' + formDisabled + '></td>';
+	tr += ' <td class="colDevID"' + colDevIDStyle + '><input type="number" class="cmdAttr form-control input-sm withDevID" data-l1key="configuration" data-l2key="cmdDevID"' + formDisabled + '></td>';
 	// Modbus function / Data format
 	tr += ' <td>';
 	tr += '	<div class="input-group" style="margin-bottom:5px;">';

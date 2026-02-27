@@ -989,7 +989,7 @@ class mymodbusCmd extends cmd {
 		$command = [];
 		$command['eqId'] = $eqMymodbus->getId();
 		if ($eqMymodbus->getConfiguration('eqProtocol') === 'shared_from') {
-			$command['eqId'] = $eqMymodbus->getConfiguration('eqInterfaceFromEqId');
+			$command['eqId'] = intval($eqMymodbus->getConfiguration('eqInterfaceFromEqId'));
 		}
 		
 		$message = [];
@@ -1243,13 +1243,21 @@ class mymodbusCmd extends cmd {
 	public function getCmdConfiguration() {
 		//log::add('mymodbus', 'debug', __CLASS__ . '::' . __FUNCTION__);
 		$eqMymodbus = $this->getEqLogic();
+
+		if ($eqMymodbus->getConfiguration('eqProtocol') === 'shared_from') {
+			$eqMymodbus = mymodbus::byId($eqMymodbus->getConfiguration('eqInterfaceFromEqId'));
+		}
+
 		$return = [];
 		$return['id'] = $this->getId();
 		$return['name'] = trim($this->getName());
 		$return['type'] = $this->getType();
 		if ($eqMymodbus->getConfiguration('eqOneDevID') === '1') {
 			$return['cmdDevID'] = trim($eqMymodbus->getConfiguration('eqDevID'));
-			$this->setConfiguration('cmdDevID', null);
+			if ($this->getConfiguration('cmdDevID') !== '') {
+				$this->setConfiguration('cmdDevID', null);
+				$this->save();
+			}
 		} else {
 			$return['cmdDevID'] = trim($this->getConfiguration('cmdDevID'));
 		}
