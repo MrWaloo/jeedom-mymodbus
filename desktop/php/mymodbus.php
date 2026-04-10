@@ -4,7 +4,6 @@ if (!isConnect('admin')) {
 }
 $plugin = plugin::byId('mymodbus');
 sendVarToJS('eqType', $plugin->getId());
-include_file('desktop', 'mymodbus.functions', 'js', 'mymodbus');
 $eqLogics = eqLogic::byType($plugin->getId());
 // require_once 'mymodbusEqConfig.class.php';
 include_file('desktop', 'mymodbusEqConfig.class', 'php', 'mymodbus');

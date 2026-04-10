@@ -83,7 +83,7 @@ $('#bt_MyModbusTemplateUp').fileupload({
 });
 
 function refreshMymodbusTemplateList() {
-	mymodbus.callPluginAjax({
+	mymodbus_ext.callPluginAjax({
 		data: {
 			action: "getTemplateList"
 		},
@@ -115,7 +115,7 @@ $('#ul_MyModbusTemplateList').on('click', '.li_mymodbusTemplate', function(event
 		$('#bt_MyModbusTemplateDelete').hide();
 	}
 	
-	mymodbus.callPluginAjax({
+	mymodbus_ext.callPluginAjax({
 		data: {
 			action: "getTemplateByFile",
 			file: $(this).attr('data-file')
@@ -205,7 +205,7 @@ $('#bt_MyModbusTemplateDelete').on('click', function() {
 	}
 	bootbox.confirm('{{Êtes-vous sûr de vouloir supprimer ce template :}}' + ' \'' + dataname + '\' ?', function(result) {
 		if (result) {
-			mymodbus.callPluginAjax({
+			mymodbus_ext.callPluginAjax({
 				data: {
 					action: "deleteTemplateByFile",
 					file: filename,

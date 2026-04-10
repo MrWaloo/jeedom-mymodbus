@@ -14,6 +14,40 @@
  * along with Jeedom. If not, see <http://www.gnu.org/licenses/>.
  */
 
+// *********** Namespace
+mymodbus_ext = {}
+
+// Send ajax request to MyModbus plugin
+mymodbus_ext.callPluginAjax = function(_params) {
+	domUtils.ajax({
+		async: _params.async == undefined ? true : _params.async,
+		global: false,
+		type: "POST",
+		url: "plugins/mymodbus/core/ajax/mymodbus.ajax.php",
+		data: _params.data,
+		dataType: 'json',
+		error: function (request, status, error) {
+			domUtils.handleAjaxError(request, status, error);
+		},
+		success: function (data) {
+			if (data.state != 'ok') {
+				jeedomUtils.showAlert({message: data.result, level: 'danger'});
+			}
+			else {
+				if (typeof _params.success === 'function') {
+					_params.success(data.result);
+				}
+			}
+		}
+	});
+}
+
+mymodbus_ext.getEqId = function() {
+	const element = document.querySelector('.eqLogicAttr[data-l1key="id"]');
+	return element ? element.value : null;
+}
+
+
 // *********** Evénements de la page du plugin
 
 $('.eqLogicAction[data-action=bt_addMymodbusEq]').off('click').on('click', function() {
@@ -42,7 +76,7 @@ $('.eqLogicAction[data-action=bt_addMymodbusEq]').off('click').on('click', funct
 					},
 					success: function(savedEq) {
 						if (eqTemplate != '') {
-							mymodbus.callPluginAjax({
+							mymodbus_ext.callPluginAjax({
 								data: {
 									action: "applyTemplate",
 									id: savedEq.id,
@@ -80,7 +114,7 @@ $('.eqLogicAction[data-action=bt_addMymodbusEq]').off('click').on('click', funct
 			}
 		}
 	});
-	mymodbus.callPluginAjax({
+	mymodbus_ext.callPluginAjax({
 		data: {
 			action: "getTemplateList",
 		},
@@ -117,10 +151,10 @@ $('.eqLogicAction[data-action=createTemplate]').off('click').on('click', functio
 		title: "{{Nom du nouveau template ?}}",
 		callback: function (result) {
 			if (result !== null) {
-				mymodbus.callPluginAjax({
+				mymodbus_ext.callPluginAjax({
 					data: {
 						action: "createTemplate",
-						id: mymodbus.getEqId(),
+						id: mymodbus_ext.getEqId(),
 						name : result
 					}
 				});
@@ -130,7 +164,7 @@ $('.eqLogicAction[data-action=createTemplate]').off('click').on('click', functio
 });
 
 $('.eqLogicAction[data-action=applyTemplate]').off('click').on('click', function () {
-	mymodbus.callPluginAjax({
+	mymodbus_ext.callPluginAjax({
 		data: {
 			action: "getTemplateList",
 		},
@@ -150,15 +184,15 @@ $('.eqLogicAction[data-action=applyTemplate]').off('click').on('click', function
 				title: '{{Appliquer un Template}}',
 				message: dialog_message,
 				callback: function (result){ if (result) {
-					mymodbus.callPluginAjax({
+					mymodbus_ext.callPluginAjax({
 						data: {
 							action: "applyTemplate",
-							id: mymodbus.getEqId(),
+							id: mymodbus_ext.getEqId(),
 							templateName : $("#applyTemplateSelector").val(),
 							keepCmd: $("[name='applyTemplateCommand']:checked").val()
 						},
 						success: function (dataresult) {
-							$('.eqLogicDisplayCard[data-eqLogic_id=' + mymodbus.getEqId() + ']').click();
+							$('.eqLogicDisplayCard[data-eqLogic_id=' + mymodbus_ext.getEqId() + ']').click();
 						}
 					});
 				}}
@@ -938,7 +972,7 @@ function addCmdToTable(_cmd) {
 	
 	var tr = $('#table_cmd tbody tr:last');
 	listSourceBlobs({
-		id:	mymodbus.getEqId(),
+		id:	mymodbus_ext.getEqId(),
 		error: function (error) {
 			$('#div_alert').showAlert({message: error.message, level: 'danger'});
 		},
@@ -949,7 +983,7 @@ function addCmdToTable(_cmd) {
 	});
 	
 	listSourceValues({
-		id:	mymodbus.getEqId(),
+		id:	mymodbus_ext.getEqId(),
 		error: function (error) {
 			$('#div_alert').showAlert({message: error.message, level: 'danger'});
 		},
