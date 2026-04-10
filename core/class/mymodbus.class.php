@@ -216,7 +216,12 @@ class mymodbus extends eqLogic {
 	// tty interfaces
 	public static function getTtyInterfaces() {
 		log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
-		$interfaces = jeedom::getUsbMapping('', True);
+		$interfaces = [];
+		foreach (jeedom::getUsbMapping('', True) as $name => $dev) {
+			if (file_exists($dev)) {
+				$interfaces[$name] = $dev;
+			}
+		}
 		for ($i = 0; $i<10; $i++) {
 			$tty = '/dev/ttyS' . strval($i);
 			if (file_exists($tty)) {
@@ -235,6 +240,7 @@ class mymodbus extends eqLogic {
 		}
 		$perso_intf = explode(";", config::byKey('interfaces', __CLASS__, '', True));
 		foreach ($perso_intf as $intf) {
+			$intf = trim($intf);
 			if ($intf && file_exists($intf)) {
 				$interfaces[$intf] = $intf;
 			}
