@@ -16,7 +16,7 @@ include_file('desktop', 'mymodbusEqConfig.class', 'php', 'mymodbus');
 		<legend><i class="fas fa-cog"></i>	{{Gestion}}</legend>
 		<!-- Boutons de gestion du plugin -->
 		<div class="eqLogicThumbnailContainer">
-			<div class="cursor eqLogicAction logoPrimary" data-action="bt_addMymodbusEq">
+			<div class="cursor eqLogicAction logoPrimary" id="bt_addMymodbusEq">
 				<i class="fas fa-plus-circle"></i>
 				<br>
 				<span>{{Ajouter}}</span>
@@ -80,7 +80,7 @@ include_file('desktop', 'mymodbusEqConfig.class', 'php', 'mymodbus');
 
 	<!-- Page de présentation de l'équipement -->
 	<div class="col-xs-12 eqLogic" style="display:none;" id="eqLogic">
-		<div class="input-group pull-right" style="display:inline-flex">
+		<div class="input-group pull-right" style="display:inline-flex" id="eqLogicActions">
 			<span class="input-group-btn">
 				<a class="btn btn-primary btn-sm eqLogicAction roundedLeft tooltips" data-action="createTemplate" title="{{Créer Template}}"><i class="fas fa-cubes"></i></a>
 				<a class="btn btn-warning btn-sm eqLogicAction tooltips" data-action="applyTemplate" title="{{Appliquer Template}}"><i class="fas fa-share"></i></a>

@@ -15,10 +15,10 @@
  */
 
 // *********** Namespace
-mymodbus_ext = {}
+MyModbus_ext = {}
 
 // Send ajax request to MyModbus plugin
-mymodbus_ext.callPluginAjax = function(_params) {
+MyModbus_ext.callPluginAjax = function(_params) {
 	domUtils.ajax({
 		async: _params.async == undefined ? true : _params.async,
 		global: false,
@@ -42,273 +42,231 @@ mymodbus_ext.callPluginAjax = function(_params) {
 	});
 }
 
-mymodbus_ext.getEqId = function() {
+MyModbus_ext.getEqId = function() {
 	const element = document.querySelector('.eqLogicAttr[data-l1key="id"]');
 	return element ? element.value : null;
 }
 
+MyModbus_ext.cmdIDStyle = '';
 
 // *********** Evénements de la page du plugin
 
-$('.eqLogicAction[data-action=bt_addMymodbusEq]').off('click').on('click', function() {
-	let dialog_message = '<label class="control-label">{{Nom du nouvel équipement :}}</label>';
-	dialog_message += '<input class="bootbox-input bootbox-input-text form-control" autocomplete="nope" type="text" id="addMymodbusEqName"><br><br>';
-	dialog_message += '<label class="control-label">{{Utiliser un template :}}';
-	dialog_message += '	<select class="bootbox-input bootbox-input-select form-control" id="addMymodbusTplSelector">';
-	dialog_message += '	</select>';
-	dialog_message += '</label>';
-	bootbox.confirm({
-		title: "{{Ajouter un nouvel équipement MyModbus}}",
-		message: dialog_message,
-		callback: function (result) {
-			if (result) {
-				var eqName = $('#addMymodbusEqName').value();
-				if (eqName === undefined || eqName == null || eqName === '' || eqName == false) {
-					$.fn.showAlert({message: "{{Le nom de l'équipement ne peut pas être vide !}}", level: 'warning'});
-					return false;
+document.querySelector('.eqLogicThumbnailContainer').addEventListener('click', function(event) {
+	if (event.target.closest('#bt_addMymodbusEq')) {
+		let prompt_message = '<label class="control-label">{{Nom du nouvel équipement :}}</label>';
+		prompt_message += '<input class="promptAttr" autocomplete="off" type="text" data-l1key="name"><br>';
+		prompt_message += '<label class="control-label">{{Utiliser un template :}}';
+		prompt_message += '	<select class="promptAttr" data-l1key="template">';
+		prompt_message += '	 <option value="">{{Aucun}}</option>';
+		MyModbus_ext.callPluginAjax({
+			data: {
+				action: "getTemplateList",
+			},
+			async: false,
+			error: function(error) {},
+			success: function (dataresult) {
+				for (var i in dataresult) {
+					prompt_message += '  <option value="' + dataresult[i][0] + '">' + dataresult[i][0] + '</option>';
 				}
-				var eqTemplate = $('#addMymodbusTplSelector').val();
-				jeedom.eqLogic.save({
-					type: 'mymodbus',
-					eqLogics: [ {name: eqName} ],
-					error: function (error) {
-						$.fn.showAlert({message: error.message, level: 'danger'});
-					},
-					success: function(savedEq) {
-						if (eqTemplate != '') {
-							mymodbus_ext.callPluginAjax({
-								data: {
-									action: "applyTemplate",
-									id: savedEq.id,
-									templateName : eqTemplate,
-									keepCmd: false
-								},
-								success: function () {
-									var vars = getUrlVars();
-									var url = 'index.php?';
-									for (var i in vars) {
-										if (i != 'id' && i != 'saveSuccessFull' && i != 'removeSuccessFull') {
-											url += i + '=' + vars[i].replace('#', '') + '&';
-										}
+			}
+		});
+		prompt_message += '	</select>';
+		prompt_message += '</label>';
+		jeeDialog.prompt({
+			title: '{{Ajouter un nouvel équipement MyModbus}}',
+			message: prompt_message,
+			inputType: false,
+			callback: function(result) {
+				if (typeof result === 'object' && result !== null && result.name != '') {
+					jeedom.eqLogic.save({
+						type: eqType,
+						eqLogics: [{
+							name: result.name
+						}],
+						error: function(error) {
+							jeedomUtils.showAlert({
+								message: error.message,
+								level: 'danger'
+							})
+						},
+						success: function(savedEq) {
+							var success = false;
+							if (result.template != '') {
+								MyModbus_ext.callPluginAjax({
+									data: {
+										action: 'applyTemplate',
+										id: savedEq.id,
+										templateName : result.template,
+										keepCmd: false
+									},
+									async: false,
+									success: function () {
+										success = true;
 									}
-									modifyWithoutSave = false;
-									url += 'id=' + savedEq.id + '&saveSuccessFull=1';
-									jeedomUtils.loadPage(url);
-								}
-							});
-
-						} else {
-							var vars = getUrlVars();
-							var url = 'index.php?';
-							for (var i in vars) {
-								if (i != 'id' && i != 'saveSuccessFull' && i != 'removeSuccessFull') {
-									url += i + '=' + vars[i].replace('#', '') + '&';
-								}
+								});
 							}
-							modifyWithoutSave = false;
-							url += 'id=' + savedEq.id + '&saveSuccessFull=1';
-							jeedomUtils.loadPage(url);
+							if (result.template != '' && success || result.template == '') {
+								var vars = getUrlVars();
+								var url = 'index.php?';
+								for (var i in vars) {
+									if (i != 'id' && i != 'saveSuccessFull' && i != 'removeSuccessFull') {
+										url += i + '=' + vars[i].replace('#', '') + '&';
+									}
+								}
+								jeeFrontEnd.modifyWithoutSave = false;
+								modifyWithoutSave = jeeFrontEnd.modifyWithoutSave;
+								url += 'id=' + savedEq.id + '&saveSuccessFull=1';
+								jeedomUtils.loadPage(url);
+							}
 						}
-					}
-				});
+					});
+				}
 			}
-		}
-	});
-	mymodbus_ext.callPluginAjax({
-		data: {
-			action: "getTemplateList",
-		},
-		error: function(error) {},
-		success: function (dataresult) {
-			opts = '<option value="">{{Aucun}}</option>';
-			for (var i in dataresult) {
-				opts += '<option value="' + dataresult[i][0] + '">' + dataresult[i][0] + '</option>';
-			}
-			$('#addMymodbusTplSelector').html(opts);
-		}
-	});
-});
+		});
+		return;
+	}
 
-$('#bt_healthmymodbus').on('click', function () {
-	$('#md_modal').dialog({title: "{{Santé mymodbus}}"});
-	$('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=health').dialog('open');
-});
+	if (event.target.closest('#bt_healthmymodbus')) {
+		jeeDialog.dialog({
+			id: 'modal_healthmymodbus',
+			title: '{{Santé MyModbus}}',
+			height: '85%',
+			contentUrl: 'index.php?v=d&plugin=' + eqType + '&modal=health'
+		});
+		return;
+	}
 
-$('#bt_templatesMymodbus').on('click', function () {
-	$('#md_modal').dialog({title: "{{Gestion des templates d'équipement MyModbus}}"});
-	$('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=templates').dialog('open');
-});
+	if (event.target.closest('#bt_templatesMymodbus')) {
+		jeeDialog.dialog({
+			id: 'modal_templatesMymodbus',
+			title: '{{Gestion des templates d\'équipement MyModbus}}',
+			height: '85%',
+			contentUrl: 'index.php?v=d&plugin=' + eqType + '&modal=templates'
+		});
+		return;
+	}
 
-$('#bt_move_cmd').on('click', function () {
-	$('#md_modal').dialog({title: "{{Déplacement des commandes MyModbus}}"});
-	$('#md_modal').load('index.php?v=d&plugin=mymodbus&modal=move_cmd').dialog('open');
+	if (event.target.closest('#bt_move_cmd')) {
+		jeeDialog.dialog({
+			id: 'modal_move_cmd',
+			title: '{{Déplacement des commandes MyModbus}}',
+			height: '85%',
+			contentUrl: 'index.php?v=d&plugin=' + eqType + '&modal=move_cmd'
+		});
+		return;
+	}
 });
 
 // *********** Evénements de la page d'édition d'un équipement
 
-$('.eqLogicAction[data-action=createTemplate]').off('click').on('click', function () {
-	bootbox.prompt({
-		title: "{{Nom du nouveau template ?}}",
-		callback: function (result) {
-			if (result !== null) {
-				mymodbus_ext.callPluginAjax({
-					data: {
-						action: "createTemplate",
-						id: mymodbus_ext.getEqId(),
-						name : result
+document.querySelector('#eqLogicActions').addEventListener('click', function(event) {
+	if (event.target.closest('.eqLogicAction[data-action="createTemplate"]')) {
+		jeeDialog.prompt(
+			'{{Nom du nouveau template ?}}',
+			function (result) {
+				if (result !== null) {
+					MyModbus_ext.callPluginAjax({
+						data: {
+							action: 'createTemplate',
+							id: MyModbus_ext.getEqId(),
+							name : result
+						}
+					});
+				}
+			}
+		);
+		return;
+	}
+	
+	if (event.target.closest('.eqLogicAction[data-action="applyTemplate"]')) {
+		MyModbus_ext.callPluginAjax({
+			data: {
+				action: 'getTemplateList',
+			},
+			async: false,
+			success: function (dataresult) {
+				let prompt_message = '<label class="control-label">{{Choisissez un template :}}</label>';
+				prompt_message += '	<select class="promptAttr" data-l1key="template">';
+				
+				for(var i in dataresult) {
+					prompt_message += '<option value="' + dataresult[i][0] + '">' + dataresult[i][0] + '</option>';
+				}
+				prompt_message += '</select>'; // <br>
+				
+				prompt_message += '<label class="control-label">{{Que voulez-vous faire des commandes existantes ?}}</label> ';
+				prompt_message += '	<select class="promptAttr" data-l1key="optionKeepCmd">';
+				prompt_message += '  <option value="0">{{Les supprimer d\'abord}}</option>';
+				prompt_message += '  <option value="1">{{Les conserver / Mettre à jour}}</option>';
+				prompt_message += '</select>';
+
+				jeeDialog.prompt({
+					title: '{{Appliquer un Template}}',
+					message: prompt_message,
+					inputType: false,
+					callback: function(result) {
+						if (result !== null) {
+							MyModbus_ext.callPluginAjax({
+								data: {
+									action: 'applyTemplate',
+									id: MyModbus_ext.getEqId(),
+									templateName: result.template,
+									keepCmd: result.optionKeepCmd
+								},
+								success: function (dataresult) {
+									window.location.reload();
+								}
+							});
+						}
 					}
 				});
 			}
+		});
+		return;
+	}
+});
+
+function handleProtocolChange(event) {
+	const value = event.target.value;
+
+	const show_shared = (value === 'shared_from');
+	const show_network = (value !== 'serial');
+	const sharedInterface = document.getElementById('div_sharedInterface');
+	const protocolParameters = document.getElementById('div_protocolParameters');
+	const networkConfig = document.querySelector('#div_protocolParameters .networkConfig');
+	const serialConfig = document.querySelector('#div_protocolParameters .serialConfig');
+	if (show_shared) {
+		sharedInterface.seen();
+		protocolParameters.unseen();
+	} else {
+		sharedInterface.unseen();
+		protocolParameters.seen();
+		if (show_network) {
+			networkConfig.seen();
+			serialConfig.unseen();
+		} else {
+			networkConfig.unseen();
+			serialConfig.seen();
+		}
+	}
+}
+
+function handleeqUniqueIdChange(event) {
+	const value = event.target.value;
+	MyModbus_ext.cmdIDStyle = value !== '' ? 'display:none;' : '';
+
+	// Mettre à jour le style de tous les champs ID des commandes
+	const cmdDevIDElements = document.querySelectorAll('.cmdAttr[data-l1key="configuration"][data-l2key="cmdDevID"]');
+	cmdDevIDElements.forEach(function(cmdDevIDEl) {
+		if (MyModbus_ext.cmdIDStyle == '') {
+			cmdDevIDEl.seen();
+		} else {
+			cmdDevIDEl.value = '';
+			cmdDevIDEl.unseen();
 		}
 	});
-});
-
-$('.eqLogicAction[data-action=applyTemplate]').off('click').on('click', function () {
-	mymodbus_ext.callPluginAjax({
-		data: {
-			action: "getTemplateList",
-		},
-		success: function (dataresult) {
-			var dialog_message = '<label class="control-label">{{Choisissez un template :}}</label> ';
-			dialog_message += '<select class="bootbox-input bootbox-input-select form-control" id="applyTemplateSelector">';
-			for(var i in dataresult) {
-				dialog_message += '<option value="'+dataresult[i][0]+'">'+dataresult[i][0]+'</option>';
-			}
-			dialog_message += '</select><br/>';
-
-			dialog_message += '<label class="control-label">{{Que voulez-vous faire des commandes existantes ?}}</label> ';
-			dialog_message += '<div class="radio"><label><input type="radio" name="applyTemplateCommand" value="1" checked="checked">{{Les conserver / Mettre à jour}}</label></div>';
-			dialog_message += '<div class="radio"><label><input type="radio" name="applyTemplateCommand" value="0">' + "{{Les supprimer d'abord}}" + '</label></div>';
-
-			bootbox.confirm({
-				title: '{{Appliquer un Template}}',
-				message: dialog_message,
-				callback: function (result){ if (result) {
-					mymodbus_ext.callPluginAjax({
-						data: {
-							action: "applyTemplate",
-							id: mymodbus_ext.getEqId(),
-							templateName : $("#applyTemplateSelector").val(),
-							keepCmd: $("[name='applyTemplateCommand']:checked").val()
-						},
-						success: function (dataresult) {
-							$('.eqLogicDisplayCard[data-eqLogic_id=' + mymodbus_ext.getEqId() + ']').click();
-						}
-					});
-				}}
-			});
-		}
-	});
-});
-
-/* Permet la réorganisation des commandes dans l'équipement */
-$("#table_cmd").sortable({
-	axis: "y",
-	cursor: "move",
-	items: ".cmd",
-	placeholder: "ui-state-highlight",
-	tolerance: "intersect",
-	forcePlaceholderSize: true
-});
+}
 
 function printEqLogic(_eqLogic) {
-	//console.log('eqLogic : ' + init(JSON.stringify(_eqLogic)));
-	if (isset(_eqLogic.configuration.keepopen)) {
-		delete _eqLogic.configuration.keepopen;
-		modifyWithoutSave = true;
-	}
-	if (isset(_eqLogic.configuration.eqKeepopen)) {
-		delete _eqLogic.configuration.eqKeepopen;
-		modifyWithoutSave = true;
-	}
-	if (isset(_eqLogic.configuration.eqTcpRtu)) {
-		delete _eqLogic.configuration.eqTcpRtu;
-		modifyWithoutSave = true;
-	}
-	if (isset(_eqLogic.configuration.eqTcpPort)) {
-		if (!isset(_eqLogic.configuration.eqPortNetwork)) {
-			_eqLogic.configuration.eqPortNetwork = _eqLogic.configuration.eqTcpPort;
-		}
-		delete _eqLogic.configuration.eqTcpPort;
-		modifyWithoutSave = true;
-	}
-	if (isset(_eqLogic.configuration.eqTcpAddr)) {
-		if (!isset(_eqLogic.configuration.eqAddr)) {
-			_eqLogic.configuration.eqAddr = _eqLogic.configuration.eqTcpAddr;
-		}
-		delete _eqLogic.configuration.eqTcpAddr;
-		modifyWithoutSave = true;
-	}
-	if (isset(_eqLogic.configuration.eqUdpPort)) {
-		if (!isset(_eqLogic.configuration.eqPortNetwork)) {
-			_eqLogic.configuration.eqPortNetwork = _eqLogic.configuration.eqUdpPort;
-		}
-		delete _eqLogic.configuration.eqUdpPort;
-		modifyWithoutSave = true;
-	}
-	if (isset(_eqLogic.configuration.eqUdpAddr)) {
-		if (!isset(_eqLogic.configuration.eqAddr)) {
-			_eqLogic.configuration.eqAddr = _eqLogic.configuration.eqUdpAddr;
-		}
-		delete _eqLogic.configuration.eqUdpAddr;
-		modifyWithoutSave = true;
-	}
-	if (isset(_eqLogic.configuration.eqSerialInterface)) {
-		if (!isset(_eqLogic.configuration.eqPortSerial)) {
-			_eqLogic.configuration.eqPortSerial = _eqLogic.configuration.eqSerialInterface;
-		}
-		delete _eqLogic.configuration.eqSerialInterface;
-		modifyWithoutSave = true;
-	}
-	// Define the default configuration's value
-	if (!isset(_eqLogic.configuration.eqRefreshMode) || _eqLogic.configuration.eqRefreshMode == '') {
-		_eqLogic.configuration.eqRefreshMode = 'polling';
-		modifyWithoutSave = true;
-	}
-	if (!isset(_eqLogic.configuration.eqPolling) || _eqLogic.configuration.eqPolling == '') {
-		_eqLogic.configuration.eqPolling = '5';
-		modifyWithoutSave = true;
-	}
-	if (!isset(_eqLogic.configuration.eqTimeout) || _eqLogic.configuration.eqTimeout == '') {
-		_eqLogic.configuration.eqTimeout = '5';
-		modifyWithoutSave = true;
-	}
-	if (!isset(_eqLogic.configuration.eqWriteCmdCheckTimeout) || _eqLogic.configuration.eqWriteCmdCheckTimeout == '') {
-		_eqLogic.configuration.eqWriteCmdCheckTimeout = '0.01';
-		modifyWithoutSave = true;
-	}
-	if (!isset(_eqLogic.configuration.eqRetries) || _eqLogic.configuration.eqRetries == '') {
-		_eqLogic.configuration.eqRetries = '3';
-		modifyWithoutSave = true;
-	}
-	if (!isset(_eqLogic.configuration.eqFirstDelay) || _eqLogic.configuration.eqFirstDelay == '') {
-		_eqLogic.configuration.eqFirstDelay = '0';
-		modifyWithoutSave = true;
-	}
-	if (!isset(_eqLogic.configuration.eqErrorDelay) || _eqLogic.configuration.eqErrorDelay == '') {
-		_eqLogic.configuration.eqErrorDelay = '1';
-		modifyWithoutSave = true;
-	}
-	if (!isset(_eqLogic.configuration.eqOneDevID) || _eqLogic.configuration.eqOneDevID == '') {
-		_eqLogic.configuration.eqOneDevID = '0';
-		modifyWithoutSave = true;
-	}
-	if (!isset(_eqLogic.configuration.eqRegTest) || _eqLogic.configuration.eqRegTest == '') {
-		_eqLogic.configuration.eqRegTest = '0';
-		modifyWithoutSave = true;
-	}
-	if (!isset(_eqLogic.configuration.eqRegTestInvertBytes) || _eqLogic.configuration.eqRegTestInvertBytes == '') {
-		_eqLogic.configuration.eqRegTestInvertBytes = '0';
-		modifyWithoutSave = true;
-	}
-	if (!isset(_eqLogic.configuration.eqRegTestInvertWords) || _eqLogic.configuration.eqRegTestInvertWords == '') {
-		_eqLogic.configuration.eqRegTestInvertWords = '0';
-		modifyWithoutSave = true;
-	}
-	if (!isset(_eqLogic.configuration.eqRegTestInvertDWords) || _eqLogic.configuration.eqRegTestInvertDWords == '') {
-		_eqLogic.configuration.eqRegTestInvertDWords = '0';
-		modifyWithoutSave = true;
-	}
 	
 	// Afficher la partie variable de la configuration de l'équipement en fonction du protocole choisi
 	$('.eqLogicAttr[data-l1key=configuration][data-l2key=eqProtocol]').off().on('change', function () {
@@ -720,7 +678,7 @@ function getTrfromCmd(_cmd, _template = false) {
 	tr += '	</div>';
 	tr += ' </td>';
 	// ID du serveur
-	tr += ' <td class="colDevID"' + colDevIDStyle + '><input type="number" class="cmdAttr form-control input-sm withDevID" data-l1key="configuration" data-l2key="cmdDevID"' + formDisabled + '></td>';
+	tr += ' <td class="colDevID"' + MyModbus_ext.cmdIDStyle + '><input type="number" class="cmdAttr form-control input-sm withDevID" data-l1key="configuration" data-l2key="cmdDevID"' + formDisabled + '></td>';
 	// Modbus function / Data format
 	tr += ' <td>';
 	tr += '	<div class="input-group" style="margin-bottom:5px;">';
@@ -972,7 +930,7 @@ function addCmdToTable(_cmd) {
 	
 	var tr = $('#table_cmd tbody tr:last');
 	listSourceBlobs({
-		id:	mymodbus_ext.getEqId(),
+		id:	MyModbus_ext.getEqId(),
 		error: function (error) {
 			$('#div_alert').showAlert({message: error.message, level: 'danger'});
 		},
@@ -983,7 +941,7 @@ function addCmdToTable(_cmd) {
 	});
 	
 	listSourceValues({
-		id:	mymodbus_ext.getEqId(),
+		id:	MyModbus_ext.getEqId(),
 		error: function (error) {
 			$('#div_alert').showAlert({message: error.message, level: 'danger'});
 		},

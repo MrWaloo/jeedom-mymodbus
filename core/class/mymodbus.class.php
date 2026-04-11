@@ -808,6 +808,30 @@ class mymodbus extends eqLogic {
 		self::sendNewConfig();
 	}
 
+	public function preInsert() {
+		log::add(__CLASS__, 'debug', __CLASS__ . '::' . __FUNCTION__);
+		
+		$default_conf = [
+			'eqRefreshMode' => 'polling',
+			'eqPolling' => '10',
+			'eqTimeout' => '5',
+			'eqWriteCmdCheckTimeout' => '0.01',
+			'eqRetries' => '3',
+			'eqFirstDelay' => '0',
+			'eqErrorDelay' => '2',
+			'eqOneDevID' => '0',
+			'eqRegTest' => '0',
+			'eqRegTestInvertBytes' => '0',
+			'eqRegTestInvertWords' => '0',
+			'eqRegTestInvertDWords' => '0',
+		];
+		foreach ($default_conf as $key => $value) {
+			if ($this->getConfiguration($key) == '') {
+				$this->setConfiguration($key, $value);
+			}
+		}
+	}
+
 	/*
 	* Non obligatoire mais permet de modifier l'affichage du widget si vous en avez besoin
 	public function toHtml($_version = 'dashboard') {}

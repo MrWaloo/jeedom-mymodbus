@@ -232,7 +232,7 @@ function bt_move_cmds_click(event) {
 	//console.log(checkedValues); // DEBUG
 
 	let html = '</br></br>';
-	mymodbus_ext.callPluginAjax({
+	MyModbus_ext.callPluginAjax({
 		async: false,
 		data: {
 			action: "moveCommands",
