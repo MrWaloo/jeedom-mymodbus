@@ -1092,6 +1092,7 @@ class mymodbusCmd extends cmd {
 			}
 		}
 		// Remplacement des noms de la configuration
+		// TODO: supprimer les paramètres si le nouveau nom est `null` ou vide
 		$conv_array = [
 			'cmdSlave' => 'cmdDevID'
 		];
