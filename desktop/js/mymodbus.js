@@ -352,7 +352,8 @@ function eqConfig_visibility() {
 		$('.btn_add_command').hide();
 		$('.noRegTest').hide();
 	}
-
+	//console.log('eqLogicId : ' + $eqLogicId);
+	//let $debug = 0;
 	if ($eqLogicId != '') {
 		jeedom.eqLogic.byId({
 			id: $eqLogicId,
@@ -365,8 +366,10 @@ function eqConfig_visibility() {
 						success: function(eqLogic2) {
 							if (eqLogic2.configuration.eqOneDevID == '1') {
 								$('.colDevID').hide();
+								//let $debug = 1;
 							} else {
 								$('.colDevID').show();
+								//let $debug = 2;
 							}
 						}
 					});
@@ -374,7 +377,7 @@ function eqConfig_visibility() {
 			}
 		});
 	}
-
+	//console.log('eqOneDevID : ' + $eqOneDevID + ' / eqLogicId : ' + $eqLogicId + ' / debug : ' + $debug);
 	if ($eqOneDevID == '1') {
 		if ($eqLogicId != '') {
 			$('.colDevID').hide();
@@ -513,7 +516,7 @@ function actualise_visible(me, source, _template = false) {
 	if (source !== 'first call') {
 		modifyWithoutSave = true;
 	}
-	//var cmdName = $(me).closest('tr').find('.cmdAttr[data-l1key=name]').value();
+	//let cmdName = $(me).closest('tr').find('.cmdAttr[data-l1key=name]').value();
 	//console.log(cmdName + ' *-*-*-*-*-*-*-*-*-* ' + source);
 	var cmdLogicalId = $(me).closest('tr').find('.cmdAttr[data-l1key=logicalId]').value();
 	var cmdType = $(me).closest('tr').find('.cmdAttr[data-l1key=type]').value();
@@ -658,6 +661,7 @@ function getTrfromCmd(_cmd, _template = false) {
 	} else {
 		colDevIDStyle = $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqOneDevID]').value() == '0' ? '' : ' style="display:none;"';
 	}
+	//console.log('colDevIDStyle : ' + colDevIDStyle);
 	let tr = '<tr class="cmd" ' + dataCmdId + '">';
 	if (!_template) {
 		tr += ' <td class="hidden-xs">'

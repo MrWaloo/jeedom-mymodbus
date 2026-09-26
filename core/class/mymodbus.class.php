@@ -995,7 +995,7 @@ class mymodbusCmd extends cmd {
 		$command = [];
 		$command['eqId'] = $eqMymodbus->getId();
 		if ($eqMymodbus->getConfiguration('eqProtocol') === 'shared_from') {
-			$command['eqId'] = intval($eqMymodbus->getConfiguration('eqInterfaceFromEqId'));
+			$command['eqId'] = $eqMymodbus->getConfiguration('eqInterfaceFromEqId');
 		}
 		
 		$message = [];
