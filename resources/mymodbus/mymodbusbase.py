@@ -105,7 +105,7 @@ class MyModbusBase(object):
 		self._client_params = {
 			"name": self.eqConfig["name"],
 			"timeout": float(self.eqConfig["eqTimeout"]),
-			"retries": float(self.eqConfig["eqRetries"]),
+			"retries": int(self.eqConfig["eqRetries"]),
 			"trace_connect": self.trace_connect_callback,
 		}
 		framer = None
