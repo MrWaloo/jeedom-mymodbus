@@ -15,7 +15,7 @@ from typing import Any
 
 from pymodbus.exceptions import ModbusException
 from pymodbus.pdu import DecodePDU, ExceptionResponse, ModbusPDU
-from pymodbus.pdu.pdu import pack_bitstring
+from pymodbus.pdu.utils import pack_bitstring
 
 from mymodbuslib import Lib
 from mymodbusbase import MyModbusBase
