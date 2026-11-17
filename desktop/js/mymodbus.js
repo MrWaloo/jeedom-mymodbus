@@ -225,33 +225,8 @@ document.querySelector('#eqLogicActions').addEventListener('click', function(eve
 	}
 });
 
-function handleProtocolChange(event) {
-	const value = event.target.value;
-
-	const show_shared = (value === 'shared_from');
-	const show_network = (value !== 'serial');
-	const sharedInterface = document.getElementById('div_sharedInterface');
-	const protocolParameters = document.getElementById('div_protocolParameters');
-	const networkConfig = document.querySelector('#div_protocolParameters .networkConfig');
-	const serialConfig = document.querySelector('#div_protocolParameters .serialConfig');
-	if (show_shared) {
-		sharedInterface.seen();
-		protocolParameters.unseen();
-	} else {
-		sharedInterface.unseen();
-		protocolParameters.seen();
-		if (show_network) {
-			networkConfig.seen();
-			serialConfig.unseen();
-		} else {
-			networkConfig.unseen();
-			serialConfig.seen();
-		}
-	}
-}
-
 function handleeqUniqueIdChange(event) {
-	const value = event.target.value;
+	const value = event.target.jeeValue();
 	MyModbus_ext.cmdIDStyle = value !== '' ? 'display:none;' : '';
 
 	// Mettre à jour le style de tous les champs ID des commandes
@@ -269,30 +244,36 @@ function handleeqUniqueIdChange(event) {
 function printEqLogic(_eqLogic) {
 	
 	// Afficher la partie variable de la configuration de l'équipement en fonction du protocole choisi
-	$('.eqLogicAttr[data-l1key=configuration][data-l2key=eqProtocol]').off().on('change', function () {
-		if ($(this).val() != '' && !is_null($(this).val())) {
-			var show_shared = ($(this).val() === 'shared_from');
-			var show_network = ($(this).val() !== 'serial');
-			const sharedInterface = $('#div_sharedInterface');
-			const protocolParameters = $('#div_protocolParameters');
-			const networkConfig = $('#div_protocolParameters .networkConfig');
-			const serialConfig = $('#div_protocolParameters .serialConfig');
-			if (show_shared) {
-				sharedInterface.show();
-				protocolParameters.hide();
-			} else {
-				sharedInterface.hide();
-				protocolParameters.show();
-				if (show_network) {
-					networkConfig.show();
-					serialConfig.hide();
-				} else {
-					networkConfig.hide();
-					serialConfig.show();
+	document
+		.querySelectorAll('.eqLogicAttr[data-l1key="configuration"][data-l2key="eqProtocol"]')
+		.forEach(function (el) {
+			el.onchange = function () {
+				const value = el.jeeValue();
+				if (value != null && value !== '' && value !== 'null') {
+					const showShared = value === 'shared_from';
+					const showNetwork = value !== 'serial';
+					const sharedInterface = document.querySelector('#div_sharedInterface');
+					const protocolParameters = document.querySelector('#div_protocolParameters');
+					const networkConfigs = protocolParameters.querySelectorAll('.networkConfig');
+					const serialConfigs = protocolParameters.querySelectorAll('.serialConfig');
+					if (showShared) {
+						sharedInterface.seen();
+						protocolParameters.unseen();
+					} else {
+						sharedInterface.unseen();
+						protocolParameters.seen();
+						if (showNetwork) {
+							networkConfigs.forEach(elmt => elmt.seen());
+							serialConfigs.forEach(elmt => elmt.unseen());
+						} else {
+							networkConfigs.forEach(elmt => elmt.unseen());
+							serialConfigs.forEach(elmt => elmt.seen());
+						}
+					}
 				}
-			}
-		}
-	});
+			};
+			el.triggerEvent('change');
+		});
 
 	const selectElement = document.getElementById('sharedInterface');
 	for (let i = 0; i < selectElement.options.length; i++) {
@@ -307,8 +288,7 @@ function printEqLogic(_eqLogic) {
 	let html_eqId = '<i class="fas fa-tachometer-alt"></i> {{Equipement}} (ID: ' + _eqLogic.id.toString() + ')';
 	div_eqlogicId.innerHTML = html_eqId;
 
-	// load values
-	$('#eqLogic').setValues(_eqLogic, '.eqLogicAttr');
+	// load values fait par le core
 }
 
 $('.eqLogicAttr[data-l1key=configuration][data-l2key=eqRefreshMode]').off().on('change', function () {

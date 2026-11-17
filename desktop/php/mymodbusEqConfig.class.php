@@ -162,7 +162,7 @@ class mymodbusEqConfig {
 					</div>
 				</div>
 
-				<div id="div_RegTestParameters" hidden>
+				<div id="div_RegTestParameters" class="hidden">
 					<div class="form-group nonShared">
 						<label class="col-sm-6 control-label"><?= __("Premier registre à tester", __FILE__) ?></label>
 						<div class="col-sm-6">
@@ -270,14 +270,14 @@ class mymodbusEqConfig {
 
 	static function show_network_config() {
 		?>
-		<div class="form-group networkConfig" hidden>
+		<div class="form-group networkConfig hidden">
 			<label class="col-sm-6 control-label"><?= __("Adresse IP", __FILE__) ?></label>
 			<div class="col-sm-6">
 				<input type="text" class="eqLogicAttr form-control networkConfig" data-l1key="configuration" data-l2key="eqAddr" placeholder="192.168.1.55"/>
 			</div>
 		</div>
 
-		<div class="form-group networkConfig" hidden>
+		<div class="form-group networkConfig hidden">
 			<label class="col-sm-6 control-label"><?= __("Port", __FILE__) ?></label>
 			<div class="col-sm-6">
 				<input type="number" class="eqLogicAttr form-control networkConfig" data-l1key="configuration" data-l2key="eqPortNetwork" placeholder="502"/>
@@ -288,7 +288,7 @@ class mymodbusEqConfig {
 
 	static function show_serial_config() {
 		?>
-		<div class="form-group serialConfig" hidden>
+		<div class="form-group serialConfig hidden">
 			<label class="col-sm-6 control-label"><?= __("Interface", __FILE__) ?></label>
 			<div class="col-sm-6">
 				<select class="eqLogicAttr form-control serialConfig" data-toggle="tooltip" data-placement="top" data-html="true" data-l1key="configuration" data-l2key="eqPortSerial">
@@ -301,7 +301,7 @@ class mymodbusEqConfig {
 			</div>
 		</div>
 
-		<div class="form-group serialConfig" hidden>
+		<div class="form-group serialConfig hidden">
 			<label class="col-sm-6 control-label"><?= __("Méthode de transport", __FILE__) ?></label>
 			<div class="col-sm-6">
 				<select class="eqLogicAttr form-control serialConfig" data-l1key="configuration" data-l2key="eqSerialMethod">
@@ -311,7 +311,7 @@ class mymodbusEqConfig {
 			</div>
 		</div>
 
-		<div class="form-group serialConfig" hidden>
+		<div class="form-group serialConfig hidden">
 			<label class="col-sm-6 control-label"><?= __("Vitesse de transmission", __FILE__) ?></label>
 			<div class="col-sm-6">
 				<select class="eqLogicAttr form-control serialConfig" data-l1key="configuration" data-l2key="eqSerialBaudrate">
@@ -335,7 +335,7 @@ class mymodbusEqConfig {
 			</div>
 		</div>
 
-		<div class="form-group serialConfig" hidden>
+		<div class="form-group serialConfig hidden">
 			<label class="col-sm-6 control-label"><?= __("Nombre de bits par octet", __FILE__) ?></label>
 			<div class="col-sm-6">
 				<select class="eqLogicAttr form-control serialConfig" data-l1key="configuration" data-l2key="eqSerialBytesize">
@@ -346,7 +346,7 @@ class mymodbusEqConfig {
 			</div>
 		</div>
 
-		<div class="form-group serialConfig" hidden>
+		<div class="form-group serialConfig hidden">
 			<label class="col-sm-6 control-label"><?= __("Parité", __FILE__) ?></label>
 			<div class="col-sm-6">
 				<select class="eqLogicAttr form-control serialConfig" data-l1key="configuration" data-l2key="eqSerialParity">
@@ -358,7 +358,7 @@ class mymodbusEqConfig {
 			</div>
 		</div>
 
-		<div class="form-group serialConfig" hidden>
+		<div class="form-group serialConfig hidden">
 			<label class="col-sm-6 control-label"><?= __("Bits de stop", __FILE__) ?></label>
 			<div class="col-sm-6">
 				<select class="eqLogicAttr form-control serialConfig" data-l1key="configuration" data-l2key="eqSerialStopbits">
